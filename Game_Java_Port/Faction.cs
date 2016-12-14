@@ -1,9 +1,7 @@
 ﻿using SharpDX;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace Game_Java_Port {
     public enum FactionNames {
@@ -24,6 +22,9 @@ namespace Game_Java_Port {
 
         public string Name { get; }
 
+        /// <summary>
+        /// Quick access to improve performance by preventing repetitive initialisation
+        /// </summary>
         private static Dictionary<FactionNames, Faction> _factions { get; } = new Dictionary<FactionNames, Faction>();
         
         public enum Conduct {
@@ -70,6 +71,11 @@ namespace Game_Java_Port {
             return (FactionNames)Enum.Parse(typeof(FactionNames), Name);
         }
 
+        /// <summary>
+        /// Translates the enum to an actual instance of the faction class
+        /// </summary>
+        /// <param name="name">the enum value of the faction you want to have</param>
+        /// <returns>the corresponding instance of the faction class</returns>
         private static Faction getFaction(FactionNames name) {
             switch(name) {
                 case FactionNames.Civilians: return Civilians;
@@ -108,7 +114,7 @@ namespace Game_Java_Port {
 
                     temp.AgressionConduct = Conduct.Attack;
 
-                    temp.FactionColor = Color.Tomato;
+                    temp.FactionColor = CustomMaths.fromArgb(255, 200, 50, 150);
 
                 }
                 return _factions[name];
@@ -126,7 +132,7 @@ namespace Game_Java_Port {
 
                     temp.DefaultDisposition = Disposition.Neutral;
 
-                    temp.FactionColor = Color.DimGray;
+                    temp.FactionColor = CustomMaths.fromArgb(255,150,150,150);
                 }
                 return _factions[name];
             }
@@ -142,16 +148,17 @@ namespace Game_Java_Port {
                     _factions.Add(name, temp);
 
                     temp.DefaultDisposition = Disposition.Fear;
+                    
 
-                    temp.Dispositions.Add(Players, Disposition.Neutral);
-                    temp.Dispositions.Add(Civilians, Disposition.Allied);
-                    temp.Dispositions.Add(Environment, Disposition.Neutral);
+                    temp.Dispositions.Add(FactionNames.Players, Disposition.Neutral);
+                    temp.Dispositions.Add(FactionNames.Civilians, Disposition.Allied);
+                    temp.Dispositions.Add(FactionNames.Environment, Disposition.Neutral);
 
                     temp.AgressionConduct = Conduct.Run;
 
                     temp.InteractionConduct = Conduct.Follow;
 
-                    temp.FactionColor = Color.LightCyan;
+                    temp.FactionColor = CustomMaths.fromArgb(255, 50, 200, 150);
                 }
                 return _factions[name];
             } }
@@ -167,12 +174,12 @@ namespace Game_Java_Port {
 
                     temp.DefaultDisposition = Disposition.Enemy;
                     
-                    temp.Dispositions.Add(Savages, Disposition.Neutral);
-                    temp.Dispositions.Add(Environment, Disposition.Neutral);
+                    temp.Dispositions.Add(FactionNames.Savages, Disposition.Neutral);
+                    temp.Dispositions.Add(FactionNames.Environment, Disposition.Neutral);
 
                     temp.AgressionConduct = Conduct.Attack;
 
-                    temp.FactionColor = Color.Red;
+                    temp.FactionColor = CustomMaths.fromArgb(255, 255, 50, 50);
                 }
                 return _factions[name];
             } }
@@ -189,10 +196,10 @@ namespace Game_Java_Port {
 
                     temp.DefaultDisposition = Disposition.Enemy;
 
-                    temp.Dispositions.Add(Players, Disposition.Allied);
-                    temp.Dispositions.Add(Civilians, Disposition.Neutral);
+                    temp.Dispositions.Add(FactionNames.Players, Disposition.Allied);
+                    temp.Dispositions.Add(FactionNames.Civilians, Disposition.Neutral);
 
-                    temp.FactionColor = Color.Blue;
+                    CustomMaths.fromArgb(255, 50, 250, 250);
                 }
                 return _factions[name];
             } }

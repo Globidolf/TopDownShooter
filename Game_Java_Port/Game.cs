@@ -14,22 +14,31 @@ using static System.BitConverter;
 namespace Game_Java_Port {
     class Game : ITickable, IRenderable {
 
+        [Flags]
         public enum GameState {
-            Menu,
-            SinglePlayer,
-            Host,
-            Client
+            Normal =        0,
+            Paused =        1,
+            Menu =          1 << 1,
+            Multiplayer =   1 << 2,
+            Host =          1 << 3
         }
         
         public static GameState state {
             get {
+                GameState _state = GameState.Normal;
                 if(instance._player == null)
-                    return GameState.Menu;
-                if(instance.GameHost != null)
-                    return GameState.Host;
-                if(instance._client != null)
-                    return GameState.Client;
-                return GameState.SinglePlayer;
+                    _state = GameState.Menu;
+                else {
+                    if(Paused)
+                        _state |= GameState.Paused;
+                    if(instance._client != null) {
+                        _state |= GameState.Multiplayer;
+                        if(instance.GameHost != null)
+                            _state |= GameState.Host;
+                    }
+                }
+
+                return _state;
             }
         }
 
@@ -100,16 +109,17 @@ namespace Game_Java_Port {
 
         public void Tick() {
             //pre-lock check (prevent exception)
-            if (instance._player != null) {
+            if (!state.HasFlag(GameState.Menu)) {
                 lock(instance._player) lock (GameSubjects) {
                     //post lock check (actual validation)
-                    if(instance._player != null && instance._player.Health <= 0 && GameSubjects.Contains(instance._player)) {
+                    if(instance._player.Health <= 0 && GameSubjects.Contains(instance._player)) {
                         NPC tempPlayer = instance._player;
                         Timer timer = null;
-                        instance.addMessage("You died. Lost all Exp. Respawning in 5 seconds...");
+                        instance.addMessage("You died. Lost all Exp and Items. Respawning in 5 seconds...");
                         tempPlayer.Location = (instance.GameHost != null ? GameHost._HostGenRNG : RNG).NextVector2(new Vector2(-10000, -10000), new Vector2(10000, 10000));
                         tempPlayer.Health = tempPlayer.MaxHealth;
                         tempPlayer.Exp = 0;
+                            tempPlayer.Inventory.ForEach((item) => item.Drop());
                         tempPlayer.removeFromGame();
                         timer = new Timer((obj) =>
                         {
@@ -122,7 +132,7 @@ namespace Game_Java_Port {
             }
             lock(GameSubjects) {
                 //singleplayer Game
-                if(_client == null && _player != null) {
+                if(!(state.HasFlag(GameState.Menu) || state.HasFlag(GameState.Multiplayer))) {
                     if(RNG.Next((int)GameVars.defaultGTPS * GameSubjects.Count / 3) == 0) {
                         NPC rndSpwn = new NPC(_player.Level, add: false);
                         float range = rndSpwn.EquippedWeaponR != null ? rndSpwn.RWeaponRange : rndSpwn.RMeleeRange;
@@ -131,11 +141,13 @@ namespace Game_Java_Port {
                             (RNG.Next(2) == 0 ? -1 : 1) * (ScreenHeight / 2 + range) + _player.Location.Y);
                         rndSpwn.addToGame();
                     }
-                } else if(GameHost != null) {
+                } else if(state.HasFlag(GameState.Host)) {
                     GameSubjects.FindAll((subj) => subj.Team == FactionNames.Players).ForEach((subj) =>
                     {
                         if(GameHost._HostGenRNG.Next((int)GameVars.defaultGTPS * GameSubjects.Count / 3) == 0) {
                             NPC rndSpwn = new NPC(_player.Level, add: false);
+                            rndSpwn.ID += GameHost.ID_Offset;
+                            GameHost.ID_Offset++;
                             float range = rndSpwn.EquippedWeaponR != null ? rndSpwn.RWeaponRange : rndSpwn.RMeleeRange;
                             rndSpwn.Location = new Vector2(
                                 (GameHost._HostGenRNG.Next(2) == 0 ? -1 : 1) * (ScreenWidth / 2 + range) + subj.Location.X,

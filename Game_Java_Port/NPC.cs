@@ -212,7 +212,7 @@ namespace Game_Java_Port {
                 addToGame();
         }
 
-        float removeCounter = 60;
+        float removeCounter = 5;
 
         public override void Tick() {
             Vector2 relativePos = Location + MatrixExtensions.PVTranslation;
@@ -220,7 +220,7 @@ namespace Game_Java_Port {
 
             lock(GameSubjects) {
                 if(GameSubjects.Any((subj) => subj.Team == FactionNames.Players)) {
-                    GameSubjects.ForEach((subj) =>
+                    GameSubjects.FindAll((subj) => subj.Team == FactionNames.Players).ForEach((subj) =>
                     {
                         float temp;
                         if((temp = Vector2.DistanceSquared(Location, subj.Location)) < distanceToPlayers)
@@ -233,7 +233,7 @@ namespace Game_Java_Port {
             hpLeftRect = new RectangleF(relativePos.X - 50, relativePos.Y - Size - 35, hpRect.Width / MaxHealth * Health, hpRect.Height);
 
             if(distanceToPlayers < (ScreenHeight * ScreenHeight + ScreenWidth * ScreenWidth) / 2) {
-                removeCounter = 60;
+                removeCounter = 5;
                 AI?.Invoke(this);
                 base.Tick();
             } else {
@@ -259,34 +259,39 @@ namespace Game_Java_Port {
                 rt.DrawText(test, MenuFont, new RectangleF(400, 400, 400, 400), MenuBorderPen);
             }
 
-            if(this != Game.instance._player) {
-                if(Game.instance._player != null) {
-                    Color4 temp = Pencil.Color;
+            lock(Pencil)
+                if (!Pencil.IsDisposed){
 
-                    // prevent concurrent exceptions
-                    RectangleF hpRect = this.hpRect;
-                    Pencil.Color = Color.DarkRed;
-                    rt.FillRectangle(hpRect, Pencil);
-                    Pencil.Color = Color.Red;
-                    rt.FillRectangle(hpLeftRect, Pencil);
-                    Pencil.Color = Color.White;
-                    rt.DrawRectangle(hpRect, Pencil);
-                    Pencil.Color = temp;
-                    rt.DrawText(Health.ToString("0.##") + " / " + MaxHealth.ToString("0.##"), MenuFont, hpRect, Pencil);
-                    hpRect.Offset(0, -20);
 
-                    string displaystring = Name + " (Level " + Level + " " + Rank.ToString() + ") [" + Team.ToString() + "]";
+                    if(this != Game.instance._player) {
+                        if(Game.instance._player != null) {
+                            Color4 temp = Pencil.Color;
 
-                    lock(TextRenderer)
-                        hpRect.Width = TextRenderer.MeasureString(displaystring, GameMenu._menufont).Width * 0.8f;
-                    Pencil.Color = Color.Black;
-                    rt.FillRectangle(hpRect, Pencil);
-                    Pencil.Color = temp;
-                    rt.DrawText(displaystring, MenuFont, hpRect, Pencil);
+                            // prevent concurrent exceptions
+                            RectangleF hpRect = this.hpRect;
+                            Pencil.Color = Color.DarkRed;
+                            rt.FillRectangle(hpRect, Pencil);
+                            Pencil.Color = Color.Red;
+                            rt.FillRectangle(hpLeftRect, Pencil);
+                            Pencil.Color = Color.White;
+                            rt.DrawRectangle(hpRect, Pencil);
+                            Pencil.Color = temp;
+                            rt.DrawText(Health.ToString("0.##") + " / " + MaxHealth.ToString("0.##"), MenuFont, hpRect, Pencil);
+                            hpRect.Offset(0, -20);
 
+                            string displaystring = Name + " (Level " + Level + " " + Rank.ToString() + ") [" + Team.ToString() + "]";
+
+                            lock(TextRenderer)
+                                hpRect.Width = TextRenderer.MeasureString(displaystring, GameMenu._menufont).Width * 0.8f;
+                            Pencil.Color = Color.Black;
+                            rt.FillRectangle(hpRect, Pencil);
+                            Pencil.Color = temp;
+                            rt.DrawText(displaystring, MenuFont, hpRect, Pencil);
+
+                        }
+                    } else
+                        drawUI(rt);
                 }
-            } else
-                drawUI(rt);
         }
 
         public void setInputState(byte[] buffer, ref int pos) {
@@ -312,6 +317,7 @@ namespace Game_Java_Port {
                 }
             }
             temp.ID = buffer.getULong(ref pos);
+            temp.Team = buffer.getEnumByte<FactionNames>(ref pos);
             temp.Pencil.Color = Color.FromRgba(buffer.getInt(ref pos));
             temp.Location = new Vector2(buffer.getFloat(ref pos), buffer.getFloat(ref pos));
             temp.MovementVector.X = buffer.getFloat(ref pos);
@@ -323,20 +329,28 @@ namespace Game_Java_Port {
             temp.Exp = buffer.getUInt(ref pos);
             temp.Name = buffer.getString(ref pos);
             int inventoryItems = buffer.getInt(ref pos);
-            int equippedWeapon = buffer.getInt(ref pos);
+            int equippedWeaponL = buffer.getInt(ref pos);
+            int equippedWeaponR = buffer.getInt(ref pos);
 
             for(int i = 0; i < inventoryItems; i++) {
                 ItemBase.deSerialize(buffer, ref pos).PickUp(temp);
             }
 
-            if(equippedWeapon >= 0) {
-                temp.EquippedWeaponR = (Weapon)temp.Inventory[equippedWeapon];
+            if(equippedWeaponL >= 0) {
+                temp.EquippedWeaponL = (Weapon)temp.Inventory[equippedWeaponL];
+            }
+
+            if(equippedWeaponR >= 0) {
+                temp.EquippedWeaponR = (Weapon)temp.Inventory[equippedWeaponR];
             }
 
             return temp;
         }
 
         public byte[] serialize() {
+            if(Pencil.IsDisposed)
+                throw new InvalidOperationException("Attempted to serialize disposed object!");
+
             List<byte> data = new List<byte>();
 
             data.AddRange(GetBytes(Seed));
@@ -351,6 +365,7 @@ namespace Game_Java_Port {
                 }
             }
             data.AddRange(GetBytes(ID));
+            data.Add((byte)(FactionNames)Team);
             data.AddRange(GetBytes(((Color4)Pencil.Color).ToRgba()));
             data.AddRange(GetBytes(Location.X));
             data.AddRange(GetBytes(Location.Y));
@@ -364,6 +379,10 @@ namespace Game_Java_Port {
             data.AddRange(Name == null ? GetBytes(0) : Name.serialize());
 
             data.AddRange(GetBytes(Inventory.Count));
+            if(EquippedWeaponL == null)
+                data.AddRange(GetBytes(-1));
+            else
+                data.AddRange(GetBytes(Inventory.IndexOf(EquippedWeaponL)));
             if(EquippedWeaponR == null)
                 data.AddRange(GetBytes(-1));
             else

@@ -358,9 +358,19 @@ namespace Game_Java_Port
         }
 
         public static void clearRenderables() {
+            IRenderable[] temp;
             lock(Renderables) {
-                Renderables.Clear();
+                temp = Renderables.ToArray();
             }
+
+            Array.ForEach(temp, (rend) =>
+            {
+                if(rend is Background)
+                    ((Background)rend).removeFromGame();
+            });
+
+            lock(Renderables)
+                Renderables.Clear();
         }
 
         public static void tick(object fu) {
@@ -422,11 +432,25 @@ namespace Game_Java_Port
                 Game.instance.GameHost.ClientList.Clear();
                 Game.instance.GameHost = null;
             }
+
+            AttributeBase[] copy;
+            lock(GameSubjects) {
+                copy = GameSubjects.ToArray();
+            }
+            Array.ForEach(copy,(subj) => subj.removeFromGame());
+
             lock(GameSubjects)
                 GameSubjects.Clear();
-            clearTickables();
+
+            lock(GameObjects)
+                GameObjects.Clear();
             
             clearRenderables();
+
+            clearTickables();
+
+            Game.instance._player = null;
+
             addRenderable(Game.instance);
             addTickable(Game.instance);
 

@@ -19,6 +19,8 @@ namespace Game_Java_Port {
         public Thread CommunicatorThread { get; }
         public Timer RefresherThread { get; }
 
+        public ulong ID_Offset = 0;
+
         public static Func<Host, TimerCallback> RefreshAction = (host) =>
         { return (obj) => {
             if (Game.instance._client != null && GameStatus.GameSubjects.Count > 0)

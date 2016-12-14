@@ -111,27 +111,36 @@ namespace Game_Java_Port
                     _RenderTarget.Clear(Color.Black);
 
                     IRenderable[] renderables;
-                    
+
+                    int objs = 0;
+                    int bgs = 0;
+                    int fgs = 0;
 
                     lock(GameStatus.Renderables)
                         renderables = GameStatus.Renderables.ToArray();
 
                     foreach(Background bg in renderables.Where((bg) => bg is Background)) {
-                        if(!bg.settings.HasFlag(Background.Settings.Foreground))
+                        if(!bg.settings.HasFlag(Background.Settings.Foreground)) {
                             bg.draw(_RenderTarget);
-                        
+                            bgs++;
+                        }
                     }
 
                     foreach(IRenderable nonbg in renderables.Where((nbg) => !(nbg is Background))) {
                         nonbg.draw(_RenderTarget);
+                        objs++;
                     }
 
                     foreach(Background fg in renderables.Where((fg) => fg is Background)) {
-                        if(fg.settings.HasFlag(Background.Settings.Foreground))
+                        if(fg.settings.HasFlag(Background.Settings.Foreground)) {
                             fg.draw(_RenderTarget);
+                            fgs++;
+                        }
                     }
 
-                    _RenderTarget.DrawText(fps.ToString(), Font, new SharpDX.Mathematics.Interop.RawRectangleF(0, 0, width, height), brush);
+                    _RenderTarget.DrawText(
+                        fps.ToString("000") + " fps | " + bgs.ToString("000") + " bg | " + 
+                        objs.ToString("000") + " obj | " + fgs.ToString("000") + " fg | " + GameStatus.GameSubjects.Count + " tick", Font, new RectangleF(0, 0, width, height), brush);
                     i++;
                     if(stopwatch.ElapsedMilliseconds - i2 > 1000) {
                         fps = i;

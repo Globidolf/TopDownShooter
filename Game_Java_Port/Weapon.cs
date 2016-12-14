@@ -523,6 +523,8 @@ namespace Game_Java_Port {
         }
 
         public void Fire() {
+            if(Ammo > ClipSize)
+                Ammo = 0;
             if(_CoolDown <= 0 && _Reload <= 0) {
                 if(WType == WeaponType.Melee) {
                     //melee attack
@@ -564,6 +566,12 @@ namespace Game_Java_Port {
                         new Bullet(this, _RNG.Next(), consumed);
                     }
                 }
+
+                if(Ammo == 0 && WType == WeaponType.Throwable) {
+                    Drop();
+                    Dispose();
+                }
+
                 _CoolDown += 1 / AttackSpeed;
             }
         }
@@ -620,12 +628,18 @@ namespace Game_Java_Port {
 
                 rt.DrawText(ItemInfo, GameStatus.MenuFont, pos, weaponPen);
             }
-            if (Game.state != Game.GameState.Menu && temp == Game.instance._player && _Reload > 0) {
-                RectangleF pos = new RectangleF(-150,0,300,20);
-                pos.Location += MatrixExtensions.PVTranslation;
-                makebgpen();
+            if (!Game.state.HasFlag(Game.GameState.Menu) && temp == Game.instance._player && _Reload > 0) {
+                int width = 150;
+                RectangleF pos = new RectangleF(-width/2,0,width,20);
+                RectangleF sub = new RectangleF(-width/2,0,width* (ReloadSpeed - _Reload * 1000) / ReloadSpeed, 20);
+                pos.Location += Game.instance.Location;
+                sub.Location += Game.instance.Location;
+                weaponPen.Color = Color.SmoothStep(Color.Yellow, Color.Black, 0.5f);
+                rt.FillRectangle(pos, weaponPen);
+                weaponPen.Color = Color.Yellow;
+                rt.FillRectangle(sub, weaponPen);
+                weaponPen.Color = Color.Black;
                 rt.DrawRectangle(pos, weaponPen);
-                resetpen();
                 pos.Location += 2;
                 rt.DrawText("Reloading...", GameStatus.MenuFont, pos, GameStatus.MenuTextBrush);
             }

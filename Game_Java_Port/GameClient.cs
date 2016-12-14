@@ -14,6 +14,7 @@ namespace Game_Java_Port {
         public TcpClient Client { get; }
         public Thread ClientThread { get; }
         public bool Listen { get; set; }
+        public List<string> commandStack;
         public GameClient(string IP, int port) {
             byte[] buffer;
             int pos;
@@ -23,6 +24,7 @@ namespace Game_Java_Port {
             {
                 NetworkStream clientStream = Client.GetStream();
                 while(Listen) {
+                    byte[] errorcmd = null;
                     try {
                         if (!Client.Connected) {
                             Game.instance.addMessage("Connection lost...");
@@ -36,12 +38,33 @@ namespace Game_Java_Port {
                             }
                             lock(this) {
                                 pos = 0;
-                                while(pos < buffer.Length) {
-                                    parseCommand(buffer, ref pos);
-                                }
+                                commandStack = new List<string>();
+
+                                List<byte[]> commands = new List<byte[]>();
+
+                                int i = 0;
+                                int size = 0;
+
+
+                                do {
+                                    i += size;
+                                    size = buffer.getInt(ref i);
+                                    i -= CustomMaths.intsize;
+                                    byte[] cmd = new byte[size];
+                                    Array.ConstrainedCopy(buffer, i, cmd, 0, size);
+                                    commands.Add(cmd);
+                                } while(i + size < buffer.Length);
+
+                                commands.ForEach((cmd) =>
+                                {
+                                    errorcmd = cmd;
+                                    parseCommand(cmd);
+                                });
                             }
                         }
                     } catch(Exception e) {
+                        e.Data.Add("command", errorcmd);
+                        parseCommand(errorcmd);
                         Game.instance.addMessage("Connection lost. Reason:");
                         Game.instance.addMessage(e.Message);
                         Client.Close();
@@ -71,15 +94,15 @@ namespace Game_Java_Port {
             invalid
         }
 
-        private void parseCommand(byte[] buffer, ref int pos) {
+        private void parseCommand(byte[] buffer) {
+
+            int pos = 0;
 
             int length = buffer.getInt(ref pos);
 
             CommandType cmdType = buffer.getEnumByte<CommandType>(ref pos);
 
-            //Game.instance.addMessage("CMD" + cmdType);
-
-
+            commandStack.Add(cmdType.ToString());
 
             switch(cmdType) {
                 case CommandType.disconnect:
@@ -140,7 +163,7 @@ namespace Game_Java_Port {
 
         private void sync(byte[] buffer, ref int pos) {
 
-            if(Game.instance._player != null && Game.instance.statechanged) {
+            if(!Game.state.HasFlag(Game.GameState.Menu) && Game.instance.statechanged) {
                 Game.instance._client.send(CommandType.updatePos, Game.instance.SerializePos());
                 Game.instance._client.send(CommandType.updateSpeed, Game.instance.SerializeSpeed());
                 Game.instance._client.send(CommandType.updateAim, Game.instance.SerializeAimDir());
@@ -232,8 +255,11 @@ namespace Game_Java_Port {
         }
 
         private void add(byte[] buffer, ref int pos) {
+            NPC temp = NPC.Deserialize(buffer, ref pos);
+            if(Game.state.HasFlag(Game.GameState.Host) && temp.Team != FactionNames.Players)
+                Game.instance.GameHost.ID_Offset--;
             lock(GameStatus.GameSubjects)
-                NPC.Deserialize(buffer, ref pos).addToGame();
+                temp.addToGame();
         }
 
         private void message(byte[] buffer, ref int pos) {

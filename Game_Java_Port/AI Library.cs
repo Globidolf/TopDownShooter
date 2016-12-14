@@ -11,7 +11,6 @@ using static Game_Java_Port.GameStatus;
 namespace Game_Java_Port {
     public static class AI_Library {
         private static Vector2 _LastMousePos;
-        private static Controls _lastState;
         private static AngleSingle LastAimDirection;
 
 
@@ -202,11 +201,13 @@ namespace Game_Java_Port {
                 me.AimDirection = Game.instance.Area.Center.angleTo(MousePos);
             }
 
-            if(Game.instance._client != null && _lastState != getInputState()) {
+            if(Game.instance._client != null && me._lastState != me.inputstate) {
 
                 Game.instance._client.send(GameClient.CommandType.updateState, Game.instance.SerializeInputState());
-                if(!_lastState.HasFlag(Controls.fire) && getInputState().HasFlag(Controls.fire))
+                if(me.justPressed(Controls.fire))
+                {
                     Game.instance._client.send(GameClient.CommandType.updateWpnRngState, me.getWeaponRandomState());
+                }
                 
             }
 
@@ -216,7 +217,6 @@ namespace Game_Java_Port {
                 LastAimDirection = me.AimDirection;
             }
 
-            _lastState = getInputState();
             
             PlayerSim.Invoke(me);
         };
@@ -305,20 +305,6 @@ namespace Game_Java_Port {
 
                         me.LastAimDirection = me.AimDirection;
                     }
-
-
-
-                    /*
-                    if(me == Game.instance._player && me.justPressed(Controls.walk) && (Game.instance._host != null || Game.instance._client == null)) {
-
-                        NPC temp = new NPC(
-                            seed: Game.instance._host == null ? (int?)null : Game.instance._host._HostGenRNG.Next(),
-                            add: Game.instance._host == null);
-                        temp.Location = me.Target;
-                        if(Game.instance._host != null)
-                            Game.instance._client.send(GameClient.CommandType.add, temp.serialize());
-                    }
-                    */
 
                     me._lastState = me.inputstate;
                 };

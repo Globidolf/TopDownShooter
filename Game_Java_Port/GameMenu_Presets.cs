@@ -110,15 +110,7 @@ namespace Game_Java_Port {
                             CharCreatorMenu.onContinue = async () =>
                             {
                                 Game.instance.Host((int)temp.getRegulatorValue<int>("Port"));
-                                NPC player = new NPC(CharCreatorMenu.getInputValue("Name"),
-                                    (uint)CharCreatorMenu._data["Vitality"],
-                                    (uint)CharCreatorMenu._data["Strength"],
-                                    (uint)CharCreatorMenu._data["Dexterity"],
-                                    (uint)CharCreatorMenu._data["Agility"],
-                                    (uint)CharCreatorMenu._data["Intelligence"],
-                                    (uint)CharCreatorMenu._data["Wisdom"],
-                                    (uint)CharCreatorMenu._data["Luck"],
-                                    false);
+                                NPC player = (NPC)CharCreatorMenu._data["output"];
                                 await Game.instance._client.awaitInit().ContinueWith((task) =>
                                 {
                                     Game.instance._client.send(GameClient.CommandType.sendPlayer, player.serialize());
@@ -166,15 +158,7 @@ namespace Game_Java_Port {
                                 Game.instance.addMessage("Attempting to connect on " + temp.getInputValue("Adress") + ":" + (int)temp.getRegulatorValue<int>("Port") + "...");
                                 try {
                                     Game.instance.Connect(temp.getInputValue("Adress"), (int)temp.getRegulatorValue<int>("Port"));
-                                    NPC player = new NPC(CharCreatorMenu.getInputValue("Name"),
-                                        (uint)CharCreatorMenu._data["Vitality"],
-                                        (uint)CharCreatorMenu._data["Strength"],
-                                        (uint)CharCreatorMenu._data["Dexterity"],
-                                        (uint)CharCreatorMenu._data["Agility"],
-                                        (uint)CharCreatorMenu._data["Intelligence"],
-                                        (uint)CharCreatorMenu._data["Wisdom"],
-                                        (uint)CharCreatorMenu._data["Luck"],
-                                        false);
+                                    NPC player = (NPC)CharCreatorMenu._data["output"];
                                     await Game.instance._client.awaitInit().ContinueWith((task) =>
                                     {
                                         player.ID = GetFirstFreeID;
@@ -223,23 +207,17 @@ namespace Game_Java_Port {
                             CharCreatorMenu.onContinue = () =>
                             {
                                 // create and start when done
-                                NPC player = new NPC(CharCreatorMenu.getInputValue("Name"),
-                                    (uint)CharCreatorMenu._data["Vitality"],
-                                    (uint)CharCreatorMenu._data["Strength"],
-                                    (uint)CharCreatorMenu._data["Dexterity"],
-                                    (uint)CharCreatorMenu._data["Agility"],
-                                    (uint)CharCreatorMenu._data["Intelligence"],
-                                    (uint)CharCreatorMenu._data["Wisdom"],
-                                    (uint)CharCreatorMenu._data["Luck"]);
+                                NPC player = (NPC)CharCreatorMenu._data["output"];
                                 player.AI = AI_Library.RealPlayer;
                                 Game.instance._player = player;
+                                player.addToGame();
                             };
                             CharCreatorMenu.open();
                         }
                     }, _log);
                     new Button(temp, "Load Game", (args) => {
                         if(checkargs(args)) {
-                            temp.close();
+                            //temp.close();
 #warning load and start game
                         }
                     }, _log);
@@ -377,19 +355,17 @@ namespace Game_Java_Port {
                     };
 
                     temp.onOpen = () => {
-                        if(Game.instance._player != null) {
-                            sum = points = Game.instance._player.AttributePoints;
-                            temp._data["points"] = sum;
-                            temp._data["sum"] = sum;
-                            attrs.ForEach((reg) =>
-                            {
-                                reg.MaxValue = Game.instance._player.Attributes[(Attribute)Enum.Parse(typeof(Attribute), reg.Label)];
-                                reg.Value = reg.MaxValue;
-                                reg.MinValue = reg.Value;
-                            });
+                        sum = points = Game.instance._player.AttributePoints;
+                        temp._data["points"] = sum;
+                        temp._data["sum"] = sum;
+                        attrs.ForEach((reg) =>
+                        {
+                            reg.MaxValue = Game.instance._player.Attributes[(Attribute)Enum.Parse(typeof(Attribute), reg.Label)];
+                            reg.Value = reg.MaxValue;
+                            reg.MinValue = reg.Value;
+                        });
 
-                            onchangedone?.Invoke();
-                        }
+                        onchangedone?.Invoke();
                     };
 
                     new RegulatorButtons<uint>(new Regulator<uint>(temp, "Vitality",
@@ -526,6 +502,9 @@ namespace Game_Java_Port {
 
                         temp.resizeStrings();
                         temp.resizeNumbers();
+
+                        temp._data["sum"] = sum;
+
                     };
 
                     temp.onOpen = () =>
@@ -580,21 +559,23 @@ namespace Game_Java_Port {
                         }
                     });
 
-                    Vit = (uint)temp._data["Vitality"];
-                    Str = (uint)temp._data["Strength"];
-                    Dex = (uint)temp._data["Dexterity"];
-                    Agi = (uint)temp._data["Agility"];
-                    Int = (uint)temp._data["Intelligence"];
-                    Wis = (uint)temp._data["Wisdom"];
-                    Luc = (uint)temp._data["Luck"];
-
                     new Button(temp, "Ok", (args) =>
                     {
-                        if(checkargs(args)) {
+                        if(checkargs(args) && (uint)temp._data["sum"] == 0) {
+                            temp._data["output"] = new NPC(
+                                        temp.getInputValue("Name"),
+                                        (uint)temp._data["Vitality"],
+                                        (uint)temp._data["Strength"],
+                                        (uint)temp._data["Dexterity"],
+                                        (uint)temp._data["Agility"],
+                                        (uint)temp._data["Intelligence"],
+                                        (uint)temp._data["Wisdom"],
+                                        (uint)temp._data["Luck"],
+                                        false);
+                            ((NPC)temp._data["output"]).AttributePoints = 0;
                             temp.close();
                             temp.onContinue?.Invoke();
-                            if(Game.instance._player != null)
-                                Game.instance._player.AttributePoints = 0;
+                            temp._data.Clear();
                         }
                     });
                     new Button(temp, "Back", (args) =>

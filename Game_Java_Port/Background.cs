@@ -76,7 +76,7 @@ namespace Game_Java_Port {
 
         public void draw(RenderTarget rt) {
             if(settings.HasFlag(Settings.Fill_Screen)) {
-                lock(_tb) {
+                if (_tb != null) lock(_tb) if(!_tb.IsDisposed) {
                     rt.FillRectangle(Game.instance.Area, tb);
                 }
             } else {
@@ -86,8 +86,7 @@ namespace Game_Java_Port {
 
         public void Tick() {
             TickAction?.Invoke();
-            if (_tb != null)
-                lock(_tb) {
+            if (_tb != null) lock(_tb) if (!_tb.IsDisposed){
                     transform = Matrix3x2.Identity;
                     transform.TranslationVector += MatrixExtensions.PVTranslation;
                     tb.Transform = transform;
@@ -105,6 +104,7 @@ namespace Game_Java_Port {
             GameStatus.addTickable(this);
             GameStatus.addRenderable(this);
         }
+
         public void removeFromGame() {
             GameStatus.removeTickable(this);
             GameStatus.removeRenderable(this);
