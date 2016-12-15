@@ -91,6 +91,7 @@ namespace Game_Java_Port {
             sendPlayer,
             message,
             updateWpnRngState,
+            interaction,
             invalid
         }
 

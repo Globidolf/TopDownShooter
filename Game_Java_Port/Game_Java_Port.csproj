@@ -137,6 +137,26 @@
     <Content Include="data\img\corpse.bmp">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="data\lib\SharpDX.Animation.dll" />
+    <Content Include="data\lib\SharpDX.D3DCompiler.dll" />
+    <Content Include="data\lib\SharpDX.Desktop.dll" />
+    <Content Include="data\lib\SharpDX.Direct2D1.dll" />
+    <Content Include="data\lib\SharpDX.Direct3D10.dll" />
+    <Content Include="data\lib\SharpDX.Direct3D11.dll" />
+    <Content Include="data\lib\SharpDX.Direct3D11.Effects.dll" />
+    <Content Include="data\lib\SharpDX.Direct3D12.dll" />
+    <Content Include="data\lib\SharpDX.Direct3D9.dll" />
+    <Content Include="data\lib\SharpDX.DirectComposition.dll" />
+    <Content Include="data\lib\SharpDX.DirectInput.dll" />
+    <Content Include="data\lib\SharpDX.DirectManipulation.dll" />
+    <Content Include="data\lib\SharpDX.DirectSound.dll" />
+    <Content Include="data\lib\SharpDX.dll" />
+    <Content Include="data\lib\SharpDX.DXGI.dll" />
+    <Content Include="data\lib\SharpDX.Mathematics.dll" />
+    <Content Include="data\lib\SharpDX.MediaFoundation.dll" />
+    <Content Include="data\lib\SharpDX.RawInput.dll" />
+    <Content Include="data\lib\SharpDX.XAudio2.dll" />
+    <Content Include="data\lib\SharpDX.XInput.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
