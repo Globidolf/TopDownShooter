@@ -19,6 +19,6 @@ namespace Game_Java_Port.Interface {
     }
     public interface IEquipable {
         EquipSlot Slot { get; }
-        void Equip(AttributeBase on);
+        void Equip(CharacterBase on);
     }
 }

@@ -1,18 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Game_Java_Port.Interface;
-using static Game_Java_Port.CustomMaths;
-using static System.BitConverter;
 using SharpDX;
 using SharpDX.Direct2D1;
+using Game_Java_Port.Serializers;
 
 namespace Game_Java_Port {
-    public abstract class ItemBase : IRenderable, ITickable, IDisposable, IInteractable {
+    public abstract class ItemBase : IRenderable, ITickable, IDisposable, IInteractable, ISerializable<ItemBase>, IIndexable {
 
         public Random _RNG;
+
+        private ulong _ID;
+
+        public ulong ID { get { return _ID; } }
 
         public const float InfoDisplayPlayerDist = 500;
 
@@ -30,6 +30,7 @@ namespace Game_Java_Port {
 
         public abstract ItemType Rarity { get; }
         private SolidColorBrush Pencil { get; set; } = new SolidColorBrush(Program._RenderTarget, Color.Transparent);
+        internal Bitmap image;
         public string Name { get; set; } = "Unknown Item";
 
         public virtual float Size { get { return BaseSize; } set { } }
@@ -52,25 +53,54 @@ namespace Game_Java_Port {
                 return Owner != null ? Owner.Area : _Area;
             } set { _Area = value; } }
         
-        public int ItemInfoLines { get {
-                return ItemInfo.Count((c) => c == '\n') + 1;
-            } }
+        protected Tooltip itemInfo;
 
-        public abstract string ItemInfo { get; }
-
-        protected byte gen { get; set; }
-
-        public abstract uint BasePrice { get; }
-        public uint BuyPrice { get { return (uint)(BasePrice * BaseBuyMultiplier); } }
-        public uint SellPrice { get { return (uint)(BasePrice * BaseSellMultiplier); } }
-
-        public AttributeBase Owner { get; set; }
-
-        public string ActionDescription {
-            get { return "Pick up"; }
+        public string ItemInfoText { get {
+                return ItemInfo.Text;
+            } set {
+                ItemInfo.Text = value;
+            }
         }
 
-        public void PickUp(AttributeBase by) {
+        protected string ItemBaseInfo { get {
+                return Name + "\nValue: " + SellPrice;
+            } }
+
+        protected Func<bool> ItemBaseInfoValidation {
+            get {
+                return () => Game.instance._player != null &&
+                                Vector2.DistanceSquared(Game.instance._player.Location, Location) < InfoDisplayPlayerDist * InfoDisplayPlayerDist &&
+                                Vector2.DistanceSquared(Location + MatrixExtensions.PVTranslation, GameStatus.MousePos) < InfoDisplayCursorDist * InfoDisplayCursorDist;
+            }
+        }
+
+        public virtual Tooltip ItemInfo {
+            get {
+                if(itemInfo == null) {
+                    itemInfo = new Tooltip(ItemBaseInfo,
+                        Validation: ItemBaseInfoValidation,
+                        ticksInternal: true);
+                }
+                return itemInfo;
+            }
+        }
+
+        public byte GenType { get; set; }
+
+        public abstract uint BasePrice { get; }
+
+        public uint BuyPrice { get { return (uint)Math.Ceiling(BasePrice * BaseBuyMultiplier); } }
+        public uint SellPrice { get { return (uint)Math.Ceiling(BasePrice * BaseSellMultiplier); } }
+
+        public CharacterBase Owner { get; set; }
+
+        public Serializer<ItemBase> Serializer {  get { return ItemSerializer.Instance; } }
+
+        public int Z { get; set; } = 1;
+
+        public DrawType drawType { get; set; } = DrawType.Circle;
+
+        public void PickUp(CharacterBase by) {
             UnOwnedTime = 0;
             if(Owner == null) {
                 lock(GameStatus.GameObjects)
@@ -116,7 +146,7 @@ namespace Game_Java_Port {
                     Owner = by;
                     Owner.Inventory.Add(this);
                 } else {
-                    Owner.Attack(by, Owner.MeleeDamage, true);
+                    Owner.Attack(by, Owner.MeleeDamageR, true);
                 }
 
                 #endregion
@@ -136,43 +166,51 @@ namespace Game_Java_Port {
             }
         }
 
-        Ellipse ellipse;
-        Vector2 relativePos;
-        RectangleF textpos;
-        float textSize = 0;
+        RectangleF _D_ImgRect;
+        Ellipse _D_Ellipse;
+        Vector2 _D_RelativePos;
+
+        Tooltip _NameToolTip;
+
+        Tooltip NameTooltip { get {
+                if (_NameToolTip == null) {
+                    _NameToolTip = new Tooltip(Name,
+                        () => new Vector2(Location.X + MatrixExtensions.PVTranslation.X, Location.Y + MatrixExtensions.PVTranslation.Y - _NameToolTip.Area.Height - 20),
+                        () => Owner == null,
+                        true);
+                }
+                return _NameToolTip;
+            } }
+
+        Tooltip _ActionTooltip;
+        public Tooltip ActionInfo { get {
+                if (_ActionTooltip == null) {
+                    _ActionTooltip = new Tooltip("Pick up",
+                        () => new Vector2(Location.X + MatrixExtensions.PVTranslation.X, Location.Y + MatrixExtensions.PVTranslation.Y - _ActionTooltip.Area.Height - _NameToolTip.Area.Height - 20),
+                        () => this.drawActionInfo() && Owner == null,
+                        true);
+                }
+                return _ActionTooltip;
+            } }
 
         public virtual void draw(RenderTarget rt) {
             if(Owner == null) {
-                //Vector2 relativePos = PointF.Add(PointF.Subtract(Location, new SizeF(Game.instance._player.Location)), new SizeF(GameStatus.ScreenWidth / 2, GameStatus.ScreenHeight / 2));
+
+
                 lock(this) {
+
                     if(!Pencil.IsDisposed) {
                         if(Pencil.Color == (Color4)Color.Transparent) {
                             Pencil.Color = GameVars.RarityColors[Rarity];
                         }
-                        Color4 temp = Pencil.Color;
-                        rt.FillEllipse(ellipse, Pencil);
-                        Pencil.Color = Color.Black;
-                        
-                        Pencil.Opacity = 0.8f;
-                        rt.FillRectangle(textpos, Pencil);
-                        Pencil.Color = temp;
-                        Pencil.Opacity = 1;
-                        textpos.X += 2;
-                        rt.DrawText(Name, GameStatus.MenuFont, textpos, Pencil);
-                        textpos.X -= 2;
-                        if (Game.instance._player != null) {
-                            if(Vector2.DistanceSquared(Game.instance._player.Location, Location) < InfoDisplayPlayerDist * InfoDisplayPlayerDist &&
-                                Vector2.DistanceSquared(Location + MatrixExtensions.PVTranslation, GameStatus.MousePos) < InfoDisplayCursorDist * InfoDisplayCursorDist) {
-                                RectangleF pos = new RectangleF(GameStatus.MousePos.X - 150, GameStatus.MousePos.Y - Size / 2 - 20, 300, 20);
-                                Pencil.Color = Color.Black;
-                                Pencil.Opacity = 0.8f;
-                                rt.FillRectangle(pos, Pencil);
-                                Pencil.Color = temp;
-                                Pencil.Opacity = 1f;
-                                pos.X += 2;
-                                pos.Width -= 4;
-                                rt.DrawText(ActionDescription, GameStatus.MenuFont, pos, Pencil);
-                            }
+
+                        switch(drawType) {
+                            case DrawType.Circle:
+                                rt.FillEllipse(_D_Ellipse, Pencil);
+                                break;
+                            case DrawType.Image:
+                                rt.DrawBitmap(image, _D_ImgRect, 1, BitmapInterpolationMode.Linear);
+                                break;
                         }
                     }
                 }
@@ -184,13 +222,27 @@ namespace Game_Java_Port {
         public virtual void Tick() {
             if(Owner == null) {
                 UnOwnedTime++;
-                if (textSize == 0) {
-                    lock(GameStatus.TextRenderer)
-                        textSize = GameStatus.TextRenderer.MeasureString(Name, GameMenu._menufont).Width * 0.8f;
+
+                NameTooltip.Tick();
+                ActionInfo.Tick();
+                ItemInfo.Tick();
+
+                _D_RelativePos = Location + MatrixExtensions.PVTranslation;
+
+                switch(drawType) {
+                    case DrawType.Rectangle:
+                    case DrawType.Image:
+                        _D_ImgRect = new RectangleF(
+                            _D_RelativePos.X - image.PixelSize.Width / 2,
+                            _D_RelativePos.Y - image.PixelSize.Height / 2,
+                            image.PixelSize.Width,
+                            image.PixelSize.Height);
+                        break;
+                    case DrawType.Circle:
+                        _D_Ellipse = new Ellipse(_D_RelativePos, Size / 2, Size / 2);
+                        break;
                 }
-                relativePos = Location + MatrixExtensions.PVTranslation;
-                textpos = new RectangleF(relativePos.X + Size / 2, relativePos.Y - 12, textSize, 20);
-                ellipse = new Ellipse(relativePos, Size / 2, Size / 2);
+
                 if(UnOwnedTime > DespawnTime * GameVars.defaultGTPS) {
                     lock(this) {
                         Dispose();
@@ -200,53 +252,6 @@ namespace Game_Java_Port {
 
         }
 
-        public static ItemBase deSerialize(byte[] buffer, ref int pos) {
-            ItemBase temp;
-            byte itemtype = buffer.getByte(ref pos);
-
-            switch(itemtype) {
-                //weapon
-                case 0:
-                    temp = new Weapon(buffer.getUInt(ref pos), buffer.getInt(ref pos));
-                    break;
-                //weapon with predefined type
-                case 1:
-                    temp = new Weapon(buffer.getUInt(ref pos), buffer.getInt(ref pos), buffer.getEnumByte<WeapPreset>(ref pos));
-                    break;
-                //weapon with predefined rarity
-                case 2:
-                    temp = new Weapon(buffer.getUInt(ref pos), buffer.getInt(ref pos), rarity: buffer.getEnumByte<ItemType>(ref pos));
-                    break;
-                //weapon with predefined type and rarity
-                case 3:
-                    temp = new Weapon(buffer.getUInt(ref pos), buffer.getInt(ref pos), buffer.getEnumByte<WeapPreset>(ref pos), buffer.getEnumByte<ItemType>(ref pos));
-                    break;
-                //unknown
-                default:
-                    temp = null;
-                    break;
-            }
-
-            return temp;
-        }
-
-        public byte[] serialize() {
-            List<byte> data = new List<byte>();
-
-            data.Add(gen);
-
-            if(this is Weapon) {
-                data.AddRange(GetBytes(((Weapon)this).Level));
-                data.AddRange(GetBytes(((Weapon)this).Seed));
-                if(gen == 1 || gen == 3)
-                    data.Add((byte)((Weapon)this).WType);
-                if(gen == 2 || gen == 3) {
-                    data.Add((byte)((Weapon)this).Rarity);
-                }
-            }
-
-            return data.ToArray();
-        }
 
         /// <summary>
         /// Call base.Dispose() if overriding.
@@ -258,6 +263,9 @@ namespace Game_Java_Port {
             GameStatus.removeRenderable(this);
             GameStatus.removeTickable(this);
             Pencil.Dispose();
+            ItemInfo.Dispose();
+            ActionInfo.Dispose();
+            NameTooltip.Dispose();
         }
 
         public virtual void AddToGame() {
@@ -268,7 +276,7 @@ namespace Game_Java_Port {
                     GameStatus.GameObjects.Add(this);
         }
 
-        public void interact(NPC who) {
+        public void interact(CharacterBase who) {
             PickUp(who);
             if (this is IEquipable) {
                 if(who.getEquipedItem(((IEquipable)this).Slot) == null)
@@ -276,6 +284,9 @@ namespace Game_Java_Port {
                 else if(((IEquipable)this).Slot == EquipSlot.Weapon1H && who.getEquipedItem(EquipSlot.Weapon1H, true) == null)
                     ((IEquipable)this).Equip(who);
             }
+            NameTooltip.Tick();
+            ActionInfo.Tick();
+            ItemInfo.Tick();
         }
         
     }

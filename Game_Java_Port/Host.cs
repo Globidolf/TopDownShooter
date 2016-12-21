@@ -18,6 +18,7 @@ namespace Game_Java_Port {
         public Timer ListenerThread { get; }
         public Thread CommunicatorThread { get; }
         public Timer RefresherThread { get; }
+        public static object ComLock = new object();
 
         public ulong ID_Offset = 0;
 
@@ -56,75 +57,92 @@ namespace Game_Java_Port {
 
         private static Func<Host, ThreadStart> CommunicatorAction = (host) =>
         {
-            return async() => {
+            return async() =>
+            {
                 //declare variables outside of loops to prevent repetitive memory allocations
                 List<TcpClient> tempList = new List<TcpClient>();
                 NetworkStream requestStream;
                 NetworkStream sendStream;
                 byte[] buffer;
                 while(host.Listen) {
-                    //check if clients have been added or removed and make a new copy of the list if true
-                    if(host.ClientsChanged) {
-                        lock(host.ClientList) {
-                            tempList.Clear();
-                            tempList.AddRange(host.ClientList);
-                            //changes applied, confirm during lock statement to prevent wrong true's/false's
-                            lock(host)
-                                host.ClientsChanged = false;
-                        }
-                    }
-
-                    //iterate all clients
-                    foreach(TcpClient request in tempList) {
-                        //check if client disconnected, remove if true.
-                        if (!request.Connected) {
-                            AttributeBase clientplayer;
-                            lock(host.ClientPlayer)
-                                try {
-                                    lock(GameStatus.GameSubjects)
-                                        clientplayer = GameStatus.GameSubjects.Find((obj) => obj.ID == host.ClientPlayer[request]);
-                                    host.ClientPlayer.Remove(request);
-
-                                    Game.instance._client.send(GameClient.CommandType.message, (clientplayer.Name + " is history.").serialize());
-                                    Game.instance._client.send(GameClient.CommandType.remove, BitConverter.GetBytes(clientplayer.ID));
-                                } catch (Exception) {
-                                    Game.instance._client.send(GameClient.CommandType.message, "A wild ... uh... nothing to see here, move on. ".serialize());
-                                }
+                    // prevents multiple actions running at the same time.
+                    lock(ComLock) {
+                        //check if clients have been added or removed and make a new copy of the list if true
+                        if(host.ClientsChanged) {
                             lock(host.ClientList) {
-                                host.ClientList.Remove(request);
-                                lock(host)
-                                    host.ClientsChanged = true;
+                                tempList.Clear();
+                                tempList.AddRange(host.ClientList);
+                                //changes applied, confirm during lock statement to prevent wrong true's/false's
+                                lock (host)
+                                    host.ClientsChanged = false;
                             }
-                            //otherwise check if client sent data and read it
-                        } else if(request.Available > 0) {
-                            buffer = new byte[request.Available];
-                            requestStream = request.GetStream();
-                            requestStream.Read(buffer, 0, buffer.Length);
-                            requestStream.Flush();
+                        }
 
-                            //iterate all clients again and send data to the connected ones
-                            foreach(TcpClient send in tempList) {
-                                if(send.Connected) {
+                        //iterate all clients
+                        foreach(TcpClient request in tempList) {
+                            //check if client disconnected, remove if true.
+                            if (!request.Connected) {
+                                CharacterBase clientplayer;
+                                lock(host.ClientPlayer)
+                                    try {
+                                        lock(GameStatus.GameSubjects)
+                                            clientplayer = GameStatus.GameSubjects.Find((obj) => obj.ID == host.ClientPlayer[request]);
+                                        host.ClientPlayer.Remove(request);
 
-                                    byte[] sendBuffer = host.HostSideCheck(request,send,buffer);
+                                        Game.instance._client.send(GameClient.CommandType.message, (clientplayer.Name + " is history.").serialize());
+                                        Program.DebugLog.Add("Sending Remove Req: " + clientplayer.ID + ". Host.CommunicatorAction.");
+                                        Game.instance._client.send(GameClient.CommandType.remove, BitConverter.GetBytes(clientplayer.ID));
+                                    } catch (Exception e) {
+                                        Game.instance._client.send(GameClient.CommandType.message, "A wild ... uh... nothing to see here, move on. ".serialize());
+                                        throw e;
+                                    }
+                                lock(host.ClientList) {
+                                    host.ClientList.Remove(request);
+                                    lock(host)
+                                        host.ClientsChanged = true;
+                                }
+                                //otherwise check if client sent data and read it
+                            } else if(request.Available > 0) {
+                                buffer = new byte[request.Available];
+                                List<byte> cmd = new List<byte>();
+                                requestStream = request.GetStream();
+                                int read = requestStream.Read(buffer, 0, buffer.Length);
+                                int protocolSize = buffer.getProtocolSize();
+                                if(read < protocolSize) {
+                                    Array.Resize(ref buffer, protocolSize);
+                                    while (read < protocolSize)
+                                        read += requestStream.Read(buffer, read, protocolSize - read);
+                                }
 
-                                    if (sendBuffer.Length > 0)
-                                        try {
-                                            sendStream = send.GetStream();
-                                            sendStream.Write(sendBuffer, 0, sendBuffer.Length);
-                                            sendStream.Flush();
-                                        } catch (Exception) { } // client quit during process
+                                requestStream.Flush();
 
-                                }// endif
-                            }// end foreach
-                        }// end elseif
-                    }// end foreach
+                                //iterate all clients again and send data to the connected ones
+                                foreach(TcpClient send in tempList) {
+                                    if(send.Connected) {
 
+                                        byte[] sendBuffer;
+
+                                        sendBuffer = host.HostSideCheck(request,send,buffer);
+
+                                        if (sendBuffer.Length > 0)
+                                            try {
+                                                sendStream = send.GetStream();
+                                                sendStream.Write(sendBuffer, 0, sendBuffer.Length);
+                                                sendStream.Flush();
+                                            } catch (Exception) { } // client quit during process
+
+                                    }// end if
+                                }// end foreach
+                            }// end elseif
+                        }// end foreach
+
+                    }
                     // IMMENSLY reduce CPU load
-                    await Task.Delay(20);
-
+                    await Task.Delay(1);
                 }// end while
+
             };// end return
+            
         };// end func
 
         public Host(int port) {
@@ -146,37 +164,49 @@ namespace Game_Java_Port {
 
         private byte[] HostSideCheck(TcpClient sender, TcpClient reciever, byte[] buffer) {
             List<byte> sendBuffer = new List<byte>();
+            
+            List<byte[]> commands = new List<byte[]>();
 
-            int pos = 0;
+            int i = 0;
+            int size = 0;
+            
+            do {
+                i += size;
+                size = buffer.getInt(ref i);
+                i -= CustomMaths.intsize;
+                byte[] cmd = new byte[size];
+                Array.ConstrainedCopy(buffer, i, cmd, 0, size);
+                commands.Add(cmd);
+            } while(i + size < buffer.Length);
 
-            while(pos < buffer.Length) {
-                int cmdpos = pos;
-                int length = buffer.getInt(ref pos);
-                GameClient.CommandType cmdType = (GameClient.CommandType)buffer.getByte(ref pos);
+            commands.ForEach((cmd) =>
+            {
+                int pos = 0;
+                int length = cmd.getInt(ref pos);
+                GameClient.CommandType cmdType = cmd.getEnumByte<GameClient.CommandType>(ref pos);
 
-                //seperates current command from the rest of the buffer.
-                byte[] cmd = buffer.Skip(cmdpos).Take(length).ToArray();
+                switch(cmdType) {
+                    case GameClient.CommandType.sendPlayer:
+                        if(sender == reciever) {
+                            NPC newPlayer = Serializers.NPCSerializer.Deserial(buffer, ref pos);
 
-                //client sent own player, reference it's id in the dictionary and message all players of new companion
-                if(cmdType == GameClient.CommandType.sendPlayer && sender == reciever) {
-                    NPC newPlayer = NPC.Deserialize(buffer, ref pos);
+                            lock(ClientPlayer)
+                                ClientPlayer.Add(sender, newPlayer.ID);
 
-                    lock(ClientPlayer)
-                        ClientPlayer.Add(sender, newPlayer.ID);
-
-                    Game.instance._client.send(GameClient.CommandType.message, ("A wild " + newPlayer.Name + " appears!").serialize());
+                            Game.instance._client.send(GameClient.CommandType.message, ("A wild " + newPlayer.Name + " appears!").serialize());
+                        } else
+                            cmd[CustomMaths.intsize] = (byte)GameClient.CommandType.add;
+                        sendBuffer.AddRange(cmd);
+                        break;
+                    case GameClient.CommandType.sync:
+                        if(reciever != sender)
+                            sendBuffer.AddRange(cmd);
+                        break;
+                    default:
+                        sendBuffer.AddRange(cmd);
+                        break;
                 }
-
-                //only sender needs to set the control to the player, rest simply adds.
-                if(cmdType == GameClient.CommandType.sendPlayer && sender != reciever)
-                    cmd[CustomMaths.intsize] = (byte)GameClient.CommandType.add;
-
-                //all commands but syncs to host itself will be sent.
-                if(!(reciever == sender && cmdType == GameClient.CommandType.sync))
-                    sendBuffer.AddRange(cmd);
-
-                pos = cmdpos + length;
-            }
+            });
 
             return sendBuffer.ToArray();
         }

@@ -56,6 +56,20 @@ namespace Game_Java_Port {
             }
         }
 
+        private int _Z;
+
+        public int Z {
+            get {
+                return settings.HasFlag(Settings.Foreground) ? _Z + 100 : _Z - 100;
+            }
+
+            set {
+                _Z = value;
+            }
+        }
+
+        public DrawType drawType { get; set; } = DrawType.Image;
+
         public Background(Bitmap bmp , RawVector2? location = null, float lifetime = 0, Settings settings = Settings.Default, bool add = true) {
             img = bmp;
             Factory test = new Factory();

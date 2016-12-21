@@ -4,10 +4,10 @@ using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
 using System;
 using System.Collections.Generic;
-using System.Drawing.Drawing2D;
-using System.Linq;
 using static Game_Java_Port.GameStatus;
 using static System.Windows.Forms.MouseButtons;
+
+using WinCur = System.Windows.Forms.Cursor;
 
 namespace Game_Java_Port {
     partial class GameMenu {
@@ -36,9 +36,13 @@ namespace Game_Java_Port {
                 base.update();
                 _Area.Height = ElementHeight + ElementMargin * 2;
 
+                _Hovering = _Area.Contains(MousePos);
+
                 Children.ForEach((child) =>
                 {
                     _Area.Height = Math.Max(_Area.Height, child.Height + ElementMargin * 2);
+                    if(_Hovering && child.Area.Contains(MousePos))
+                        _Hovering = false;
                 });
 
                 float offset = (_Area.Height - ElementHeight) / 2;
@@ -50,13 +54,27 @@ namespace Game_Java_Port {
                     Area.Top,
                     Area.Width - (int)Parent.LargestStringSize,
                     Area.Height);
+
             }
         }
 
         private abstract class MenuElementBase : IRenderable {
 
             public bool doDrawLabel = true;
-            public virtual string Label { get; internal set; }
+            public virtual string Label { get; internal set; } = "";
+            private Size2F _LabelSize;
+            public Size2F LabelSize { get {
+                    //init
+                    if(_LabelSize == default(Size2F)) {
+                        //measure
+                        using(TextLayout tl = new TextLayout(Program.DW_Factory, Label, MenuFont, ScreenWidth, ScreenHeight))
+                            _LabelSize = new Size2F(tl.Metrics.Width, tl.Metrics.Height);
+                        //no size -> 1,1
+                        if(_LabelSize == default(Size2F))
+                            _LabelSize = new Size2F(1, 1);
+                    }
+                    return _LabelSize;
+                } }
             internal GameMenu Parent { get; set; }
             private MenuElementListBase _Container;
             internal MenuElementListBase Container {
@@ -82,15 +100,14 @@ namespace Game_Java_Port {
 
             internal Color? TextColor = null;
 
-            internal void invalidateWidths() {
+            internal virtual void invalidateWidths() {
                 if(Container != null) {
                     float temp;
                     _conpos = Container.Children.FindIndex((ele) => ele.Equals(this));
-                    temp = Container.ContentArea.Width - ElementMargin;
+                    temp = Container.ContentArea.Width - ElementMargin * 2;
 
                     if(this is Button)
-                        lock(GameStatus.TextRenderer)
-                            temp = Math.Max((int)GameStatus.TextRenderer.MeasureString(Label, _menufont).Width, Container.ContentArea.Height - 2 * ElementMargin);
+                        temp = Math.Max((int)LabelSize.Width, Container.ContentArea.Height - 2 * ElementMargin);
                     else {
                         int buttoncount = 0;
 
@@ -109,6 +126,8 @@ namespace Game_Java_Port {
                     for(int i = 0; i < _conpos; i++)
                         temp += Container.Children[i]._width + ElementMargin;
                     _x = temp;
+                } else {
+                    _width = LabelSize.Width;
                 }
             }
 
@@ -129,31 +148,27 @@ namespace Game_Java_Port {
                         _Area = new RectangleF(
                                 Parent._X + ElementMargin,
                                 Y - Parent.ScrollOffset,
-                                Parent._Width - 2 * ElementMargin,
+                                Math.Max(_width + 2 * ElementMargin,
+                                         Parent._Width - 2 * ElementMargin),
                                 ElementHeight);
 
-                        _LabelArea = _Area;
-                        _LabelArea.X += TextXOffset;
-                        _LabelArea.Width -= TextXOffset;
-                        _LabelArea.Y += TextYOffset;
-                        _LabelArea.Height -= TextYOffset;
                     } else {
                         _Area = new RectangleF(
                             _x,
                             Container._Area.Y + ElementMargin,
                             _width,
                             ElementHeight);
-                        _LabelArea = _Area;
-                        _LabelArea.X += TextXOffset;
-                        _LabelArea.Width -= TextXOffset;
-                        _LabelArea.Y += TextYOffset;
-                        _LabelArea.Height -= TextYOffset;
                     }
+                    _LabelArea = _Area;
+                    _LabelArea.X += TextXOffset;
+                    _LabelArea.Width -= TextXOffset;
+                    _LabelArea.Y += TextYOffset;
+                    _LabelArea.Height -= TextYOffset;
                 }
                 _Hovering = _Area.Contains(MousePos);
             }
             //private int _position = 0;
-            private int _elecount = 0;
+            protected int _elecount = 0;
 
             internal int Position {
                 get {
@@ -165,14 +180,14 @@ namespace Game_Java_Port {
                 }
             }
 
-            private int _conelecount = 0;
-            private int _conpos = 0;
+            protected int _conelecount = 0;
+            protected int _conpos = 0;
 
 
-            private float _x = 0;
+            protected float _x = 0;
 
 
-            private float _width = 0;
+            internal float _width = 0;
 
             public float Height {
                 get {
@@ -205,6 +220,10 @@ namespace Game_Java_Port {
                         _CustomArea = value;
                 }
             }
+
+            public int Z { get; set; } = 1001;
+
+            public DrawType drawType { get; set; } = DrawType.Rectangle;
 
             #region Drawing
 
@@ -252,8 +271,11 @@ namespace Game_Java_Port {
 
             
         }
-
+        
         private class RegulatorButtons<T> : MenuElementListBase where T : struct, IComparable, IConvertible {
+
+
+
             public RegulatorButtons(Regulator<T> regulator, T? stepsize = null) {
                 if(stepsize == null)
                     stepsize = (T)Convert.ChangeType((float.Parse(regulator.MaxValue.ToString()) - float.Parse(regulator.MinValue.ToString())) / 20f, typeof(T));
@@ -302,92 +324,7 @@ namespace Game_Java_Port {
                     Parent.Elements.Add(this);
             }
         }
-
-        private class ItemButton : MenuElementListBase {
-
-            ItemBase Item;
-            bool isEquipped { get {
-                    return Item == Game.instance._player.EquippedWeaponL || Item == Game.instance._player.EquippedWeaponR;
-                } }
-
-            public ItemButton(GameMenu parent, ItemBase item) {
-                Parent = parent;
-                Item = item;
-                TextColor = GameVars.RarityColors[item.Rarity];
-                Button drop = null;
-                Button equip = null;
-                Button use = null;
-                drop = new Button(Parent, "Drop", (args) =>
-                {
-                    if(checkargs(args)) {
-                        item.Drop();
-                        lock(Parent.Elements)
-                            Parent.Elements.Remove(drop);
-                        drop.Container = null;
-                        drop.Parent = null;
-                        drop.Dispose();
-                        if(equip != null) {
-                            lock(Parent.Elements)
-                                Parent.Elements.Remove(equip);
-                            equip.Container = null;
-                            equip.Parent = null;
-                            equip.Dispose();
-                        }
-                        if(use != null) {
-                            lock(Parent.Elements)
-                                Parent.Elements.Remove(use);
-                            use.Container = null;
-                            use.Parent = null;
-                            use.Dispose();
-                        }
-                        Parent.Elements.Remove(this);
-                        Parent = null;
-                    }
-                });
-                drop.Container = this;
-
-                if(item is IEquipable) {
-                    equip = new Button(Parent, "Equip", (args) =>
-                    {
-                        if(checkargs(args)) {
-                            ((IEquipable)item).Equip(Game.instance._player);
-                        }
-                    });
-                    equip.Container = this;
-                }
-
-                if(item is IUsable) {
-                    use = new Button(Parent, "Use", (args) =>
-                    {
-                        if(checkargs(args)) {
-                            ((IUsable)item).Use(Game.instance._player);
-                        }
-                    });
-                    use.Container = this;
-                }
-                lock(Parent.Elements)
-                    Parent.Elements.Add(this);
-            }
-
-
-            public override void draw(RenderTarget rt) {
-                base.draw(rt);
-
-
-                if(_Hovering) {
-                    RectangleF pos = new RectangleF(MousePos.X - 150, MousePos.Y, 300, 16 * Item.ItemInfoLines + 4);
-                    rt.FillRectangle(pos, MenuHoverBrush);
-                    
-                    rt.DrawText(Item.ItemInfo, MenuFont, pos, MenuTextBrush);
-                }
-            }
-
-            public override void update() {
-                base.update();
-                Label = Item.Name + (isEquipped ? " [E]" : "");
-            }
-        }
-
+        
         private class InputField : MenuElementBase {
 
             public string Value { get; set; }
@@ -831,29 +768,82 @@ namespace Game_Java_Port {
             #endregion
         }
 
-        private class Text : MenuElementBase {
+
+        private class TextElement : MenuElementBase {
+
+            private bool _DownScale = false;
+
+            public bool DownScale { get {
+                    return _DownScale;
+                }
+                set {
+                    if (value != _DownScale) {
+                        _DownScale = value;
+                        resize();
+                    }
+                }
+            }
+
+            private Size2F _CustomSize;
+            public Size2F CustomSize { get { return _CustomSize; } set {
+                    _CustomSize = value;
+                    resize();
+                }
+            }
+            private Size2F Size;
+
+            private string _Text;
+            internal string Text { get {
+                    return _Text;
+                } set {
+                    _Text = value;
+                    resize();
+                }
+            }
 
 
-            internal string Value { get; set; }
+            private void resize() {
+                lock(this) {
+                    using(TextLayout tl = new TextLayout(Program.DW_Factory, _Text, MenuFont, _CustomSize.Width, _CustomSize.Height))
+                        Size = new Size2F(tl.Metrics.Width, tl.Metrics.Height);
+                    update();
+                }
+            }
 
-            public uint Lines = 1;
-
-            public Text(GameMenu parent, string Text) {
+            public TextElement(GameMenu parent, string Text, Size2F size = default(Size2F), bool downscale = false) {
+                if(size == default(Size2F))
+                    size = new Size2F(ScreenWidth, ScreenHeight);
+                _CustomSize = size;
                 Parent = parent;
                 lock(Parent.Elements)
                     parent.Elements.Add(this);
-                Value = Text;
+                _Text = Text;
+
+                _DownScale = downscale;
+
+                resize();
+
             }
 
             public override void draw(RenderTarget rt) {
                 drawBorder(rt);
-                rt.DrawText(Value, MenuFont, _LabelArea, MenuTextBrush);
+                rt.DrawText(Text, MenuFont, _LabelArea, MenuTextBrush);
+            }
+
+            internal override void invalidateWidths() {
+                _width = Size.Width;
             }
 
             public override void update() {
                 base.update();
-                _Area.Height = Lines * 17;
-                _LabelArea.Height = Lines * 17;
+                _LabelArea.Size = new Size2F((DownScale ?
+                    Math.Min(Size.Width, _LabelArea.Width) :
+                    Math.Max(Size.Width, _LabelArea.Width)),
+                    Size.Height);
+                _Area.Size = new Size2F((DownScale ?
+                    Math.Min(Size.Width + 2 * TextXOffset, _Area.Width) :
+                    Math.Max(Size.Width + 2 * TextXOffset, _Area.Width)),
+                    Size.Height + ElementMargin);
             }
 
         }
@@ -912,6 +902,190 @@ namespace Game_Java_Port {
                     onClickEvent -= _remoteOnClick;
             }
 
+
+        }
+
+        private class IconButton : MenuElementBase, IDisposable {
+            Tooltip tooltip;
+
+            private Action<onClickArgs> _remoteOnClick;
+
+            Color IconColor = Color.Transparent;
+
+            ItemBase Item;
+            bool isEquipped {
+                get {
+                    if(Game.state != Game.GameState.Menu)
+                        return Item == Game.instance._player.EquippedWeaponL || Item == Game.instance._player.EquippedWeaponR;
+                    else
+                        return false;
+                }
+            }
+
+
+
+            public IconButton(GameMenu parent, ItemBase item, Action<onClickArgs> onClick = null) {
+
+                //makes the event raise under the condition that it was properly directed to this button.
+                _remoteOnClick = (args) =>
+                {
+                    if(Area.Contains(args.Position) && parent.isOpen && !args.Consumed) {
+                        args.Consumed = true;
+                        if(args.Button == Right && !args.Down) {
+                            if(getKeyState(System.Windows.Forms.Keys.ShiftKey)) {
+                                item.Drop();
+                                Dispose();
+                            } else {
+                                if(item is IEquipable && Game.instance._player.getEquipedItem(((IEquipable)item).Slot) != item) {
+                                    ((IEquipable)item).Equip(Game.instance._player);
+                                } else if(item is IUsable) {
+                                    ((IUsable)item).Use(Game.instance._player);
+                                }
+                            }
+                        }
+                        onClick?.Invoke(args);
+                    }
+                };
+
+                //register the button on the root clickEvent
+                onClickEvent += _remoteOnClick;
+                
+                Parent = parent;
+                Item = item;
+                tooltip = new Tooltip(item.ItemInfoText, Location: () => Area.Center, Validation: () => _Hovering);
+                IconColor = GameVars.RarityColors[item.Rarity];
+                
+                lock(Parent.Elements)
+                    Parent.Elements.Add(this);
+            }
+
+
+            public override void draw(RenderTarget rt) {
+                drawBorder(rt);
+                Color4 temp = MenuHoverBrush.Color;
+                MenuHoverBrush.Color = IconColor;
+                rt.FillRectangle(Area, MenuHoverBrush);
+                MenuHoverBrush.Color = temp;
+                temp = MenuTextBrush.Color;
+                MenuTextBrush.Color = Color.Black;
+                if(Item.image != null)
+                    rt.DrawBitmap(Item.image, Area, 1, BitmapInterpolationMode.Linear);
+                if(Item is IEquipable)
+                    if(Game.instance._player.getEquipedItem(((IEquipable)Item).Slot) == Item)
+                        rt.DrawText("E", MenuFont, Area, MenuTextBrush);
+
+                RectangleF coinArea = Area;
+                coinArea.Offset(0, 22);
+                coinArea.Size = new Size2F(8, 8);
+                
+                RectangleF offset = Area;
+                offset.Offset(8, 18);
+                offset = RectangleF.Intersect(Area, offset);
+
+                rt.DrawBitmap(dataLoader.get("Coin.bmp"), coinArea, 1, BitmapInterpolationMode.Linear);
+                
+                rt.DrawText(Item.SellPrice.ToString(), MenuFont, offset, MenuTextBrush);
+
+                MenuTextBrush.Color = temp;
+            }
+
+            public override void update() {
+                
+
+                base.update();
+                
+
+                int index = Container.Children.IndexOf(this);
+                int columns = ((InventoryElement)Container).Columns;
+
+                int x = index % columns;
+                int y = index / columns;
+
+                float size = ((InventoryElement)Container).ElementSize;
+
+                RectangleF destination = new RectangleF(0,0, size, size);
+
+                destination.Offset(Container.Area.TopLeft + ElementMargin);
+
+                destination.X += x * (size + ElementMargin) + (Container.Area.Width % Container._width) / 2;
+                destination.Y += y * (size + ElementMargin);
+
+                Area = destination;
+                
+                if(_Hovering != Area.Contains(MousePos)) {
+                    _Hovering ^= true;
+                }
+
+                if(_Hovering) {
+                    if(getKeyState(System.Windows.Forms.Keys.ShiftKey))
+                        Cursor.CursorType = CursorTypes.Inventory_Remove;
+                    else if(Item is IEquipable && Game.instance._player.getEquipedItem(((IEquipable)Item).Slot) != Item)
+                        Cursor.CursorType = CursorTypes.Inventory_Equip;
+                    else if(Item is IUsable)
+                        Cursor.CursorType = CursorTypes.Inventory_Use;
+                    else
+                        Cursor.CursorType = CursorTypes.Normal;
+                }
+                    
+
+                        
+                tooltip.Tick();
+            }
+
+            public void Dispose() {
+                if(Container != null) {
+                    lock(Container) {
+                        Container = null;
+                    }
+                    lock(Parent.Elements)
+                        Parent.Elements.Remove(this);
+                    Parent = null;
+                    tooltip.Dispose();
+                    onClickEvent -= _remoteOnClick;
+                }
+            }
+        }
+
+        private class InventoryElement : MenuElementListBase {
+
+            private float _ElementSize = 32;
+
+            public int Columns { get; private set; }
+
+            public float ElementSize { get { return _ElementSize; } set {
+                    _ElementSize = value;
+                    Columns = (int)((_Area.Width - 2 * ElementMargin) % (_ElementSize + ElementMargin));
+                }
+            }
+
+            public InventoryElement(GameMenu Parent, List<ItemBase> Inventory, float size = 32, float Width = 600, Action<onClickArgs> onClick = null) {
+                this.Parent = Parent;
+                _ElementSize = size;
+                Columns = (int)((Width - 2 * ElementMargin) / (_ElementSize + ElementMargin));
+                lock(Parent.Elements)
+                    Parent.Elements.Add(this);
+                int i = 0;
+                int j;
+                for(j = 0; j * Columns < Inventory.Count; j++) { // Rows | Y
+                    for(i = 0; i + j * Columns < Inventory.Count && i < Columns; i++) { // Columns | X
+                        IconButton temp = new IconButton(Parent, Inventory[i + j * Columns], onClick);
+                        temp.Container = this;
+                    }
+                }
+            }
+
+            internal override void invalidateWidths() {
+                _width = (ElementSize + ElementMargin) * Columns + ElementMargin;
+            }
+
+            public override void update() {
+                base.update();
+                _Area.Height = ElementMargin + (Children.Count / Columns + 1) * (ElementMargin + ElementSize);
+            }
+
+            public override void draw(RenderTarget rt) {
+                drawBorder(rt);
+            }
 
         }
     }

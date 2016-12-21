@@ -14,24 +14,29 @@ namespace Game_Java_Port {
         private static AngleSingle LastAimDirection;
 
 
-        private static Func<AttributeBase, Faction.Disposition, Func<AttributeBase, bool>> Seek_By_Disposition =
+        private static Func<CharacterBase, Faction.Disposition, Func<CharacterBase, bool>> Seek_By_Disposition =
             (me, disp) =>
             (targ) =>
             targ != me && (me.Team.Dispositions.ContainsKey(targ.Team) ? me.Team.Dispositions[targ.Team] : me.Team.DefaultDisposition) == disp;
 
-        private static AttributeBase ResultOrNull(IOrderedEnumerable<AttributeBase> orderedList, Func<AttributeBase, bool> criteria) {
-            return orderedList.Any(criteria) ? orderedList.First(criteria) : null;
+        private static CharacterBase ResultOrNull(IOrderedEnumerable<CharacterBase> orderedList, Func<CharacterBase, bool> criteria) {
+
+            
+
+            return orderedList.FirstOrDefault(criteria);
         }
 
         private static Action<NPC> NonConduction_AI = (me) =>
                 {
-                    IOrderedEnumerable<AttributeBase> orderedList = GameSubjects.OrderBy((subj) => Vector2.Distance(subj.Location, me.Location));
+                    IOrderedEnumerable<CharacterBase> orderedList;
+                    lock(GameSubjects)
+                        orderedList = GameSubjects.OrderBy((subj) => Vector2.Distance(subj.Location, me.Location));
 
-                    AttributeBase closestEnemy = ResultOrNull(orderedList, Seek_By_Disposition(me, Faction.Disposition.Enemy));
+                    CharacterBase closestEnemy = ResultOrNull(orderedList, Seek_By_Disposition(me, Faction.Disposition.Enemy));
 
-                    AttributeBase closestAlly = ResultOrNull(orderedList, Seek_By_Disposition(me, Faction.Disposition.Allied));
+                    CharacterBase closestAlly = ResultOrNull(orderedList, Seek_By_Disposition(me, Faction.Disposition.Allied));
 
-                    AttributeBase closestFearSource = ResultOrNull(orderedList, Seek_By_Disposition(me, Faction.Disposition.Fear));
+                    CharacterBase closestFearSource = ResultOrNull(orderedList, Seek_By_Disposition(me, Faction.Disposition.Fear));
 
                     if(closestFearSource != null && Vector2.Distance(closestFearSource.Location, me.Location) - closestFearSource.Size / 2 <= me.ViewRadius) {
                         Run(me, closestFearSource);
@@ -50,7 +55,7 @@ namespace Game_Java_Port {
                     }
                 };
 
-        private static bool Conduction_AI(NPC me, AttributeBase activator, Faction.Conduct conduct) {
+        private static bool Conduction_AI(NPC me, CharacterBase activator, Faction.Conduct conduct) {
 
             if(activator != null) {
                 if(activator.Health <= 0) {
@@ -112,7 +117,7 @@ namespace Game_Java_Port {
                     me.DirectionVector = movementAngle.toVector();
                 };
 
-        public static Action<NPC, AttributeBase> Search = (me, target) =>
+        public static Action<NPC, CharacterBase> Search = (me, target) =>
                 {
                     me.AimDirection = me.AimDirection.track(me.Location.angleTo(target.Location) + new AngleSingle(me.RNG.NextFloat(-0.5f, 0.5f), AngleType.Revolution), 0.01f);
 
@@ -128,7 +133,7 @@ namespace Game_Java_Port {
                         me.IsMoving = false;
                 };
 
-        public static Action<NPC, AttributeBase, float> Follow = (me, target, dist) =>
+        public static Action<NPC, CharacterBase, float> Follow = (me, target, dist) =>
                 {
                     float distance = Vector2.Distance(target.Location, me.Location);
 
@@ -146,7 +151,7 @@ namespace Game_Java_Port {
                         me.IsMoving = false;
                 };
 
-        public static void Run(NPC me, AttributeBase target, bool lookback = false)
+        public static void Run(NPC me, CharacterBase target, bool lookback = false)
                 {
                     me.AimDirection = me.Location.angleTo(target.Location) + (lookback ? AngleSingle.ZeroAngle : AngleSingle.StraightAngle);
 
@@ -161,11 +166,11 @@ namespace Game_Java_Port {
                     me.IsMoving = true;
                 }
 
-        public static Action<NPC, AttributeBase> Attack = (me, target) =>
+        public static Action<NPC, CharacterBase> Attack = (me, target) =>
                 {
                     float distance = Vector2.Distance(target.Location, me.Location);
-                    float range = me.EquippedWeaponR == null ? me.RMeleeRange : me.EquippedWeaponR.Range;
-                    float targetRange = target.EquippedWeaponR == null ? target.RMeleeRange : target.EquippedWeaponR.Range;
+                    float range = me.EquippedWeaponR == null ? me.MeleeRangeR : me.EquippedWeaponR.Range;
+                    float targetRange = target.EquippedWeaponR == null ? target.MeleeRangeR : target.EquippedWeaponR.Range;
                     bool canRun = range > targetRange;
                     me.AimDirection = me.Location.angleTo(target.Location);
 
@@ -191,13 +196,13 @@ namespace Game_Java_Port {
 
             //reduce cpu load
             if(MousePos != _LastMousePos) {
-                range = Math.Max(me.RWeaponRange, me.RMeleeRange);
+                range = Math.Max(me.WeaponRangeR, me.MeleeRangeR);
                 _LastMousePos = MousePos;
 
                 me.AimDirection = Game.instance.Area.Center.angleTo(new Vector2(MousePos.X / Program._RenderTarget.Size.Width * Program.width, MousePos.Y / Program._RenderTarget.Size.Height * Program.height));
 
             } else if(me.MovementVector.LengthSquared() != 0) {
-                range = Math.Max(me.RWeaponRange, me.RMeleeRange);
+                range = Math.Max(me.WeaponRangeR, me.MeleeRangeR);
                 me.AimDirection = Game.instance.Area.Center.angleTo(MousePos);
             }
 
@@ -217,7 +222,34 @@ namespace Game_Java_Port {
                 LastAimDirection = me.AimDirection;
             }
 
-            
+
+            if(me.justPressed(Controls.interact)) {
+                IOrderedEnumerable<IInteractable> list;
+                lock(GameObjects) {
+                    list = GameObjects.OrderBy((obj) => { return Vector2.Distance(obj.Location + MatrixExtensions.PVTranslation, MousePos); });
+                }
+                
+                if (list.Any((obj) => {
+                    return obj != me &&
+                            Vector2.Distance(obj.Location, me.Location) <= GameVars.pickupRange &&
+                            Vector2.Distance(obj.Location + MatrixExtensions.PVTranslation, MousePos) <= GameVars.pickupMouseRange;
+                })){
+                    IInteractable interact = list.OrderBy((obj) => Vector2.DistanceSquared(obj.Location + MatrixExtensions.PVTranslation, MousePos)).First();
+                    switch(Game.state){
+                        case Game.GameState.Normal:
+                            interact.interact(me);
+                            break;
+                        case Game.GameState.Multiplayer:
+                        case Game.GameState.Host | Game.GameState.Multiplayer:
+                            List<byte> cmd = new List<byte>();
+                            cmd.AddRange(BitConverter.GetBytes(me.ID));
+                            cmd.AddRange(BitConverter.GetBytes(interact.ID));
+                            Game.instance._client.send(GameClient.CommandType.interaction, cmd.ToArray());
+                            break;
+                    }
+                }
+            }
+
             PlayerSim.Invoke(me);
         };
 
@@ -269,19 +301,6 @@ namespace Game_Java_Port {
                         me.Fire(true);
                     }
 
-                    if(me.justPressed(Controls.interact)) {
-                        lock(GameObjects) {
-                            IOrderedEnumerable<IInteractable> list = GameObjects.OrderBy((obj) => { return Vector2.Distance(obj.Location + MatrixExtensions.PVTranslation, MousePos); });
-                            if (list.Any((obj) => {
-                                return obj != me &&
-                                Vector2.Distance(obj.Location, me.Location) < 200 &&
-                                Vector2.Distance(obj.Location + MatrixExtensions.PVTranslation, MousePos) < 20; })){
-                                list.FirstOrDefault(( obj ) => { return obj != me && Vector2.Distance(obj.Location, me.Location) < 200; })
-                                    .interact(me);
-                            }
-                        }
-                    }
-
                     if (me.justPressed(Controls.reload))
                     {
                         if (me.EquippedWeaponL != null)
@@ -293,7 +312,7 @@ namespace Game_Java_Port {
                     if (me == Game.instance._player) {
                         if (me.justPressed(Controls.open_inventory))
                         {
-                            GameMenu.InventoryMenu.open();
+                            GameMenu.CharacterMenu.open();
                         }
                     }
 
@@ -309,7 +328,7 @@ namespace Game_Java_Port {
                     me._lastState = me.inputstate;
                 };
 
-        public static Action<NPC, AttributeBase, float> Circle = (me, target, dist) =>
+        public static Action<NPC, CharacterBase, float> Circle = (me, target, dist) =>
                 {
                     float distance = Vector2.Distance(target.Location, me.Location);
 

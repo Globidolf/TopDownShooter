@@ -1,11 +1,12 @@
 ﻿using Game_Java_Port.Interface;
+using SharpDX;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using static Game_Java_Port.AttributeBase;
+using static Game_Java_Port.CharacterBase;
 using static Game_Java_Port.GameStatus;
 
 namespace Game_Java_Port {
@@ -113,7 +114,7 @@ namespace Game_Java_Port {
                                 NPC player = (NPC)CharCreatorMenu._data["output"];
                                 await Game.instance._client.awaitInit().ContinueWith((task) =>
                                 {
-                                    Game.instance._client.send(GameClient.CommandType.sendPlayer, player.serialize());
+                                    Game.instance._client.send(GameClient.CommandType.sendPlayer, player.Serializer.Serialize(player));
                                 });
 
                             };
@@ -123,7 +124,7 @@ namespace Game_Java_Port {
                     new Button(temp, "Load Game", (args) => {
                         if(checkargs(args)) {
                             temp.close();
-#warning load and host game
+                            // TODO: add load functionlity
                         }
                     }, _log);
                     new Button(temp, "Cancel", (args) => {
@@ -162,7 +163,7 @@ namespace Game_Java_Port {
                                     await Game.instance._client.awaitInit().ContinueWith((task) =>
                                     {
                                         player.ID = GetFirstFreeID;
-                                        Game.instance._client.send(GameClient.CommandType.sendPlayer, player.serialize());
+                                        Game.instance._client.send(GameClient.CommandType.sendPlayer, player.Serializer.Serialize(player));
                                     });
                                 } catch(Exception e) {
                                     Game.instance.addMessage("Connection failed: " + e.Message);
@@ -175,7 +176,7 @@ namespace Game_Java_Port {
                     new Button(temp, "Load Game", (args) => {
                         if(checkargs(args)) {
                             temp.close();
-#warning load and host game
+                            // TODO: add load functionlity
                         }
                     }, _log);
                     new Button(temp, "Cancel", (args) => {
@@ -210,7 +211,44 @@ namespace Game_Java_Port {
                                 NPC player = (NPC)CharCreatorMenu._data["output"];
                                 player.AI = AI_Library.RealPlayer;
                                 Game.instance._player = player;
+                                Program.DebugLog.Add("Adding Subject " + player.ID + ". MainMenu -> New Game -> CharCreatorMenu.onContinue().");
                                 player.addToGame();
+                                // test data
+                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Mace).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Mace).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Mace).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Mace).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Mace).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Mace).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Mace).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Mace).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Mace).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Sword).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Spear).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Mace).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Sword).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Spear).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Mace).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Sword).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Spear).PickUp(player);
+                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
                             };
                             CharCreatorMenu.open();
                         }
@@ -218,7 +256,7 @@ namespace Game_Java_Port {
                     new Button(temp, "Load Game", (args) => {
                         if(checkargs(args)) {
                             //temp.close();
-#warning load and start game
+                            // TODO: add load functionlity
                         }
                     }, _log);
                     new Button(temp, "Host Game", (args) =>
@@ -315,8 +353,7 @@ namespace Game_Java_Port {
                     uint Luc;
                     uint points = 0;
                     uint sum = 0;
-                    Text info = new Text(temp, "");
-                    info.Lines = 7;
+                    TextElement info = new TextElement(temp, "");
 
                     Action onchangedone = () =>
                     {
@@ -341,7 +378,7 @@ namespace Game_Java_Port {
                         Wis = (uint)temp._data["Wisdom"];
                         Luc = (uint)temp._data["Luck"];
 
-                        info.Value =
+                        info.Text =
                         "Precision: " + getPRCMult(Dex, Agi).ToString("0.#%") + "\n" +
                         "Melee Damage: " + getMDMGMult(Str, Dex).ToString("0.#%") + "\n" +
                         "Movement: " + getSPDMult(Str, Dex, Agi).ToString("0.##") + "\n" +
@@ -461,9 +498,7 @@ namespace Game_Java_Port {
                     temp.addInput("Name", NameGen.RandomName);
 
 
-                    Text info = new Text(temp, "");
-
-                    info.Lines = 7;
+                    TextElement info = new TextElement(temp, "");
 
 
 
@@ -490,7 +525,7 @@ namespace Game_Java_Port {
                         Wis = (uint)temp._data["Wisdom"];
                         Luc = (uint)temp._data["Luck"];
 
-                        info.Value =
+                        info.Text =
                         "Precision: " + getPRCMult(Dex, Agi).ToString("0.#%") + "\n" +
                         "Melee Damage: " + getMDMGMult(Str, Dex).ToString("0.#%") + "\n" +
                         "Movement: " + getSPDMult(Str, Dex, Agi).ToString("0.##") + "\n" +
@@ -591,51 +626,79 @@ namespace Game_Java_Port {
                 return getMenu(name);
             }
         }
+        
+        public static GameMenu CharacterMenu { get {
 
-        public static GameMenu InventoryMenu {
-            get {
-                string name = "InventoryMenu";
+                string name = "CharacterMenu";
                 if(!hasMenu(name)) {
                     GameMenu temp = new GameMenu();
                     temp.Name = name;
 
-                    temp.onOpen += () =>
+                    Action<onKeyPressArgs> inputHandler = (args) => {
+                        if(!args.Consumed) {
+                            if(args.Down) {
+                                switch(args.Data.KeyData) {
+                                    case System.Windows.Forms.Keys.E:
+                                    case System.Windows.Forms.Keys.Escape:
+                                        temp.onContinue?.Invoke();
+                                        temp.close();
+                                        args.Consumed = true;
+                                        break;
+                                }
+                            }
+                        }
+                    };
+                    
+                    TextElement weaponDetails = null;
+                    InventoryElement inventory = null; 
+
+                    Action refresh = () =>
                     {
-                        //clear all onclick events
-                        lock(temp.Elements)
-                            temp.Elements.ForEach((ele) =>
-                        {
-                            if (ele is Button) {
-                                ((Button)ele).Dispose();
-                            } else if (ele is MenuElementListBase) {
-                                ((MenuElementListBase)ele).Children.ForEach((chl) =>
-                                {
-                                    if (chl is Button) {
-                                        ((Button)chl).Dispose();
-                                    }
-                                });
-                            }
-                        });
-                        //clear list
-                        lock(temp.Elements)
-                            temp.Elements.Clear();
-                        new Button(temp, "Close Menu", (args) => {
-                            if(checkargs(args)) {
-                                temp.close();
-                            }
-                        });
-                        if (Game.instance._player != null)
-                            foreach (ItemBase item in Game.instance._player.Inventory) {
-                                new ItemButton(temp, item);
-                            }
+                        if(Game.instance._player.EquippedWeaponL != null &&
+                            Game.instance._player.EquippedWeaponR != null &&
+                            Game.instance._player.EquippedWeaponR != Game.instance._player.EquippedWeaponL) {
+                            // L and R are equipped and not the same
+                            weaponDetails.Text =
+                                Game.instance._player.EquippedWeaponL.ItemInfoText + "\n" +
+                                Game.instance._player.EquippedWeaponR.ItemInfoText;
+                        } else if(Game.instance._player.EquippedWeaponL != null) {
+                            // only L (or 2h)
+                            weaponDetails.Text = Game.instance._player.EquippedWeaponL.ItemInfoText;
+                        } else if(Game.instance._player.EquippedWeaponR != null) {
+                            // only R
+                            weaponDetails.Text = Game.instance._player.EquippedWeaponR.ItemInfoText;
+                        } else { // unarmed
+                            weaponDetails.Text = "Unarmed\n" +
+                            "Damage: " + Game.instance._player.MeleeDamageR.ToString("0.##") + "\n" +
+                            "Range: " + Game.instance._player.MeleeRangeR.ToString("0.##") + "\n" +
+                            "Precision: " + Game.instance._player.PrecisionR.ToString("0.##%") + "\n" +
+                            "Rate: " + Game.instance._player.MeleeSpeedR.ToString("0.##");
+                        }
                     };
 
-                    
+                    temp.onOpen += () =>
+                    {
+                        inventory = new InventoryElement(temp, Game.instance._player.Inventory, onClick: (args) => refresh() );
+                        onKeyEvent += inputHandler;
+                        refresh();
+                    };
+
+                    temp.onContinue += () =>
+                    {
+                        onKeyEvent -= inputHandler;
+                        MenuElementBase[] disposables = inventory.Children.ToArray();
+                        foreach(IconButton disposeme in disposables)
+                            disposeme.Dispose();
+                        temp.Elements.Remove(inventory);
+                    };
+
+                    weaponDetails = new TextElement(temp, "", new Size2F(ScreenWidth / 4, ScreenHeight), true);
 
                     addMenu(temp);
                 }
                 return getMenu(name);
             }
         }
+
     }
 }

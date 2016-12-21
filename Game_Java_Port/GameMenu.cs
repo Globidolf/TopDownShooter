@@ -79,6 +79,10 @@ namespace Game_Java_Port {
 
         public float[] LrgstRegNumSz { get; set; } = new float[] { 0, 0, 0 };
 
+        public int Z { get; set; } = 1000;
+
+        public DrawType drawType { get; set; } = DrawType.Rectangle;
+
         #endregion
         #region constants
 
@@ -170,12 +174,14 @@ namespace Game_Java_Port {
                         float[] numsize;
 
 
-                        lock(TextRenderer) {
-                            numsize = new float[] {
-                                TextRenderer.MeasureString(float.Parse(val.ToString()).ToString("0.##"),_menufont).Width,
-                                TextRenderer.MeasureString(float.Parse(min.ToString()).ToString("0.##"),_menufont).Width,
-                                TextRenderer.MeasureString(float.Parse(max.ToString()).ToString("0.##"),_menufont).Width
-                            };
+                        lock(Program.DW_Factory) {
+                            numsize = new float[3];
+                            using(SharpDX.DirectWrite.TextLayout tl = new SharpDX.DirectWrite.TextLayout(Program.DW_Factory, float.Parse(val.ToString()).ToString("0.##"), MenuFont, 1000, 1000))
+                                numsize[0] = tl.Metrics.Width;
+                            using(SharpDX.DirectWrite.TextLayout tl = new SharpDX.DirectWrite.TextLayout(Program.DW_Factory, float.Parse(min.ToString()).ToString("0.##"), MenuFont, 1000, 1000))
+                                numsize[1] = tl.Metrics.Width;
+                            using(SharpDX.DirectWrite.TextLayout tl = new SharpDX.DirectWrite.TextLayout(Program.DW_Factory, float.Parse(max.ToString()).ToString("0.##"), MenuFont, 1000, 1000))
+                                numsize[2] = tl.Metrics.Width;
                         }
 
                         for(int i = 0; i < 3; i++) {
@@ -199,10 +205,11 @@ namespace Game_Java_Port {
         public void resizeStrings() {
             lock(Elements) {
                 foreach(MenuElementBase element in Elements) {
+                    float size = 0;
+                    lock(Program.DW_Factory) lock(MenuFont) if(!Program.DW_Factory.IsDisposed && !MenuFont.IsDisposed)
+                                using(SharpDX.DirectWrite.TextLayout tl = new SharpDX.DirectWrite.TextLayout(Program.DW_Factory, element.Label, MenuFont, 1000, 1000))
+                                    size = tl.Metrics.Width;
 
-                    float size;
-                    lock(TextRenderer)
-                        size = TextRenderer.MeasureString(element.Label, _menufont).Width;
                     if(size > LargestStringSize)
                         LargestStringSize = size;
                 }
@@ -299,14 +306,11 @@ namespace Game_Java_Port {
             lock(Elements)
                 Elements.Add(temp);
         }
-
-
-        Brush black = new SolidColorBrush(Program._RenderTarget, Color.Black);
-
+        
         public void draw(RenderTarget rt) {
             //draws the border of the menu and each element afterwards
 
-            rt.FillRectangle(Area, black);
+            rt.FillRectangle(Area, BGBrush);
             rt.DrawRectangle(Area, MenuBorderPen);
             lock(Elements)
                 Elements.ForEach((ele) => ele.draw(rt));
@@ -314,8 +318,11 @@ namespace Game_Java_Port {
 
         public void Tick() {
             update();
+            List<MenuElementBase> elements = new List<MenuElementBase>();
+            //direct iteration causes a deadlock
             lock(Elements)
-                Elements.ForEach((ele) => ele.update());
+                elements.AddRange(Elements);
+            elements.ForEach((ele) => { lock(ele) ele.update(); });
         }
 
         public void update() {
@@ -342,7 +349,9 @@ namespace Game_Java_Port {
 
             //default width
             resizeStrings();
-            _Width = (int)(LargestStringSize + 4 * ElementMargin) - (tooLarge ? ScrollBarWidth : 0);
+            _Width = (int)(
+                (Elements.Any() ? Elements.Max((ele) => ele.Area.Width) : 0)
+                + 2 * ElementMargin) - (tooLarge ? ScrollBarWidth : 0);
 
             // max width
             lock(Elements)
@@ -357,7 +366,8 @@ namespace Game_Java_Port {
                     })          //any end
                     ) {                 // if block start
                     _Width = ScreenWidth - 2 * MenuPadding - (tooLarge ? ScrollBarWidth : 0);
-                }                       // if block end
+                }                       // if block end 
+            /*
                 else if(Elements.Any((ele) => ele is MenuElementListBase)) {
                     Elements.FindAll((ele) => ele is MenuElementListBase).ForEach((ele) =>
                     {
@@ -371,7 +381,7 @@ namespace Game_Java_Port {
                             _Width = tempWidth;
                     });
                 }
-
+                */
             #endregion
 
             _X = ScreenWidth / 2 - _Width / 2;

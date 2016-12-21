@@ -54,7 +54,7 @@ namespace Game_Java_Port {
         #endregion
         #region angles and points
 
-        public static Vector2 collisionPoint(this AttributeBase inst, Vector2 p1, Vector2 p2) {
+        public static Vector2 collisionPoint(this CharacterBase inst, Vector2 p1, Vector2 p2) {
             p2 = p2.move(p1.angleTo(p2), inst.Size * Vector2.Distance(inst.Location, p1));
             float sqlen = p1.squareDist(p2);
             Vector2 p0 = inst.Location;
@@ -166,6 +166,12 @@ namespace Game_Java_Port {
                 data.AddRange(BitConverter.GetBytes(c));
             }
             return data.ToArray();
+        }
+
+        public static int getProtocolSize(this byte[] buffer) {
+            int cmdSize = 0;
+            while((cmdSize += BitConverter.ToInt32(buffer, cmdSize)) < buffer.Length);
+            return cmdSize;
         }
 
         public static byte getByte(this byte[] buffer, ref int pos) {

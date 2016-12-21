@@ -71,6 +71,10 @@ namespace Game_Java_Port {
             set { }
         }
 
+        public int Z { get; set; }
+
+        public DrawType drawType { get; set; } = DrawType.Rectangle;
+
         public void addMessage(string msg) {
             lock(_messages)
                 _messages.Add(msg);
@@ -108,54 +112,41 @@ namespace Game_Java_Port {
 
 
         public void Tick() {
-            //pre-lock check (prevent exception)
-            if (!state.HasFlag(GameState.Menu)) {
-                lock(instance._player) lock (GameSubjects) {
-                    //post lock check (actual validation)
-                    if(instance._player.Health <= 0 && GameSubjects.Contains(instance._player)) {
-                        NPC tempPlayer = instance._player;
-                        Timer timer = null;
-                        instance.addMessage("You died. Lost all Exp and Items. Respawning in 5 seconds...");
-                        tempPlayer.Location = (instance.GameHost != null ? GameHost._HostGenRNG : RNG).NextVector2(new Vector2(-10000, -10000), new Vector2(10000, 10000));
-                        tempPlayer.Health = tempPlayer.MaxHealth;
-                        tempPlayer.Exp = 0;
-                            tempPlayer.Inventory.ForEach((item) => item.Drop());
-                        tempPlayer.removeFromGame();
-                        timer = new Timer((obj) =>
-                        {
-                            tempPlayer.addToGame();
-                            timer.Dispose();
-                        });
-                        timer.Change(5000, Timeout.Infinite);
-                    }
-                }
-            }
-            lock(GameSubjects) {
-                //singleplayer Game
-                if(!(state.HasFlag(GameState.Menu) || state.HasFlag(GameState.Multiplayer))) {
-                    if(RNG.Next((int)GameVars.defaultGTPS * GameSubjects.Count / 3) == 0) {
-                        NPC rndSpwn = new NPC(_player.Level, add: false);
-                        float range = rndSpwn.EquippedWeaponR != null ? rndSpwn.RWeaponRange : rndSpwn.RMeleeRange;
-                        rndSpwn.Location = new Vector2(
-                            (RNG.Next(2) == 0 ? -1 : 1) * (ScreenWidth / 2 + range) + _player.Location.X,
-                            (RNG.Next(2) == 0 ? -1 : 1) * (ScreenHeight / 2 + range) + _player.Location.Y);
+
+            switch(state) {
+                case GameState.Normal:
+                    int count;
+                    lock(GameSubjects)
+                        count = GameSubjects.Count;
+
+                        if(RNG.Next((int)GameVars.defaultGTPS * count / 3) == 0) {
+                            NPC rndSpwn = new NPC(_player.Level, add: false);
+                            float range = rndSpwn.EquippedWeaponR != null ? rndSpwn.WeaponRangeR : rndSpwn.MeleeRangeR;
+                            range = rndSpwn.EquippedWeaponL != null ? Math.Max(range, rndSpwn.WeaponRangeL) : range;
+                            range = Math.Max(range, rndSpwn.Size);
+                            rndSpwn.Location = new Vector2(
+                                (RNG.Next(2) == 0 ? -1 : 1) * (ScreenWidth / 2 + range) + _player.Location.X,
+                                (RNG.Next(2) == 0 ? -1 : 1) * (ScreenHeight / 2 + range) + _player.Location.Y);
+                        Program.DebugLog.Add("Adding Subject " + rndSpwn.ID + ". Game.Tick().");
                         rndSpwn.addToGame();
-                    }
-                } else if(state.HasFlag(GameState.Host)) {
-                    GameSubjects.FindAll((subj) => subj.Team == FactionNames.Players).ForEach((subj) =>
+                        }
+                    break;
+                case GameState.Host | GameState.Multiplayer:
+                    List<CharacterBase> players;
+                    lock(GameSubjects)
+                        players = GameSubjects.FindAll((subj) => subj.Team == FactionNames.Players);
+                    players.ForEach((subj) =>
                     {
                         if(GameHost._HostGenRNG.Next((int)GameVars.defaultGTPS * GameSubjects.Count / 3) == 0) {
-                            NPC rndSpwn = new NPC(_player.Level, add: false);
-                            rndSpwn.ID += GameHost.ID_Offset;
-                            GameHost.ID_Offset++;
-                            float range = rndSpwn.EquippedWeaponR != null ? rndSpwn.RWeaponRange : rndSpwn.RMeleeRange;
+                            NPC rndSpwn = new NPC(subj.Level, add: false);
+                            float range = rndSpwn.EquippedWeaponR != null ? rndSpwn.WeaponRangeR : rndSpwn.MeleeRangeR;
                             rndSpwn.Location = new Vector2(
                                 (GameHost._HostGenRNG.Next(2) == 0 ? -1 : 1) * (ScreenWidth / 2 + range) + subj.Location.X,
                                 (GameHost._HostGenRNG.Next(2) == 0 ? -1 : 1) * (ScreenHeight / 2 + range) + subj.Location.Y);
-                            _client.send(GameClient.CommandType.add, rndSpwn.serialize());
+                            _client.send(GameClient.CommandType.add, Serializers.NPCSerializer.Serial(rndSpwn));
                         }
                     });
-                }
+                    break;
             }
         }
 

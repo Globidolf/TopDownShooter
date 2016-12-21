@@ -15,19 +15,22 @@ namespace Game_Java_Port
 {
     public static class GameStatus {
 
+        private static ulong nextID = 0;
+
         public static ulong GetFirstFreeID { get {
-                ulong newID = 0;
-                lock(GameSubjects) {
-                    if (GameSubjects.Count > 0)
-                        while(GameSubjects.Any((obj) => obj.ID == newID))
-                            newID++;
-                    return newID;
-                }
+                return nextID++;
             } }
+
+
+        public static CustomCursor Cursor;
 
         private static System.Threading.Timer tickTimer = new System.Threading.Timer(tick);
 
-        public static List<AttributeBase> GameSubjects { get; } = new List<AttributeBase>();
+        /// <summary>
+        /// Pair of a CharacterBase and an uint. CharacterBase is a GameSubject with HP at 0. uint is the amount of ticks that have passed since it's death.
+        /// </summary>
+        public static Dictionary<CharacterBase, uint> Corpses { get; } = new Dictionary<CharacterBase, uint>();
+        public static List<CharacterBase> GameSubjects { get; } = new List<CharacterBase>();
         public static List<IInteractable> GameObjects { get; } = new List<IInteractable>();
         private static List<ITickable> Tickables { get; } = new List<ITickable>();
         public static List<IRenderable> Renderables { get; } = new List<IRenderable>();
@@ -258,35 +261,78 @@ namespace Game_Java_Port
         /// </summary>
         public static int ScreenHeight { get { return Program.height; } }
 
-        /// <summary>
-        /// The measurestring method is required, we need an instance to call it.... well and the instance needs a bitmap, so...
-        /// </summary>
-        public static System.Drawing.Graphics TextRenderer { get; } = System.Drawing.Graphics.FromImage(new System.Drawing.Bitmap(1, 1));
-
         #region Menus
 
         // menu settings
 
+        private static BitmapBrush _BGBrush;
+
+        public static BitmapBrush BGBrush {
+            get {
+                if(_BGBrush == null) {
+                    _BGBrush =
+                    new BitmapBrush(
+                    Program._RenderTarget,
+                    dataLoader.get("MenuBG.bmp"),
+                    new BitmapBrushProperties() {
+                        ExtendModeX = ExtendMode.Wrap,
+                        ExtendModeY = ExtendMode.Wrap,
+                        InterpolationMode = BitmapInterpolationMode.NearestNeighbor
+                    });
+                }
+                return _BGBrush;
+            }
+        }
+
+        private static SolidColorBrush _MenuPen;
+
         /// <summary>
         /// Pen for the non-text non-border menu parts
         /// </summary>
-        public static SolidColorBrush MenuPen { get; } = new SolidColorBrush(Program._RenderTarget, Color.Lerp(Color.Crimson, Color.Black, 0.4f));
+        public static SolidColorBrush MenuPen { get {
+                if (_MenuPen == null)
+                    _MenuPen = new SolidColorBrush(Program._RenderTarget, Color.Lerp(Color.Crimson, Color.Black, 0.4f));
+                return _MenuPen;
+            } }
         /// <summary>
         /// Pen for the menu borders
         /// </summary>
-        public static SolidColorBrush MenuBorderPen { get; } = MenuPen;
+        public static SolidColorBrush MenuBorderPen { get { return MenuPen; } }
+        private static SolidColorBrush _MenuHoverBrush;
         /// <summary>
         /// Brush for the hover effect of the menu
         /// </summary>
-        public static SolidColorBrush MenuHoverBrush { get; } = new SolidColorBrush(Program._RenderTarget, Color.Lerp(Color.Crimson, Color.Black, 0.75f)); //CustomMaths.fromArgb(0xff, 0x17, 0x4e, 0x30)
+        public static SolidColorBrush MenuHoverBrush { get {
+                if (_MenuHoverBrush == null) {
+                    _MenuHoverBrush = new SolidColorBrush(Program._RenderTarget, Color.Lerp(Color.Crimson, Color.Black, 0.75f)); //CustomMaths.fromArgb(0xff, 0x17, 0x4e, 0x30)
+                }
+                return _MenuHoverBrush;
+            }
+        }
+        private static SolidColorBrush _MenuTextBrush;
         /// <summary>
         /// Brush for the text of the menu
         /// </summary>
-        public static SolidColorBrush MenuTextBrush { get; } = new SolidColorBrush(Program._RenderTarget, CustomMaths.fromArgb(255, 0xff, 0xff, 0xff));//new Pen(Color.FromArgb(0x27, 0xae, 0x60)).Brush;
+        public static SolidColorBrush MenuTextBrush { get {
+                if(_MenuTextBrush == null) {
+                    _MenuTextBrush = new SolidColorBrush(Program._RenderTarget, CustomMaths.fromArgb(255, 0xff, 0xff, 0xff));//new Pen(Color.FromArgb(0x27, 0xae, 0x60)).Brush;
+                }
+                return _MenuTextBrush;
+            }
+        }
+
+        private static TextFormat _MenuFont;
+
         /// <summary>
         /// Font for the menu
         /// </summary>
-        public static TextFormat MenuFont { get; } = new TextFormat(Program.DW_Factory, System.Drawing.FontFamily.Families[0].Name, 12);
+        public static TextFormat MenuFont {
+            get {
+                if(_MenuFont == null)
+                    _MenuFont = new TextFormat(Program.DW_Factory, System.Drawing.FontFamily.Families[0].Name, 12);
+                return _MenuFont;
+            }
+        }
         /// <summary>
         /// Padding for the menu
         /// </summary>
@@ -354,6 +400,7 @@ namespace Game_Java_Port
         public static void addRenderable(IRenderable obj) {
             lock(Renderables) {
                 Renderables.Add(obj);
+                Renderables.Sort(new Comparison<IRenderable>((left, right) => left.Z.CompareTo(right.Z) ));
             }
         }
 
@@ -374,22 +421,49 @@ namespace Game_Java_Port
         }
 
         public static void tick(object fu) {
+
+            Cursor.CursorType = CursorTypes.Normal;
+            Cursor.Tick();
+
             MatrixExtensions.Tick();
             _RegisteredMenus.ForEach((menu) =>
             {
                 if(menu.isOpen)
                     menu.Tick();
             });
+
+
+            Cursor.Tick();
+
             if(!Paused) {
-                ITickable[] dataCopy;
+                ITickable[] Tickables_Copy;
                 lock(Tickables) {
-                    dataCopy = Tickables.ToArray();
+                    Tickables_Copy = Tickables.ToArray();
                 }
-                foreach(ITickable tickable in dataCopy) {
-                    if (tickable != null)
+                foreach(ITickable tickable in Tickables_Copy) {
+                    // each tick locks itself when ticking so the next tick has to wait for the previous to complete.
+                    if (tickable != null) lock(tickable)
                         tickable.Tick();
                 }
+
+                // remove all corpses after one minute
+                lock(Corpses) {
+                    CharacterBase[] keys = Corpses.Keys.ToArray();
+
+                    foreach(CharacterBase key in keys)
+                        Corpses[key]++;
+                }
+
+                lock(Corpses) {
+                    List<KeyValuePair<CharacterBase, uint>> Corpses_Copy = Corpses.ToList();
+                    Corpses_Copy.FindAll((pair) => pair.Value > GameVars.defaultGTPS * 60).ForEach((pair) => Corpses.Remove(pair.Key));
+                }
             }
+
+            Cursor.Tick();
+
+            Cursor.Apply();
+
         }
 
 
@@ -403,9 +477,10 @@ namespace Game_Java_Port
 
                 data.AddRange(BitConverter.GetBytes(GameSubjects.Count));
 
-                foreach(AttributeBase obj in GameSubjects) {
-                    data.AddRange(((NPC)obj).serialize());
-                }
+                GameSubjects.ForEach((subj) =>
+                {
+                    subj.Serializer.Serialize(subj);
+                });
             }
 
             return data.ToArray();
@@ -433,11 +508,15 @@ namespace Game_Java_Port
                 Game.instance.GameHost = null;
             }
 
-            AttributeBase[] copy;
+            CharacterBase[] copy;
             lock(GameSubjects) {
                 copy = GameSubjects.ToArray();
             }
-            Array.ForEach(copy,(subj) => subj.removeFromGame());
+            Array.ForEach(copy,(subj) => {
+                Program.DebugLog.Add("Removing Subject " + subj.ID + ". GameStatus.reset().");
+                subj.removeFromGame();
+                }
+            );
 
             lock(GameSubjects)
                 GameSubjects.Clear();
@@ -468,6 +547,18 @@ namespace Game_Java_Port
         /// for it to respond accordingly to the player. to bitch about it.
         /// </summary>
         public static void exit() {
+            lock(MenuBorderPen)
+                MenuBorderPen.Dispose();
+            lock(MenuFont)
+                MenuFont.Dispose();
+            lock(MenuHoverBrush)
+                MenuHoverBrush.Dispose();
+            lock(MenuPen)
+                MenuPen.Dispose();
+            lock(MenuTextBrush)
+                MenuTextBrush.Dispose();
+            lock(BGBrush)
+                BGBrush.Dispose();
             Program.form.Close();
         }
 

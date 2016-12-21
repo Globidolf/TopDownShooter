@@ -12,15 +12,15 @@ using SharpDX;
 namespace Game_Java_Port {
     class Bullet : IRenderable, ITickable, IDisposable {
 
-        AttributeBase _sourceOwner;
+        CharacterBase _sourceOwner;
         Weapon _source;
 
         Random _RNG;
 
-        AttributeBase _currentTarget;
+        CharacterBase _currentTarget;
 
-        List<AttributeBase> _nonTargets;
-        List<AttributeBase> _lockOnTargets;
+        List<CharacterBase> _nonTargets;
+        List<CharacterBase> _lockOnTargets;
 
         public Vector2 pos { get; set; } = new Vector2();
         Vector2 lastPos = new Vector2();
@@ -93,15 +93,15 @@ namespace Game_Java_Port {
             }
         }
 
-        public AttributeBase getCurrentTarget() {
+        public CharacterBase getCurrentTarget() {
             return _currentTarget;
         }
 
 
 
-        private List<AttributeBase> TargetList {
+        private List<CharacterBase> TargetList {
             get {
-                List<AttributeBase> temp = new List<AttributeBase>();
+                List<CharacterBase> temp = new List<CharacterBase>();
                 lock(GameStatus.GameSubjects)
                     temp.AddRange(GameStatus.GameSubjects);
                 temp.RemoveAll((targ) =>
@@ -112,8 +112,8 @@ namespace Game_Java_Port {
             }
         }
 
-        private List<AttributeBase> LockOnTargetList { get {
-                List<AttributeBase> temp = TargetList;
+        private List<CharacterBase> LockOnTargetList { get {
+                List<CharacterBase> temp = TargetList;
                 temp.RemoveAll((targ) =>
                 {
                     //out of range
@@ -121,9 +121,9 @@ namespace Game_Java_Port {
                         return true;
 
                     // not in hit-area
-                    if(_sourceOwner.Precision != 0 && lastPos.angleTo(targ.Area.Center).isInBetween(
-                            new AngleSingle(_sourceOwner.AimDirection.Revolutions + (1 - _sourceOwner.Precision)/2, AngleType.Revolution),
-                            new AngleSingle(_sourceOwner.AimDirection.Revolutions - (1 - _sourceOwner.Precision)/2, AngleType.Revolution)))
+                    if(_sourceOwner.PrecisionR != 0 && lastPos.angleTo(targ.Area.Center).isInBetween(
+                            new AngleSingle(_sourceOwner.AimDirection.Revolutions + (1 - _sourceOwner.PrecisionR)/2, AngleType.Revolution),
+                            new AngleSingle(_sourceOwner.AimDirection.Revolutions - (1 - _sourceOwner.PrecisionR)/2, AngleType.Revolution)))
                         return true;
 
                     return false;
@@ -131,7 +131,11 @@ namespace Game_Java_Port {
                 return temp;
             } }
 
-        public Bullet(Weapon source, int? seed = null, List<AttributeBase> reserved = null) {
+        public int Z { get; set; } = 9;
+
+        public DrawType drawType { get; set; } = DrawType.Polygon;
+
+        public Bullet(Weapon source, int? seed = null, List<CharacterBase> reserved = null) {
 
             //initialize RNG
             if(seed == null)
@@ -149,7 +153,7 @@ namespace Game_Java_Port {
             pos = lastPos;
 
             //init ignore list (do not hit owner)
-            _nonTargets = new List<AttributeBase>();
+            _nonTargets = new List<CharacterBase>();
             _nonTargets.Add(_sourceOwner);
 
             //tracking lists initialisation
@@ -257,7 +261,7 @@ namespace Game_Java_Port {
             }
 
             //check each object in the target list (all objects minus the ignored ones), sorted by their distance to the previous position
-            foreach(AttributeBase targ in TargetList.OrderBy((targ) => lastPos.squareDist(targ.Area.Center) - targ.Size / 2f)) {
+            foreach(CharacterBase targ in TargetList.OrderBy((targ) => lastPos.squareDist(targ.Area.Center) - targ.Size / 2f)) {
                 //calculate the actual distance of the bullet path to the target
                 float dist = targ.Area.Center.distanceToLine(pos, lastPos) - targ.Size / 2;
 
@@ -269,7 +273,7 @@ namespace Game_Java_Port {
                         float size = _source.Range / 10;
                         new Explosion(new RectangleF(col.X - size / 2, col.Y - size/2, size,size));
                         uint potentialtargets = _source.BulletHitCount;
-                        foreach(AttributeBase expltarg in TargetList.OrderBy((targ2) => col.squareDist(targ2.Area.Center))) {
+                        foreach(CharacterBase expltarg in TargetList.OrderBy((targ2) => col.squareDist(targ2.Area.Center))) {
                             if(potentialtargets <= 0)
                                 break;
                             if(expltarg == targ)
@@ -374,7 +378,7 @@ namespace Game_Java_Port {
                 _disposeMe = true;
         }
 
-        private void bounceOff(AttributeBase collision) {
+        private void bounceOff(CharacterBase collision) {
             //change the direction and target-location of the bullet to the directon of the point of impact from the target location
             pos = collision.collisionPoint(lastPos,pos);
             _direction = collision.Area.Center.angleTo(pos);
@@ -419,8 +423,8 @@ namespace Game_Java_Port {
 
                 //randomize bullet direction based on aim and precision
                 _direction.Revolutions = _sourceOwner.AimDirection.Revolutions
-                    + ((1 - _sourceOwner.Precision)
-                    - (1 - _sourceOwner.Precision) * 2 * (float)_RNG.NextDouble()) / 2;
+                    + ((1 - _sourceOwner.PrecisionR)
+                    - (1 - _sourceOwner.PrecisionR) * 2 * (float)_RNG.NextDouble()) / 2;
             }
 
             _initiated = true;

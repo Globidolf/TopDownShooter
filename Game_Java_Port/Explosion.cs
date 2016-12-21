@@ -17,6 +17,10 @@ namespace Game_Java_Port {
 
         public RectangleF Area { get; set; }
 
+        public int Z { get; set; } = 10;
+
+        public DrawType drawType { get; set; } = DrawType.Circle;
+
         private Ellipse ellipse;
 
         public Explosion(RectangleF Area, float duration = 0.3f) {

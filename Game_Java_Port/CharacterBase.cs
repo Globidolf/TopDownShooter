@@ -6,10 +6,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Game_Java_Port {
-    public abstract class AttributeBase : IRenderable, ITickable {
+    public abstract class CharacterBase : IRenderable, ITickable, ISerializable<CharacterBase>, IIndexable, ICollidible {
 
         #region base values
 
@@ -30,21 +31,22 @@ namespace Game_Java_Port {
         public const uint BaseExpIncPerLevel = 10;
 
         #endregion
+       
 
-        public enum DrawType {
-            None,
-            Circle,
-            Rectangle,
-            Polygon,
-            Image
+        public enum GenerationType : byte {
+            INVALID,
+            NPC
         }
+
+        public abstract GenerationType GenType { get; }
+        
 
 
         private float _CoolDown = 0;
 
         public Faction Team = FactionNames.Environment;
 
-        public abstract DrawType drawType { get; }
+        public abstract DrawType drawType { get; set; }
         public SolidColorBrush Pencil { get; set; } = new SolidColorBrush(Program._RenderTarget, Color.FromRgba(0xFF00FFFF));
         public bool IsMoving { get; set; }
         public virtual RectangleF Area { get; set; }
@@ -59,7 +61,7 @@ namespace Game_Java_Port {
         private bool _dead { get; set; } = false;
         public Bitmap Image { get; set; }
 
-        public List<Vector2> Polygon { get; } = new List<Vector2>();
+        public List<Vector2> Poly { get; set; } = new List<Vector2>();
 
         private Vector2[] laser;
 
@@ -72,36 +74,45 @@ namespace Game_Java_Port {
         private float _complexSize = 0;
         private object comparsionobject = new RectangleF();
 
+        private float _Size;
+
         public float Size {
             get {
-                switch(drawType) {
+                if(_Size == 0)
+                    switch(drawType) {
                     case DrawType.Circle:
                     case DrawType.None:
-                        return Area.Width;
+                        _Size = (float)Math.Sqrt(Area.Width * Area.Width + Area.Height * Area.Height);
+                            break;
                     case DrawType.Rectangle:
                     case DrawType.Image:
                         if(!(comparsionobject is RectangleF) || (RectangleF)comparsionobject != Area) {
                             _complexSize = Vector2.Distance(Area.TopLeft, Area.BottomRight);
                             comparsionobject = Area;
                         }
-                        return _complexSize;
+                        _Size = _complexSize;
+                            break;
                     case DrawType.Polygon:
-                        if(!(comparsionobject is List<Vector2>) || (List<Vector2>)comparsionobject != Polygon) {
+                        if(!(comparsionobject is List<Vector2>) || (List<Vector2>)comparsionobject != Poly) {
                             float longestdist = 0;
-                            foreach(Vector2 p1 in Polygon)
-                                foreach(Vector2 p2 in Polygon) {
+                            foreach(Vector2 p1 in Poly)
+                                foreach(Vector2 p2 in Poly) {
                                     if((p1 - p2).LengthSquared() > longestdist)
                                         longestdist = (p1 - p2).LengthSquared();
                                 }
                             _complexSize = (float)Math.Sqrt(longestdist);
-                            comparsionobject = Polygon;
+                            comparsionobject = Poly;
                         }
-                        return _complexSize;
+                        _Size = _complexSize;
+                            break;
                     default:
-                        return 0;
+                            throw new NotImplementedException("Unknown Draw-Type!");
                 }
+                return _Size;
             }
             set {
+                // reset size
+                _Size = 0;
                 RectangleF rect = Area;
                 switch(drawType) {
                     case DrawType.Circle:
@@ -128,8 +139,8 @@ namespace Game_Java_Port {
 
                         _complexSize = value;
 
-                        for(int i = 0; i < Polygon.Count; i++)
-                            Polygon[i] *= scale;
+                        for(int i = 0; i < Poly.Count; i++)
+                            Poly[i] *= scale;
 
                         break;
                 }
@@ -188,7 +199,7 @@ namespace Game_Java_Port {
             }
         }
 
-        public abstract Rank Rank { get; }
+        public abstract Rank Rank { get; set; }
 
         private ulong _ID;
 
@@ -232,13 +243,16 @@ namespace Game_Java_Port {
 
         public float Health { get; set; }
         public float MaxHealth { get { return HealthMult * BaseHealth * PowerMod; } }
-        public float Precision { get { return Math.Min(1f, PrecisionMult * BasePrecision * (EquippedWeaponR == null ? 1 : EquippedWeaponR.Precision)); } }
-        public float MeleeDamage { get { return MeleeMult * (BaseMeleeDamage + (EquippedWeaponR == null ? 0 : EquippedWeaponR.Damage)); } }
-        public float MeleeSpeed { get { return MeleeSpeedMult * BaseMeleeSpeed * (EquippedWeaponR == null ? 1 : EquippedWeaponR.AttackSpeed); } }
-        public float RMeleeRange { get { return BaseMeleeRange * PowerMod + (EquippedWeaponR == null ? 0 : EquippedWeaponR.MeleeRangeExtension); } }
-        public float LMeleeRange { get { return BaseMeleeRange * PowerMod + (EquippedWeaponL == null ? 0 : EquippedWeaponL.MeleeRangeExtension); } }
-        public float RWeaponRange { get { return EquippedWeaponR == null ? 0 : EquippedWeaponR.Range; } }
-        public float LWeaponRange { get { return EquippedWeaponL == null ? 0 : EquippedWeaponL.Range; } }
+        public float PrecisionR { get { return Math.Min(1f, PrecisionMult * BasePrecision * (EquippedWeaponR == null ? 1 : EquippedWeaponR.Precision)); } }
+        public float PrecisionL { get { return Math.Min(1f, PrecisionMult * BasePrecision * (EquippedWeaponL == null ? 1 : EquippedWeaponL.Precision)); } }
+        public float MeleeDamageR { get { return MeleeMult * (BaseMeleeDamage + (EquippedWeaponR == null ? 0 : EquippedWeaponR.Damage)); } }
+        public float MeleeDamageL { get { return MeleeMult * (BaseMeleeDamage + (EquippedWeaponL == null ? 0 : EquippedWeaponL.Damage)); } }
+        public float MeleeSpeedR { get { return MeleeSpeedMult * BaseMeleeSpeed * (EquippedWeaponR == null ? 1 : EquippedWeaponR.AttackSpeed); } }
+        public float MeleeSpeedL { get { return MeleeSpeedMult * BaseMeleeSpeed * (EquippedWeaponL == null ? 1 : EquippedWeaponL.AttackSpeed); } }
+        public float MeleeRangeR { get { return BaseMeleeRange * PowerMod + (EquippedWeaponR == null ? 0 : EquippedWeaponR.MeleeRangeExtension); } }
+        public float MeleeRangeL { get { return BaseMeleeRange * PowerMod + (EquippedWeaponL == null ? 0 : EquippedWeaponL.MeleeRangeExtension); } }
+        public float WeaponRangeR { get { return EquippedWeaponR == null ? 0 : EquippedWeaponR.Range; } }
+        public float WeaponRangeL { get { return EquippedWeaponL == null ? 0 : EquippedWeaponL.Range; } }
         public float Acceleration { get { return SpeedMult * BaseAcceleration; } }
         public float MaxMovementSpeed { get { return SpeedMult * BaseMovementSpeed * Math.Max(0.5f, Math.Min(2, PowerMod)); } }
         public List<ItemBase> Inventory { get; } = new List<ItemBase>();
@@ -458,6 +472,12 @@ namespace Game_Java_Port {
         public Dictionary<Attribute, uint> Attributes { get; set; } = generateBaseAttributes();
         public Random RNG { get; internal set; }
 
+        public Serializer<CharacterBase> Serializer { get { return Serializers.CharacterSerializer.Instance; } }
+
+        public int Z { get; set; } = 2;
+
+        public CollisionType ColType { get; set; } = CollisionType.Circle;
+
         public void AutoAssignAttributePoints() {
             if(AttributePoints > 0) {
                 uint[] stats = new uint[Enum.GetValues(typeof(Attribute)).Length];
@@ -482,26 +502,58 @@ namespace Game_Java_Port {
             Health = MaxHealth;
         }
 
-        protected void Killed(AttributeBase by) {
-            lock(this)
-                if(!_dead) {
+        protected void Killed(CharacterBase by) {
+            // get boolean value during shortest possible lock.
+            bool isdead;
+            lock(GameStatus.Corpses)
+                if(!(isdead = GameStatus.Corpses.ContainsKey(this))) 
+                    GameStatus.Corpses.Add(this, 0);
+
+            if(!isdead) { 
                     new Background(dataLoader.get("corpse.bmp"), Area.Center, 30, Background.Settings.Parallax);
-                    if(Game.instance._client == null) {
-                        Game.instance.addMessage(Name + " was killed by " + by.Name + ".");
-                        foreach(ItemBase item in Inventory.ToArray()) {
-                            item.Drop();
-                        }
-                        removeFromGame();
-                    } else if(Game.instance.GameHost != null) {
-                        Game.instance._client.send(GameClient.CommandType.message, (Name + " was killed by " + by.Name + ".").serialize());
-                        if(Rank != Rank.Player)
+                    switch(Game.state) {
+                        case Game.GameState.Normal:
+                            Game.instance.addMessage(Name + " was killed by " + by.Name + ".");
+                            foreach(ItemBase item in Inventory.ToArray()) {
+                                item.Drop();
+                            }
+                        if(Rank != Rank.Player) {
+                            Program.DebugLog.Add("Removing Subject " + ID + ". CharacterBase.Killed(CharacterBase).");
+                            removeFromGame();
+                        } else if(this == Game.instance._player)
+                            StartRespawn();
+                        break;
+                        case Game.GameState.Host | Game.GameState.Multiplayer:
+                            Game.instance._client.send(GameClient.CommandType.message, (Name + " was killed by " + by.Name + ".").serialize());
+                        if(Rank != Rank.Player) {
+                            Program.DebugLog.Add("Sending Remove Req: " + ID + ". CharacterBase.Killed(CharacterBase).");
                             Game.instance._client.send(GameClient.CommandType.remove, BitConverter.GetBytes(ID));
+                        }
+                            break;
                     }
-                    _dead = true;
                 }
         }
 
-        public virtual void Attack(AttributeBase target, float damage, bool reflection = false) {
+        protected void StartRespawn() {
+
+            Timer timer = null;
+            Game.instance.addMessage("You died. Lost all Exp and Items. Respawning in 5 seconds...");
+            Location = GameStatus.RNG.NextVector2(new Vector2(-10000, -10000), new Vector2(10000, 10000));
+            Health = MaxHealth;
+            Exp = 0;
+            Inventory.ForEach((item) => item.Drop());
+            timer = new Timer((obj) =>
+            {
+                lock (GameStatus.Corpses)
+                    GameStatus.Corpses.Remove(this);
+                timer.Change(Timeout.Infinite, Timeout.Infinite);
+                timer.Dispose();
+            });
+            timer.Change(5000, Timeout.Infinite);
+
+        }
+
+        public virtual void Attack(CharacterBase target, float damage, bool reflection = false) {
             float totalDamage = damage;
 
             float threshold = 0;
@@ -560,7 +612,7 @@ namespace Game_Java_Port {
             if((L ? EquippedWeaponL : EquippedWeaponR) == null) {
                 if(_CoolDown <= 0) {
                     //melee attack
-                    List<AttributeBase> targets = new List<AttributeBase>();
+                    List<CharacterBase> targets = new List<CharacterBase>();
 
                     lock(GameStatus.GameSubjects)
                         targets.AddRange(GameStatus.GameSubjects.OrderBy((targ) => AimDirection.offset(Area.Center.angleTo(targ.Area.Center), true)));
@@ -569,20 +621,21 @@ namespace Game_Java_Port {
 
                     targets.RemoveAll((targ) =>
                     {
-                        if(Vector2.Distance(targ.Location, Location.absolute()) - targ.Size / 2 > RMeleeRange)
+                        if(Vector2.Distance(targ.Location, Location.absolute()) - targ.Size / 2 > MeleeRangeR)
                             return true;
-                        if(Precision != 0 && Location.angleTo(targ.Location).isInBetween(
-                                new AngleSingle(AimDirection.Revolutions + (1 - Precision) / 2, AngleType.Revolution),
-                                new AngleSingle(AimDirection.Revolutions - (1 - Precision) / 2, AngleType.Revolution)))
+                        if(PrecisionR != 0 && Location.angleTo(targ.Location).isInBetween(
+                                new AngleSingle(AimDirection.Revolutions + (1 - PrecisionR) / 2, AngleType.Revolution),
+                                new AngleSingle(AimDirection.Revolutions - (1 - PrecisionR) / 2, AngleType.Revolution)))
                             return true;
                         return false;
                     });
                     if(targets.Count > 0) {
-                        Attack(targets.First(), MeleeDamage);
+                        Attack(targets.First(), (L ? MeleeDamageL : MeleeDamageR));
                     }
-                    _CoolDown += 1 / MeleeSpeed;
+                    _CoolDown += 1 / MeleeSpeedR;
                 }
-            } else
+                //attack with left hand only if it isnt the same as right hand
+            } else if (!L || EquippedWeaponL != EquippedWeaponR)
                 (L ? EquippedWeaponL : EquippedWeaponR).Fire();
         }
 
@@ -640,7 +693,7 @@ namespace Game_Java_Port {
 
                         switch(drawType) {
                             case DrawType.Polygon:
-                                Polygon.Aggregate((prev, current) =>
+                                Poly.Aggregate((prev, current) =>
                                 {
                                     rt.DrawLine(prev, current, Pencil);
                                     return current;
@@ -684,7 +737,7 @@ namespace Game_Java_Port {
 
                         Pencil.Color = tempColor;
 
-                        float range = Math.Max(RWeaponRange, RMeleeRange);
+                        float range = Math.Max(WeaponRangeR, MeleeRangeR);
 
                         List<GradientStop> lgs = new List<GradientStop>();
 
@@ -708,7 +761,7 @@ namespace Game_Java_Port {
 
                             using(LinearGradientBrush lgb = new LinearGradientBrush(rt, lgbp, gsc)) {
 
-                                if(Precision == 0) {
+                                if(PrecisionR == 0) {
                                     rt.DrawEllipse(new Ellipse(relativePos, range, range), lgb);
                                 } else {
                                     if(laser != null)
@@ -740,12 +793,39 @@ namespace Game_Java_Port {
             }
 
             slowDown();
-
+            
             RectangleF temp = Area;
             temp.Location += MovementVector / GameVars.defaultGTPS;
+
             Area = temp;
 
-            float range = Math.Max(RWeaponRange, RMeleeRange);
+            temp.Location -= MovementVector / GameVars.defaultGTPS;
+
+            List<CharacterBase> list = new List<CharacterBase>();
+
+            lock(GameStatus.GameSubjects)
+                list.AddRange(GameStatus.GameSubjects);
+
+
+            list.Remove(this);
+
+
+            while(list.Any((subj) => subj.CollidesWith(this))){
+
+                list.RemoveAll((subj) => !subj.CollidesWith(this));
+
+                list = list.OrderBy((subj) => Vector2.DistanceSquared(subj.Location, Location)).ToList();
+
+                CharacterBase closest = list.First();
+
+                temp.Location = Area.Location.move(
+                    closest.Location.angleTo(Location),
+                    (float)Math.Ceiling(closest.Size/2 + Size/2 -
+                    Vector2.Distance(Location, closest.Location)));
+                Area = temp;
+            }
+
+            float range = Math.Max(WeaponRangeR, MeleeRangeR);
             Target = Location + AimDirection.toVector() * range;
 
             if(laser != null) {
@@ -759,13 +839,13 @@ namespace Game_Java_Port {
 
         private void generatelaserlines(float range) {
 
-            if(Precision < 1) {
+            if(PrecisionR < 1) {
 
                 laser = new Vector2[3];
 
                 laser[0] = Location + MatrixExtensions.PVTranslation;
-                laser[1] = laser[0].move(new AngleSingle(AimDirection.Revolutions + (1 - Precision) / 2, AngleType.Revolution), range);
-                laser[2] = laser[0].move(new AngleSingle(AimDirection.Revolutions - (1 - Precision) / 2, AngleType.Revolution), range);
+                laser[1] = laser[0].move(new AngleSingle(AimDirection.Revolutions + (1 - PrecisionR) / 2, AngleType.Revolution), range);
+                laser[2] = laser[0].move(new AngleSingle(AimDirection.Revolutions - (1 - PrecisionR) / 2, AngleType.Revolution), range);
 
 
             } else {

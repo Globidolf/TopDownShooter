@@ -1,4 +1,5 @@
 ﻿using Game_Java_Port.Interface;
+using Game_Java_Port.Serializers;
 using SharpDX;
 using SharpDX.Direct2D1;
 using System;
@@ -10,30 +11,40 @@ using static Game_Java_Port.GameStatus;
 using static System.BitConverter;
 
 namespace Game_Java_Port {
-    public class NPC : AttributeBase, IInteractable {
+    public class NPC : CharacterBase, IInteractable, ISerializable<NPC> {
 
         public Controls _lastState = Controls.none;
 
         public Action<NPC> AI { get; set; }
 
-        public AttributeBase Agressor;
+        public override GenerationType GenType { get { return GenerationType.NPC; } }
 
-        public AttributeBase Interactor;
+        public CharacterBase Agressor;
+
+        public CharacterBase Interactor;
 
         public Controls inputstate = Controls.none;
 
         public float ViewRadius { get; private set; }
 
-        public override DrawType drawType { get { return DrawType.Circle; } }
+        public override DrawType drawType { get; set; } = DrawType.Circle;
 
-        public override Rank Rank { get; }
+        public override Rank Rank { get; set; }
 
         public int Seed { get; set; }
         public AngleSingle LastAimDirection { get; internal set; }
 
-        public string ActionDescription {
-            get { return "Tell: " + Team.InteractionConduct.ToString() + " me!"; }
+        private Tooltip _ActionInfo;
+
+        public Tooltip ActionInfo {
+            get {
+                if (_ActionInfo == null)
+                    _ActionInfo = new Tooltip("Tell: " + Team.InteractionConduct.ToString() + " me!", Validation: () => this.drawActionInfo(), ticksInternal: true);
+                return _ActionInfo;
+            }
         }
+        
+        new public Serializer<NPC> Serializer { get { return NPCSerializer.Instance; } }
 
         private RectangleF hpRect;
         private RectangleF hpLeftRect;
@@ -43,17 +54,8 @@ namespace Game_Java_Port {
             }
             return false;
         }
-
-        /// <summary>
-        /// Unique constructor. only non-writeable rank is set.
-        /// </summary>
-        /// <param name="rank">Rank for this NPC</param>
-        private NPC(Rank rank) {
-            Rank = rank;
-            if(Rank == Rank.Player)
-                AI = AI_Library.PlayerSim;
-        }
-
+        
+        public NPC() { }
 
         public NPC(string Name,
             uint Vit = 1, uint Str = 1, uint Dex = 1,
@@ -103,6 +105,7 @@ namespace Game_Java_Port {
             }
             Pencil.Color = Color.Blue;
             if(directAdd) {
+                Program.DebugLog.Add("Adding Subject " + ID + ". NPC(...a lot...).");
                 addToGame();
                 AI = AI_Library.PlayerSim;
             }
@@ -208,43 +211,68 @@ namespace Game_Java_Port {
             }
             AutoAssignAttributePoints();
             Health = MaxHealth;
-            if(add)
+            if(add) {
+                Program.DebugLog.Add("Adding Subject " + ID + ". NPC(uint, int?, ulong?, bool).");
                 addToGame();
+            }
         }
 
         float removeCounter = 5;
 
         public override void Tick() {
-            Vector2 relativePos = Location + MatrixExtensions.PVTranslation;
-            float distanceToPlayers = float.PositiveInfinity;
+            bool isdead;
+            lock(Corpses)
+                isdead = Corpses.ContainsKey(this);
 
-            lock(GameSubjects) {
-                if(GameSubjects.Any((subj) => subj.Team == FactionNames.Players)) {
-                    GameSubjects.FindAll((subj) => subj.Team == FactionNames.Players).ForEach((subj) =>
-                    {
-                        float temp;
-                        if((temp = Vector2.DistanceSquared(Location, subj.Location)) < distanceToPlayers)
-                            distanceToPlayers = temp;
-                    });
+
+            if(!isdead) {
+                Vector2 relativePos = Location + MatrixExtensions.PVTranslation;
+                float distanceToPlayers = float.PositiveInfinity;
+
+                lock(GameSubjects) {
+                    if(GameSubjects.Any((subj) => subj.Team == FactionNames.Players)) {
+                        GameSubjects.FindAll((subj) => subj.Team == FactionNames.Players).ForEach((subj) =>
+                        {
+                            float temp;
+                            if((temp = Vector2.DistanceSquared(Location, subj.Location)) < distanceToPlayers)
+                                distanceToPlayers = temp;
+                        });
+                    }
                 }
-            }
+                displaystring = Name + " (Level " + Level + " " + Rank.ToString() + ") [" + Team.ToString() + "]";
 
-            hpRect = new RectangleF(relativePos.X - 50, relativePos.Y - Size - 35, 100, 20);
-            hpLeftRect = new RectangleF(relativePos.X - 50, relativePos.Y - Size - 35, hpRect.Width / MaxHealth * Health, hpRect.Height);
+                using(SharpDX.DirectWrite.TextLayout tl = new SharpDX.DirectWrite.TextLayout(Program.DW_Factory, displaystring, MenuFont, 1000, 1000))
+                    hpRect = new RectangleF(relativePos.X - tl.Metrics.Width / 2, relativePos.Y - Size - 35, tl.Metrics.Width, tl.Metrics.Height);
+                
+                hpLeftRect = new RectangleF(hpRect.X, hpRect.Y, hpRect.Width / MaxHealth * Health, hpRect.Height);
 
-            if(distanceToPlayers < (ScreenHeight * ScreenHeight + ScreenWidth * ScreenWidth) / 2) {
-                removeCounter = 5;
-                AI?.Invoke(this);
-                base.Tick();
-            } else {
-                removeCounter -= 1 / GameVars.defaultGTPS;
-                if(removeCounter <= 0) {
-                    removeFromGame();
-                }
-            }
+                if(distanceToPlayers < (ScreenHeight * ScreenHeight + ScreenWidth * ScreenWidth)) {
+                    removeCounter = 5;
+                    AI?.Invoke(this);
+                    base.Tick();
+                    if(Team.InteractionConduct != Faction.Conduct.Ignore)
+                        ActionInfo.Tick();
+                } else {
+                    removeCounter -= 1 / GameVars.defaultGTPS;
+                    if(removeCounter <= 0) {
+                        lock(Corpses)
+                            Corpses.Add(this,0);
+                        switch(Game.state) {
+                            case Game.GameState.Host | Game.GameState.Multiplayer:
+                                Program.DebugLog.Add("Sending Remove Req: " + ID + ". NPC.Tick().");
+                                Game.instance._client.send(GameClient.CommandType.remove, GetBytes(ID));
+                                break;
+                            case Game.GameState.Normal:
+                                Program.DebugLog.Add("Removing Subject " + ID + ". NPC.Tick().");
+                                removeFromGame();
+                                break;
+                        } // end switch
+                    } // end if
+                } // end else
+            } // end if
         }
 
-
+        private string displaystring = "";
 
         public override void draw(RenderTarget rt) {
             base.draw(rt);
@@ -278,11 +306,7 @@ namespace Game_Java_Port {
                             Pencil.Color = temp;
                             rt.DrawText(Health.ToString("0.##") + " / " + MaxHealth.ToString("0.##"), MenuFont, hpRect, Pencil);
                             hpRect.Offset(0, -20);
-
-                            string displaystring = Name + " (Level " + Level + " " + Rank.ToString() + ") [" + Team.ToString() + "]";
-
-                            lock(TextRenderer)
-                                hpRect.Width = TextRenderer.MeasureString(displaystring, GameMenu._menufont).Width * 0.8f;
+                            
                             Pencil.Color = Color.Black;
                             rt.FillRectangle(hpRect, Pencil);
                             Pencil.Color = temp;
@@ -300,102 +324,8 @@ namespace Game_Java_Port {
             else
                 pos += CustomMaths.shortsize;
         }
-
-        public static NPC Deserialize(byte[] buffer, ref int pos) {
-            NPC temp;
-
-            int Seed = buffer.getInt(ref pos);
-            if(Seed != -1) {
-                temp = new NPC(buffer.getUInt(ref pos), Seed, add: false);
-            } else {
-                temp = new NPC(buffer.getEnumByte<Rank>(ref pos));
-                temp.Seed = Seed;
-                temp.Level = buffer.getUInt(ref pos);
-                temp.Size = buffer.getFloat(ref pos);
-                foreach(Attribute attr in Enum.GetValues(typeof(Attribute))) {
-                    temp.Attributes[attr] = buffer.getUInt(ref pos);
-                }
-            }
-            temp.ID = buffer.getULong(ref pos);
-            temp.Team = buffer.getEnumByte<FactionNames>(ref pos);
-            temp.Pencil.Color = Color.FromRgba(buffer.getInt(ref pos));
-            temp.Location = new Vector2(buffer.getFloat(ref pos), buffer.getFloat(ref pos));
-            temp.MovementVector.X = buffer.getFloat(ref pos);
-            temp.MovementVector.Y = buffer.getFloat(ref pos);
-            temp.DirectionVector.X = buffer.getFloat(ref pos);
-            temp.DirectionVector.Y = buffer.getFloat(ref pos);
-            temp.AimDirection = new AngleSingle(buffer.getFloat(ref pos), AngleType.Radian);
-            temp.Health = buffer.getFloat(ref pos);
-            temp.Exp = buffer.getUInt(ref pos);
-            temp.Name = buffer.getString(ref pos);
-            int inventoryItems = buffer.getInt(ref pos);
-            int equippedWeaponL = buffer.getInt(ref pos);
-            int equippedWeaponR = buffer.getInt(ref pos);
-
-            for(int i = 0; i < inventoryItems; i++) {
-                ItemBase.deSerialize(buffer, ref pos).PickUp(temp);
-            }
-
-            if(equippedWeaponL >= 0) {
-                temp.EquippedWeaponL = (Weapon)temp.Inventory[equippedWeaponL];
-            }
-
-            if(equippedWeaponR >= 0) {
-                temp.EquippedWeaponR = (Weapon)temp.Inventory[equippedWeaponR];
-            }
-
-            return temp;
-        }
-
-        public byte[] serialize() {
-            if(Pencil.IsDisposed)
-                throw new InvalidOperationException("Attempted to serialize disposed object!");
-
-            List<byte> data = new List<byte>();
-
-            data.AddRange(GetBytes(Seed));
-            if(Seed != -1) {
-                data.AddRange(GetBytes(Level));
-            } else {
-                data.Add((byte)Rank);
-                data.AddRange(GetBytes(Level));
-                data.AddRange(GetBytes(Size));
-                foreach(Attribute attr in Enum.GetValues(typeof(Attribute))) {
-                    data.AddRange(GetBytes(Attributes[attr]));
-                }
-            }
-            data.AddRange(GetBytes(ID));
-            data.Add((byte)(FactionNames)Team);
-            data.AddRange(GetBytes(((Color4)Pencil.Color).ToRgba()));
-            data.AddRange(GetBytes(Location.X));
-            data.AddRange(GetBytes(Location.Y));
-            data.AddRange(GetBytes(MovementVector.X));
-            data.AddRange(GetBytes(MovementVector.Y));
-            data.AddRange(GetBytes(DirectionVector.X));
-            data.AddRange(GetBytes(DirectionVector.Y));
-            data.AddRange(GetBytes(AimDirection.Radians));
-            data.AddRange(GetBytes(Health));
-            data.AddRange(GetBytes(Exp));
-            data.AddRange(Name == null ? GetBytes(0) : Name.serialize());
-
-            data.AddRange(GetBytes(Inventory.Count));
-            if(EquippedWeaponL == null)
-                data.AddRange(GetBytes(-1));
-            else
-                data.AddRange(GetBytes(Inventory.IndexOf(EquippedWeaponL)));
-            if(EquippedWeaponR == null)
-                data.AddRange(GetBytes(-1));
-            else
-                data.AddRange(GetBytes(Inventory.IndexOf(EquippedWeaponR)));
-
-            foreach(ItemBase item in Inventory) {
-                data.AddRange(item.serialize());
-            }
-
-            return data.ToArray();
-        }
-
-        public void interact(NPC interactor) {
+        
+        public void interact(CharacterBase interactor) {
             Interactor = interactor;
         }
 

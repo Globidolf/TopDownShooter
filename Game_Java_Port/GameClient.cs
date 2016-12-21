@@ -6,6 +6,7 @@ using System.Threading;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using SharpDX;
+using Game_Java_Port.Interface;
 
 namespace Game_Java_Port {
 
@@ -17,64 +18,62 @@ namespace Game_Java_Port {
         public List<string> commandStack;
         public GameClient(string IP, int port) {
             byte[] buffer;
-            int pos;
             Client = new TcpClient(IP, port);
             Listen = true;
-            ClientThread = new Thread(new ThreadStart( async() =>
-            {
-                NetworkStream clientStream = Client.GetStream();
-                while(Listen) {
-                    byte[] errorcmd = null;
-                    try {
-                        if (!Client.Connected) {
-                            Game.instance.addMessage("Connection lost...");
-                            Client.Close();
-                            GameStatus.reset();
-                        }else if(Client.Available > 0) {
-                            buffer = new byte[Client.Available];
-                            lock(clientStream) {
-                                clientStream.Read(buffer, 0, buffer.Length);
-                                clientStream.Flush();
-                            }
-                            lock(this) {
-                                pos = 0;
-                                commandStack = new List<string>();
+            ClientThread = new Thread(new ThreadStart(async () =>
+           {
+               NetworkStream clientStream = Client.GetStream();
+               while(Listen) {
+                   byte[] errorcmd = null;
+                   try {
+                       if(!Client.Connected) {
+                           Game.instance.addMessage("Connection lost...");
+                           Client.Close();
+                           GameStatus.reset();
+                       } else if(Client.Available > 0) {
+                           buffer = new byte[Client.Available];
+                           lock(clientStream) {
+                               clientStream.Read(buffer, 0, buffer.Length);
+                               clientStream.Flush();
+                           }
+                           lock(this) {
+                               commandStack = new List<string>();
 
-                                List<byte[]> commands = new List<byte[]>();
+                               List<byte[]> commands = new List<byte[]>();
 
-                                int i = 0;
-                                int size = 0;
+                               int i = 0;
+                               int size = 0;
 
 
-                                do {
-                                    i += size;
-                                    size = buffer.getInt(ref i);
-                                    i -= CustomMaths.intsize;
-                                    byte[] cmd = new byte[size];
-                                    Array.ConstrainedCopy(buffer, i, cmd, 0, size);
-                                    commands.Add(cmd);
-                                } while(i + size < buffer.Length);
+                               do {
+                                   i += size;
+                                   size = buffer.getInt(ref i);
+                                   i -= CustomMaths.intsize;
+                                   byte[] cmd = new byte[size];
+                                   Array.ConstrainedCopy(buffer, i, cmd, 0, size);
+                                   commands.Add(cmd);
+                               } while(i + size < buffer.Length);
 
-                                commands.ForEach((cmd) =>
-                                {
-                                    errorcmd = cmd;
-                                    parseCommand(cmd);
-                                });
-                            }
-                        }
-                    } catch(Exception e) {
-                        e.Data.Add("command", errorcmd);
-                        parseCommand(errorcmd);
-                        Game.instance.addMessage("Connection lost. Reason:");
-                        Game.instance.addMessage(e.Message);
-                        Client.Close();
-                        GameStatus.reset();
-                    }
+                               commands.ForEach((cmd) =>
+                               {
+                                   errorcmd = cmd;
+                                   parseCommand(cmd);
+                               });
+                           }
+                       }
+                   } catch(Exception e) {
+                       e.Data.Add("command", errorcmd);
+                       parseCommand(errorcmd);
+                       Game.instance.addMessage("Connection lost. Reason:");
+                       Game.instance.addMessage(e.Message);
+                       Client.Close();
+                       GameStatus.reset();
+                   }
                     //make those commands stack
                     await Task.Delay(20);
-                }
-                Client.Close();
-            }));
+               }
+               Client.Close();
+           }));
             ClientThread.Start();
         }
 
@@ -102,6 +101,8 @@ namespace Game_Java_Port {
             int length = buffer.getInt(ref pos);
 
             CommandType cmdType = buffer.getEnumByte<CommandType>(ref pos);
+
+            Game.instance.addMessage(cmdType.ToString());
 
             commandStack.Add(cmdType.ToString());
 
@@ -142,10 +143,30 @@ namespace Game_Java_Port {
                 case CommandType.sendPlayer:
                     sendPlayer(buffer, ref pos);
                     break;
+                case CommandType.interaction:
+                    interaction(buffer, ref pos);
+                    break;
                 case CommandType.invalid:
                 default:
                     throw new NotImplementedException("unknown command recieved. are you using the same version as the other players?");
             }
+        }
+
+        private void interaction(byte[] buffer, ref int pos) {
+            ulong ID_act_src = buffer.getULong(ref pos);
+            ulong ID_act_on = buffer.getULong(ref pos);
+
+            CharacterBase interactor;
+            IInteractable interact;
+
+            lock(GameStatus.GameSubjects) {
+                interactor = GameStatus.GameSubjects.First((subj) => subj.ID == ID_act_src);
+            }
+            lock (GameStatus.GameObjects)
+                interact = GameStatus.GameObjects.First((obj) => obj.ID == ID_act_on);
+
+            interact.interact((NPC)interactor);
+
         }
 
         private void disconnect(byte[] buffer, ref int pos) {
@@ -157,8 +178,11 @@ namespace Game_Java_Port {
             NameGen.NameRandomizer = buffer.loadRNG(ref pos);
 
             int count = buffer.getInt(ref pos);
-            for (int i = 0; i < count; i++)
-                NPC.Deserialize(buffer, ref pos).addToGame();
+            for(int i = 0; i < count; i++) {
+                CharacterBase temp = Serializers.CharacterSerializer.Deserial(buffer, ref pos);
+                Program.DebugLog.Add("Adding Subject " + temp.ID + ". GameClient.init(byte[], ref int).");
+                temp.addToGame();
+            }
             _initiated = true;
         }
 
@@ -173,20 +197,20 @@ namespace Game_Java_Port {
             }
 
             int sizeindex = pos - CustomMaths.intsize;
-            
+
+            int count = buffer.getInt(ref pos);
+            int i = 0;
+            while(i < count && pos < buffer.Length) {
+                ulong ID = buffer.getULong(ref pos);
+                CharacterBase target;
                 lock(GameStatus.GameSubjects) {
-                    int count = buffer.getInt(ref pos);
-                    int i = 0;
-                    while(i < count && pos < buffer.Length) {
-                        ulong ID = buffer.getULong(ref pos);
-                        AttributeBase target;
 
-                        target = GameStatus.GameSubjects.First((obj) => obj.ID == ID);
-
-                        target.setState(buffer, ref pos);
-                        i++;
-                    }
+                    target = GameStatus.GameSubjects.First((obj) => obj.ID == ID);
                 }
+
+                target.setState(buffer, ref pos);
+                i++;
+            }
         }
 
         private void updatePos(byte[] buffer, ref int pos) {
@@ -241,9 +265,12 @@ namespace Game_Java_Port {
 
         private void remove(byte[] buffer, ref int pos) {
             ulong ID = buffer.getULong(ref pos);
+            CharacterBase remove;
             lock(GameStatus.GameSubjects) {
-                GameStatus.GameSubjects.First((obj) => obj.ID == ID).removeFromGame();
+                remove = GameStatus.GameSubjects.First((obj) => obj.ID == ID);
             }
+            Program.DebugLog.Add("Removing Subject " + remove.ID + ". GameClient.remove(byte[],ref int).");
+            remove.removeFromGame();
         }
 
         private void updateWpnRngState(byte[] buffer, ref int pos) {
@@ -256,11 +283,9 @@ namespace Game_Java_Port {
         }
 
         private void add(byte[] buffer, ref int pos) {
-            NPC temp = NPC.Deserialize(buffer, ref pos);
-            if(Game.state.HasFlag(Game.GameState.Host) && temp.Team != FactionNames.Players)
-                Game.instance.GameHost.ID_Offset--;
-            lock(GameStatus.GameSubjects)
-                temp.addToGame();
+            CharacterBase temp = Serializers.CharacterSerializer.Deserial(buffer, ref pos);
+            Program.DebugLog.Add("Adding Subject " + temp.ID + ". GameClient.add(byte[], ref int).");
+            temp.addToGame();
         }
 
         private void message(byte[] buffer, ref int pos) {
@@ -268,8 +293,9 @@ namespace Game_Java_Port {
         }
 
         private void sendPlayer(byte[] buffer, ref int pos) {
-            Game.instance._player = NPC.Deserialize(buffer, ref pos);
+            Game.instance._player = Serializers.NPCSerializer.Deserial(buffer, ref pos);
             Game.instance._player.AI = AI_Library.RealPlayer;
+            Program.DebugLog.Add("Adding Subject " + Game.instance._player.ID + ". GameClient.sendPlayer(byte[], ref int).");
             Game.instance._player.addToGame();
             Game.instance.addMessage("Connection successful!");
         }
@@ -281,7 +307,6 @@ namespace Game_Java_Port {
             if (data != null)
                 data.CopyTo(concat, CustomMaths.intsize + CustomMaths.bytesize);
             try {
-
                 Client.GetStream().Write(concat, 0, concat.Length);
             } catch(Exception e) {
                 Game.instance.addMessage("Connection lost: " + e.Message);

@@ -21,6 +21,7 @@ namespace Game_Java_Port {
         public const int messageLifeTime = 3000;
 
         public const float pickupRange = 200;
+        public const float pickupMouseRange = 50;
 
         public static Dictionary<Controls, int> ControlMapping { get; set; } = new Dictionary<Controls, int>() {
                 {Controls.move_left,        (int)Keys.A },

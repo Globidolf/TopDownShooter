@@ -12,6 +12,21 @@
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -127,9 +142,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AI Library.cs" />
-    <Compile Include="AttributeBase.cs" />
+    <Compile Include="CharacterBase.cs" />
     <Compile Include="Background.cs" />
     <Compile Include="Bullet.cs" />
+    <Compile Include="CustomCursor.cs" />
     <Compile Include="CustomMaths.cs" />
     <Compile Include="dataLoader.cs" />
     <Compile Include="Explosion.cs" />
@@ -139,9 +155,12 @@
     <Compile Include="GameMenu_Elements.cs" />
     <Compile Include="GameMenu_Presets.cs" />
     <Compile Include="Host.cs" />
+    <Compile Include="Interface\ICollidible.cs" />
     <Compile Include="Interface\IEquipable.cs" />
+    <Compile Include="Interface\IIndexable.cs" />
     <Compile Include="Interface\IInteractable.cs" />
     <Compile Include="Interface\IRenderable.cs" />
+    <Compile Include="Interface\ISerializer.cs" />
     <Compile Include="Interface\IUsable.cs" />
     <Compile Include="MatrixExtensions.cs" />
     <Compile Include="NameGen.cs" />
@@ -153,6 +172,9 @@
     <Compile Include="Interface\ITickable.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Serializers\CharacterSerializer.cs" />
+    <Compile Include="Serializers\ItemSerializer.cs" />
+    <Compile Include="Tooltip.cs" />
     <Compile Include="Weapon.cs" />
     <Compile Include="Weapon_Presets.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -163,6 +185,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -178,35 +201,21 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="data\img\GameBG.bmp">
+    <Content Include="data\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="data\img\MenuBG.bmp">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="data\img\corpse.bmp">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="data\lib\SharpDX.Animation.dll" />
-    <Content Include="data\lib\SharpDX.D3DCompiler.dll" />
-    <Content Include="data\lib\SharpDX.Desktop.dll" />
-    <Content Include="data\lib\SharpDX.Direct2D1.dll" />
-    <Content Include="data\lib\SharpDX.Direct3D10.dll" />
-    <Content Include="data\lib\SharpDX.Direct3D11.dll" />
-    <Content Include="data\lib\SharpDX.Direct3D11.Effects.dll" />
-    <Content Include="data\lib\SharpDX.Direct3D12.dll" />
-    <Content Include="data\lib\SharpDX.Direct3D9.dll" />
-    <Content Include="data\lib\SharpDX.DirectComposition.dll" />
-    <Content Include="data\lib\SharpDX.DirectInput.dll" />
-    <Content Include="data\lib\SharpDX.DirectManipulation.dll" />
-    <Content Include="data\lib\SharpDX.DirectSound.dll" />
-    <Content Include="data\lib\SharpDX.dll" />
-    <Content Include="data\lib\SharpDX.DXGI.dll" />
-    <Content Include="data\lib\SharpDX.Mathematics.dll" />
-    <Content Include="data\lib\SharpDX.MediaFoundation.dll" />
-    <Content Include="data\lib\SharpDX.RawInput.dll" />
-    <Content Include="data\lib\SharpDX.XAudio2.dll" />
-    <Content Include="data\lib\SharpDX.XInput.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.5.2">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.5.2 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

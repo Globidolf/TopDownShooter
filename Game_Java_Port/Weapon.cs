@@ -8,9 +8,10 @@ using SharpDX.Direct2D1;
 using SharpDX;
 
 namespace Game_Java_Port {
-    public partial class Weapon : ItemBase, IEquipable {
+    public partial class Weapon : ItemBase, IEquipable, ISerializable<Weapon> {
 
         public SolidColorBrush weaponPen;
+
 
         public float MeleeRangeExtension { get; private set; }
         public float Range { get; private set; }
@@ -40,7 +41,7 @@ namespace Game_Java_Port {
         public override ItemType Rarity { get { return _Rarity; } }
         public override uint BasePrice {
             get {
-                float price = (float)Math.Pow(1.1f, Level);
+                float price = 5 * (float)Math.Pow(1.1f, Level);
 
                 switch(Rarity) {
                     case ItemType.Garbage:
@@ -95,14 +96,14 @@ namespace Game_Java_Port {
 
             _RNG = new Random(Seed);
 
-            gen = 0;
+            GenType = 0;
 
             if(wt != null) {
-                gen = 1;
+                GenType = 1;
                 if(rarity != null)
-                    gen = 3;
+                    GenType = 3;
             } else if(rarity != null)
-                gen = 2;
+                GenType = 2;
 
             // determines the weapon type and scales the values to match the type. also takes in the levels for slight in-and decreases of the values.
             #region base calculation
@@ -110,6 +111,8 @@ namespace Game_Java_Port {
             Weapon Base = wt == null ? BaseWeapons.Random(_RNG) : BaseWeapons[(WeapPreset)wt];
 
             Name = Base.Name;
+            drawType = Base.drawType;
+            image = Base.image;
 
             WType = Base.WType;
             
@@ -528,7 +531,7 @@ namespace Game_Java_Port {
             if(_CoolDown <= 0 && _Reload <= 0) {
                 if(WType == WeaponType.Melee) {
                     //melee attack
-                    List<AttributeBase> targets = new List<AttributeBase>();
+                    List<CharacterBase> targets = new List<CharacterBase>();
 
                     lock(GameStatus.GameSubjects)
                         targets.AddRange(GameStatus.GameSubjects.OrderBy((targ) => Owner.AimDirection.offset(Owner.Location.angleTo(targ.Location), true)));
@@ -539,29 +542,29 @@ namespace Game_Java_Port {
                     {
                         if(Vector2.Distance(targ.Location, Owner.Location) - targ.Size / 2 > Range)
                             return true;
-                        if(Owner.Precision != 0 && Owner.Location.angleTo(targ.Location).isInBetween(
-                                new AngleSingle(Owner.AimDirection.Revolutions + (1 - Owner.Precision)/2, AngleType.Revolution),
-                                new AngleSingle(Owner.AimDirection.Revolutions - (1 - Owner.Precision)/2, AngleType.Revolution)))
+                        if(Owner.PrecisionR != 0 && Owner.Location.angleTo(targ.Location).isInBetween(
+                                new AngleSingle(Owner.AimDirection.Revolutions + (1 - Owner.PrecisionR)/2, AngleType.Revolution),
+                                new AngleSingle(Owner.AimDirection.Revolutions - (1 - Owner.PrecisionR)/2, AngleType.Revolution)))
                             return true;
                         return false;
                     });
                     uint i = BulletHitCount;
-                    foreach(AttributeBase targ in targets) {
+                    foreach(CharacterBase targ in targets) {
                         if(i <= 0)
                             break;
                         else
                             i--;
-                        Owner.Attack(targ, Owner.MeleeDamage);
+                        Owner.Attack(targ, Owner.MeleeDamageR);
                         if(Behaviour.HasFlag(BulletBehaviour.Knockback)) {
-                            targ.MovementVector.X += -(float)Math.Cos(Owner.Location.angleTo(targ.Location).Radians) * Math.Min(80000 / GameVars.defaultGTPS, ((Owner.MeleeDamage / targ.MaxHealth)) * 10000 / GameVars.defaultGTPS);
-                            targ.MovementVector.Y += -(float)Math.Sin(Owner.Location.angleTo(targ.Location).Radians) * Math.Min(80000 / GameVars.defaultGTPS, ((Owner.MeleeDamage / targ.MaxHealth)) * 10000 / GameVars.defaultGTPS);
+                            targ.MovementVector.X += -(float)Math.Cos(Owner.Location.angleTo(targ.Location).Radians) * Math.Min(80000 / GameVars.defaultGTPS, ((Owner.MeleeDamageR / targ.MaxHealth)) * 10000 / GameVars.defaultGTPS);
+                            targ.MovementVector.Y += -(float)Math.Sin(Owner.Location.angleTo(targ.Location).Radians) * Math.Min(80000 / GameVars.defaultGTPS, ((Owner.MeleeDamageR / targ.MaxHealth)) * 10000 / GameVars.defaultGTPS);
 
                         }
                     }
 
                 } else if(Ammo > 0) {
                     Ammo -= AmmoPerShot;
-                    List<AttributeBase> consumed = new List<AttributeBase>();
+                    List<CharacterBase> consumed = new List<CharacterBase>();
                     for(int i = 0; i < BulletsPerShot; i++) {
                         new Bullet(this, _RNG.Next(), consumed);
                     }
@@ -594,40 +597,34 @@ namespace Game_Java_Port {
             weaponPen.Opacity = 1f;
         }
 
-        public override string ItemInfo {
+        public override Tooltip ItemInfo {
             get {
-                return
-                    Name + "\n" +
+                if (itemInfo == null) {
+                    itemInfo = new Tooltip(ItemBaseInfo + "\n" +
                     "Lv." + Level + " " + Rarity.ToString() + " " + WType.ToString() + "\n" +
                     "Bullets: " + Behaviour.ToString() + "\n" +
                     "Speed: " + BulletSpeed + "Px/s" + "\n" +
                     "Damage: " + Damage.ToString("0.##") + "x" + BulletsPerShot + "^" + (BulletHitCount > uint.MaxValue / 12 ? "inf" : BulletHitCount.ToString()) + "\n" +
-                    "Precision: " + Precision.ToString("0.#%") + " (" + Math.Min(1,(Precision * Game.instance._player.PrecisionMult)).ToString("0.#%") + ")\n" +
+                    "Precision: " + Precision.ToString("0.#%") +
+                    " (" + Math.Min(1, (Precision * (Game.state == Game.GameState.Menu ? 1 : Game.instance._player.PrecisionMult))).ToString("0.#%") + ")\n" +
                     "Range: " + Range.ToString("0.##") + "\n" +
                     "APS: " + AttackSpeed.ToString("0.##") + "\n" +
-                    "Seed: " + Seed + ":" + gen;
+                    "Seed: " + Seed + ":" + GenType,
+                    Validation: () => ItemBaseInfoValidation() && Owner == null,
+                    ticksInternal: true);
+                }
+                return itemInfo;
             }
+        }
+
+        Serializer<Weapon> ISerializable<Weapon>.Serializer {
+            get { return Serializers.WeaponSerializer.Instance; }
         }
 
         public override void draw(RenderTarget rt) {
             base.draw(rt);
-            AttributeBase temp = Owner;
+            CharacterBase temp = Owner;
 
-            if (Game.instance._player != null &&
-                temp == null &&
-                Vector2.DistanceSquared(Game.instance._player.Location, Location) < InfoDisplayPlayerDist * InfoDisplayPlayerDist &&
-                Vector2.DistanceSquared(GameStatus.MousePos, Location + MatrixExtensions.PVTranslation) < InfoDisplayCursorDist * InfoDisplayCursorDist) {
-
-                RectangleF pos = new RectangleF(GameStatus.MousePos.X - 150, GameStatus.MousePos.Y + Size / 2/*(16 * ItemInfoLines + 4 + Size / 2)*/, 300, 16 * ItemInfoLines + 4);
-
-                makebgpen();
-
-                rt.FillRectangle(pos, weaponPen);
-
-                resetpen();
-
-                rt.DrawText(ItemInfo, GameStatus.MenuFont, pos, weaponPen);
-            }
             if (!Game.state.HasFlag(Game.GameState.Menu) && temp == Game.instance._player && _Reload > 0) {
                 int width = 150;
                 RectangleF pos = new RectangleF(-width/2,0,width,20);
@@ -635,13 +632,13 @@ namespace Game_Java_Port {
                 pos.Location += Game.instance.Location;
                 sub.Location += Game.instance.Location;
                 weaponPen.Color = Color.SmoothStep(Color.Yellow, Color.Black, 0.5f);
-                rt.FillRectangle(pos, weaponPen);
+                rt.FillRectangle(pos, GameStatus.BGBrush);
                 weaponPen.Color = Color.Yellow;
                 rt.FillRectangle(sub, weaponPen);
                 weaponPen.Color = Color.Black;
                 rt.DrawRectangle(pos, weaponPen);
                 pos.Location += 2;
-                rt.DrawText("Reloading...", GameStatus.MenuFont, pos, GameStatus.MenuTextBrush);
+                rt.DrawText("Reloading...", GameStatus.MenuFont, pos, weaponPen);
             }
         }
 
@@ -650,7 +647,7 @@ namespace Game_Java_Port {
             weaponPen.Dispose();
         }
 
-        public void Equip(AttributeBase on) {
+        public void Equip(CharacterBase on) {
 
             if(on.EquippedWeaponL != this && on.EquippedWeaponR != this) {
 

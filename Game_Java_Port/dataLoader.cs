@@ -6,6 +6,7 @@ using SharpDX.Direct2D1;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Resources;
 using System.Runtime.InteropServices;
 
 namespace Game_Java_Port {
@@ -16,11 +17,21 @@ namespace Game_Java_Port {
         private static Dictionary<string, Bitmap> images = new Dictionary<string, Bitmap>();
 
         public static Bitmap get(string name) {
+            if(!name.EndsWith(".bmp"))
+                name += ".bmp";
             if(!images.ContainsKey(name))
                 Load(null, name);
             return images[name];
         }
 
+
+        public static void LoadAll(RenderTarget renderTarget) {
+            IEnumerable<string> files = Directory.EnumerateFiles(imgdir);
+
+            foreach(string file in files) {
+                Load(renderTarget, file.Remove(0, imgdir.Length));
+            }
+        }
 
         /// <summary>
         /// Loads a Direct2D Bitmap from a file using System.Drawing.Image.FromFile(...)
@@ -28,8 +39,9 @@ namespace Game_Java_Port {
         /// <param name="renderTarget">The render target.</param>
         /// <param name="file">The file.</param>
         /// <returns>A D2D1 Bitmap</returns>
-        public static void Load(RenderTarget renderTarget, string file) {
+        private static void Load(RenderTarget renderTarget, string file) {
             // Loads from file using System.Drawing.Image
+
 
             //check if image has been loaded already
             if(!images.ContainsKey(file)) {
@@ -61,7 +73,6 @@ namespace Game_Java_Port {
                 g.Dispose();
 
                 bitmap.Dispose();
-
                 //code from this point taken from SharpDX sample:
                 //https://github.com/sharpdx/SharpDX-Samples/blob/master/Desktop/Direct2D1/BitmapApp/Program.cs
                 //slightly modified.

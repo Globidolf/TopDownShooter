@@ -1,4 +1,6 @@
-﻿using System;
+﻿using SharpDX;
+using SharpDX.Direct2D1;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +10,8 @@ namespace Game_Java_Port.Interface {
     public interface IUsable {
         uint charges { get; set; }
 
-        void Use(AttributeBase on);
+        Tooltip ActionInfo { get; }
+
+        void Use(CharacterBase on);
     }
 }

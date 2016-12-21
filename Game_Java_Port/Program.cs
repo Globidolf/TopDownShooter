@@ -14,14 +14,16 @@ using AlphaMode = SharpDX.Direct2D1.AlphaMode;
 using Device = SharpDX.Direct3D11.Device;
 using Factory2 = SharpDX.DXGI.Factory2;
 using Game_Java_Port.Interface;
+using System.Collections.Generic;
 
 namespace Game_Java_Port
 {
     static class Program
     {
+        public static List<string> DebugLog = new List<string>();
 
         public static SharpDX.DirectWrite.Factory DW_Factory;
-        public static RenderTarget _RenderTarget;
+        public static RenderTarget _RenderTarget = null;
 
         public static RenderForm form;
         static Device device;
@@ -72,6 +74,9 @@ namespace Game_Java_Port
 
             mainMenu.open();
 
+            System.Windows.Forms.Cursor.Hide();
+            GameStatus.Cursor = new CustomCursor(CursorTypes.Normal, 16);
+
             form.MaximizeBox = false;
 
             form.MouseWheel += (obj, args) => GameStatus.MouseWheel(args);
@@ -81,6 +86,11 @@ namespace Game_Java_Port
 
             form.MouseMove += (obj, args) => {
                 GameStatus.MousePos = new Vector2(args.Location.X, args.Location.Y) / scale;
+                RectangleF temp = GameStatus.Cursor.Area;
+
+                temp.Location = GameStatus.MousePos;
+
+                GameStatus.Cursor.Area = temp;
             };
 
             form.KeyUp += (obj, args) => GameStatus.SetKeyState(args, false);
@@ -101,6 +111,10 @@ namespace Game_Java_Port
             Background back = new Background(dataLoader.get("GameBG.bmp"), settings: Background.Settings.Fill_Screen | Background.Settings.Parallax);
             back.ExtendX = ExtendMode.Wrap;
             back.ExtendY = ExtendMode.Wrap;
+
+
+            GameStatus.addRenderable(GameStatus.Cursor);
+            GameStatus.addTickable(GameStatus.Cursor);
 
             GameStatus.Running = true;
             
@@ -149,7 +163,7 @@ namespace Game_Java_Port
                     }
                     _RenderTarget.EndDraw();
                 }
-                swapChain.Present(1, PresentFlags.None);
+                swapChain.Present(0, PresentFlags.None);
             });
 
             // Release all resources
@@ -157,9 +171,7 @@ namespace Game_Java_Port
         }
 
         static void loadImages() {
-            dataLoader.Load(_RenderTarget, "corpse.bmp");
-            dataLoader.Load(_RenderTarget, "GameBG.bmp");
-            dataLoader.Load(_RenderTarget, "MenuBG.bmp");
+            dataLoader.LoadAll(_RenderTarget);
             /*
             dataLoader.Load(RenderTarget, "test.bmp");
             dataLoader.Load(RenderTarget, "test.bmp");
@@ -264,7 +276,8 @@ namespace Game_Java_Port
             factory.Dispose();
             d2dFactory.Dispose();
             Font.Dispose();
-            DW_Factory.Dispose();
+            lock(DW_Factory)
+                DW_Factory.Dispose();
             brush.Dispose();
             _RenderTarget.Dispose();
             surface.Dispose();
