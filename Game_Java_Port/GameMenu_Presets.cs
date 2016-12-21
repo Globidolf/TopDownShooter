@@ -214,41 +214,14 @@ namespace Game_Java_Port {
                                 Program.DebugLog.Add("Adding Subject " + player.ID + ". MainMenu -> New Game -> CharCreatorMenu.onContinue().");
                                 player.addToGame();
                                 // test data
-                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Mace).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Mace).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Mace).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Mace).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Mace).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Mace).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Mace).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Mace).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Mace).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Sword).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Spear).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Mace).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Sword).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Spear).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Mace).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Sword).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Spear).PickUp(player);
-                                new Weapon(1, wt: WeapPreset.Greatsword).PickUp(player);
+                                foreach(WeapPreset wp in Enum.GetValues(typeof(WeapPreset))){
+                                    new Weapon(10, wt: wp).PickUp(player);
+                                    new Weapon(25, wt: wp).PickUp(player);
+                                    new Weapon(50, wt: wp).PickUp(player);
+                                }
+                                for(uint i = 10; i <= 1000; i+= 10) {
+                                    new Weapon(i, 1, WeapPreset.Pistol, ItemType.Common).PickUp(player);
+                                }
                             };
                             CharCreatorMenu.open();
                         }
@@ -635,18 +608,19 @@ namespace Game_Java_Port {
                     temp.Name = name;
 
                     Action<onKeyPressArgs> inputHandler = (args) => {
-                        if(!args.Consumed) {
-                            if(args.Down) {
-                                switch(args.Data.KeyData) {
-                                    case System.Windows.Forms.Keys.E:
-                                    case System.Windows.Forms.Keys.Escape:
-                                        temp.onContinue?.Invoke();
-                                        temp.close();
-                                        args.Consumed = true;
-                                        break;
+                        lock (args)
+                            if(!args.Consumed) {
+                                if(args.Down) {
+                                    switch(args.Data.KeyData) {
+                                        case System.Windows.Forms.Keys.E:
+                                        case System.Windows.Forms.Keys.Escape:
+                                            args.Consumed = true;
+                                            temp.close();
+                                            temp.onContinue?.Invoke();
+                                            break;
+                                    }
                                 }
                             }
-                        }
                     };
                     
                     TextElement weaponDetails = null;
@@ -676,8 +650,10 @@ namespace Game_Java_Port {
                         }
                     };
 
-                    temp.onOpen += () =>
+                    temp.onOpen = () =>
                     {
+                        Console.WriteLine(justPressed);
+                        weaponDetails = new TextElement(temp, "", new Size2F(ScreenWidth / 4, ScreenHeight), true);
                         inventory = new InventoryElement(temp, Game.instance._player.Inventory, onClick: (args) => refresh() );
                         onKeyEvent += inputHandler;
                         refresh();
@@ -686,13 +662,12 @@ namespace Game_Java_Port {
                     temp.onContinue += () =>
                     {
                         onKeyEvent -= inputHandler;
-                        MenuElementBase[] disposables = inventory.Children.ToArray();
-                        foreach(IconButton disposeme in disposables)
-                            disposeme.Dispose();
-                        temp.Elements.Remove(inventory);
+                        inventory.Dispose();
+                        inventory = null;
+                        temp.Elements.Clear();
                     };
 
-                    weaponDetails = new TextElement(temp, "", new Size2F(ScreenWidth / 4, ScreenHeight), true);
+                    
 
                     addMenu(temp);
                 }

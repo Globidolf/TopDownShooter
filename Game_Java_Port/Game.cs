@@ -54,7 +54,6 @@ namespace Game_Java_Port {
         public NPC _player;
 
         public AngleSingle LastAimDirection = new AngleSingle();
-        private Controls _lastState = Controls.none;
 
         RectangleF _Area;
 
@@ -87,16 +86,6 @@ namespace Game_Java_Port {
             });
             timer.Change(GameVars.messageLifeTime,Timeout.Infinite);
         }
-
-        private bool justPressed(Controls input) {
-            if(!_lastState.HasFlag(input) && getInputState().HasFlag(input)) {
-                return true;
-            }
-            return false;
-        }
-
-
-
         public void Host(int port) {
             GameHost = new Host(port);
             Connect("localhost", port);
@@ -173,7 +162,7 @@ namespace Game_Java_Port {
 
             
             cmd.AddRange(GetBytes(_player.ID));
-            cmd.AddRange(GetBytes((short)getInputState()));
+            cmd.AddRange(GetBytes((short)_player.inputstate));
             return cmd.ToArray();
         }
         

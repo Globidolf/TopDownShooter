@@ -32,22 +32,27 @@ namespace Game_Java_Port {
                 drawLabel(rt);
             }
 
+            internal override RectangleF calcArea() {
+                RectangleF temp = base.calcArea();
+
+                temp.Height = ElementHeight + ElementMargin * 2;
+
+                lock(Children)
+                    Children.ForEach(ch => temp.Height = Math.Max(temp.Height, ch.Height + ElementMargin * 2));
+                
+                return temp;
+            }
+
+            internal override RectangleF calcLabelArea() {
+                RectangleF temp = base.calcLabelArea();
+                temp.Y += (_Area.Height - ElementHeight) / 2;
+                return temp;
+            }
+
             public override void update() {
                 base.update();
-                _Area.Height = ElementHeight + ElementMargin * 2;
-
-                _Hovering = _Area.Contains(MousePos);
-
-                Children.ForEach((child) =>
-                {
-                    _Area.Height = Math.Max(_Area.Height, child.Height + ElementMargin * 2);
-                    if(_Hovering && child.Area.Contains(MousePos))
-                        _Hovering = false;
-                });
-
-                float offset = (_Area.Height - ElementHeight) / 2;
-
-                _LabelArea.Y += offset;
+                lock(Children)
+                    _Hovering = _Hovering && !Children.Exists(ch => ch.Area.Contains(MousePos));
 
                 _ContentArea = new RectangleF(
                     Area.Left + (int)Parent.LargestStringSize,
@@ -82,12 +87,13 @@ namespace Game_Java_Port {
                     return _Container;
                 }
                 set {
-                    if(_Container != null)
+                    if(_Container != null) lock(_Container.Children)
                         _Container.Children.Remove(this);
                     if(value != null) {
-                        if(value.Children.Contains(this))
+                        if(value.Children.Contains(this)) lock(value.Children)
                             value.Children.Remove(this);
-                        value.Children.Add(this);
+                        lock(value.Children)
+                            value.Children.Add(this);
                         if(!(this is Button))
                             doDrawLabel = false;
                     } else if(!(this is Button))
@@ -103,7 +109,8 @@ namespace Game_Java_Port {
             internal virtual void invalidateWidths() {
                 if(Container != null) {
                     float temp;
-                    _conpos = Container.Children.FindIndex((ele) => ele.Equals(this));
+                    lock (Container.Children)
+                        _conpos = Container.Children.FindIndex((ele) => ele.Equals(this));
                     temp = Container.ContentArea.Width - ElementMargin * 2;
 
                     if(this is Button)
@@ -131,39 +138,49 @@ namespace Game_Java_Port {
                 }
             }
 
+            internal virtual RectangleF calcArea() {
+                invalidateWidths();
+
+                if(Container == null) {
+                    float Y = Parent._Y + ElementMargin;
+                    lock(Parent.Elements)
+                        Parent.Elements.FindAll((ele) =>
+                        {
+                            return ele.Container == null && ele.Position < Position;
+                        }).ForEach((ele) =>
+                        {
+                            Y += ElementMargin + ele.Area.Height;
+                        });
+
+                    return new RectangleF(
+                            Parent._X + ElementMargin,
+                            Y - Parent.ScrollOffset,
+                            Math.Max(_width + 2 * ElementMargin,
+                                     Parent._Width - 2 * ElementMargin),
+                            ElementHeight);
+
+                } else {
+                    return new RectangleF(
+                        _x,
+                        Container._Area.Y + ElementMargin,
+                        _width,
+                        ElementHeight);
+                }
+            }
+
+            virtual internal RectangleF calcLabelArea() {
+                RectangleF temp = _Area;
+                temp.X += TextXOffset;
+                temp.Width -= TextXOffset;
+                temp.Y += TextYOffset;
+                temp.Height -= TextYOffset;
+                return temp;
+            }
+
             virtual public void update() {
                 lock(this) {
-                    invalidateWidths();
-                    if(Container == null) {
-                        float Y = Parent._Y + ElementMargin;
-                        lock(Parent.Elements)
-                            Parent.Elements.FindAll((ele) =>
-                            {
-                                return ele.Container == null && ele.Position < Position;
-                            }).ForEach((ele) =>
-                            {
-                                Y += ElementMargin + ele.Area.Height;
-                            });
-
-                        _Area = new RectangleF(
-                                Parent._X + ElementMargin,
-                                Y - Parent.ScrollOffset,
-                                Math.Max(_width + 2 * ElementMargin,
-                                         Parent._Width - 2 * ElementMargin),
-                                ElementHeight);
-
-                    } else {
-                        _Area = new RectangleF(
-                            _x,
-                            Container._Area.Y + ElementMargin,
-                            _width,
-                            ElementHeight);
-                    }
-                    _LabelArea = _Area;
-                    _LabelArea.X += TextXOffset;
-                    _LabelArea.Width -= TextXOffset;
-                    _LabelArea.Y += TextYOffset;
-                    _LabelArea.Height -= TextYOffset;
+                    _Area = calcArea();
+                    _LabelArea = calcLabelArea();
                 }
                 _Hovering = _Area.Contains(MousePos);
             }
@@ -834,16 +851,26 @@ namespace Game_Java_Port {
                 _width = Size.Width;
             }
 
-            public override void update() {
-                base.update();
-                _LabelArea.Size = new Size2F((DownScale ?
-                    Math.Min(Size.Width, _LabelArea.Width) :
-                    Math.Max(Size.Width, _LabelArea.Width)),
-                    Size.Height);
-                _Area.Size = new Size2F((DownScale ?
-                    Math.Min(Size.Width + 2 * TextXOffset, _Area.Width) :
-                    Math.Max(Size.Width + 2 * TextXOffset, _Area.Width)),
+            internal override RectangleF calcArea() {
+                RectangleF temp = base.calcArea();
+
+                temp.Size = new Size2F((DownScale ?
+                    Math.Min(Size.Width + 2 * TextXOffset, temp.Width) :
+                    Math.Max(Size.Width + 2 * TextXOffset, temp.Width)),
                     Size.Height + ElementMargin);
+
+                return temp;
+            }
+
+            internal override RectangleF calcLabelArea() {
+                RectangleF temp = base.calcLabelArea();
+
+                temp.Size = new Size2F((DownScale ?
+                    Math.Min(Size.Width, temp.Width) :
+                    Math.Max(Size.Width, temp.Width)),
+                    Size.Height);
+
+                return temp;
             }
 
         }
@@ -989,12 +1016,7 @@ namespace Game_Java_Port {
                 MenuTextBrush.Color = temp;
             }
 
-            public override void update() {
-                
-
-                base.update();
-                
-
+            internal override RectangleF calcArea() {
                 int index = Container.Children.IndexOf(this);
                 int columns = ((InventoryElement)Container).Columns;
 
@@ -1003,18 +1025,18 @@ namespace Game_Java_Port {
 
                 float size = ((InventoryElement)Container).ElementSize;
 
-                RectangleF destination = new RectangleF(0,0, size, size);
+                RectangleF temp = new RectangleF(0, 0, size, size);
 
-                destination.Offset(Container.Area.TopLeft + ElementMargin);
+                temp.Offset(Container.Area.TopLeft + ElementMargin);
 
-                destination.X += x * (size + ElementMargin) + (Container.Area.Width % Container._width) / 2;
-                destination.Y += y * (size + ElementMargin);
-
-                Area = destination;
+                temp.X += x * (size + ElementMargin) + (Container.Area.Width % Container._width) / 2;
+                temp.Y += y * (size + ElementMargin);
                 
-                if(_Hovering != Area.Contains(MousePos)) {
-                    _Hovering ^= true;
-                }
+                return temp;
+            }
+
+            public override void update() {
+                base.update();
 
                 if(_Hovering) {
                     if(getKeyState(System.Windows.Forms.Keys.ShiftKey))
@@ -1023,30 +1045,23 @@ namespace Game_Java_Port {
                         Cursor.CursorType = CursorTypes.Inventory_Equip;
                     else if(Item is IUsable)
                         Cursor.CursorType = CursorTypes.Inventory_Use;
-                    else
-                        Cursor.CursorType = CursorTypes.Normal;
                 }
-                    
-
-                        
+                lock(tooltip)
                 tooltip.Tick();
             }
 
             public void Dispose() {
-                if(Container != null) {
-                    lock(Container) {
-                        Container = null;
-                    }
-                    lock(Parent.Elements)
-                        Parent.Elements.Remove(this);
-                    Parent = null;
+                onClickEvent -= _remoteOnClick;
+                lock(Parent.Elements)
+                    Parent.Elements.Remove(this);
+                lock(Container.Children)
+                    Container.Children.Remove(this);
+                lock(tooltip)
                     tooltip.Dispose();
-                    onClickEvent -= _remoteOnClick;
-                }
             }
         }
 
-        private class InventoryElement : MenuElementListBase {
+        private class InventoryElement : MenuElementListBase, IDisposable {
 
             private float _ElementSize = 32;
 
@@ -1078,15 +1093,23 @@ namespace Game_Java_Port {
                 _width = (ElementSize + ElementMargin) * Columns + ElementMargin;
             }
 
-            public override void update() {
-                base.update();
-                _Area.Height = ElementMargin + (Children.Count / Columns + 1) * (ElementMargin + ElementSize);
+            internal override RectangleF calcArea() {
+                RectangleF temp = base.calcArea();
+                temp.Height = ElementMargin + (Children.Count / Columns + 1) * (ElementMargin + ElementSize);
+                return temp;
             }
 
             public override void draw(RenderTarget rt) {
                 drawBorder(rt);
             }
 
+            public void Dispose() {
+                List<MenuElementBase> temp = Children.FindAll(ch => ch is IDisposable);
+                temp.ForEach(ch =>  ((IDisposable)ch).Dispose());
+                lock(Parent.Elements)
+                    Parent.Elements.Remove(this);
+                Parent = null;
+            }
         }
     }
 }

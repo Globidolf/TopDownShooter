@@ -274,8 +274,6 @@ namespace Game_Java_Port {
 
         public void open() {
             onOpen?.Invoke();
-            //code is soooo great, after three ticks all is in constant order.
-            //... so do three ticks before opening the menu to make it appear cleanly
             Tick();
             Tick();
             Tick();
@@ -349,9 +347,10 @@ namespace Game_Java_Port {
 
             //default width
             resizeStrings();
-            _Width = (int)(
-                (Elements.Any() ? Elements.Max((ele) => ele.Area.Width) : 0)
-                + 2 * ElementMargin) - (tooLarge ? ScrollBarWidth : 0);
+            lock(Elements)
+                _Width = (int)(
+                    (Elements.Any() ? Elements.Max((ele) => ele.Area.Width) : 0)
+                    + 2 * ElementMargin) - (tooLarge ? ScrollBarWidth : 0);
 
             // max width
             lock(Elements)

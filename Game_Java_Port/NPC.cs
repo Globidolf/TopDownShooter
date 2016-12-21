@@ -250,8 +250,11 @@ namespace Game_Java_Port {
                     removeCounter = 5;
                     AI?.Invoke(this);
                     base.Tick();
-                    if(Team.InteractionConduct != Faction.Conduct.Ignore)
+                    if(Team.InteractionConduct != Faction.Conduct.Ignore) {
                         ActionInfo.Tick();
+                        if (this.drawActionInfo())
+                            Cursor.CursorType = CursorTypes.Interact;
+                    }
                 } else {
                     removeCounter -= 1 / GameVars.defaultGTPS;
                     if(removeCounter <= 0) {

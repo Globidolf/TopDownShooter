@@ -310,7 +310,7 @@ namespace Game_Java_Port {
                     }
 
                     if (me == Game.instance._player) {
-                        if (me.justPressed(Controls.open_inventory))
+                        if (justPressed.HasFlag(Controls.open_inventory))
                         {
                             GameMenu.CharacterMenu.open();
                         }

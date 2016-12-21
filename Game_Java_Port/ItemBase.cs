@@ -227,6 +227,10 @@ namespace Game_Java_Port {
                 ActionInfo.Tick();
                 ItemInfo.Tick();
 
+                if (this.drawActionInfo())
+                    GameStatus.Cursor.CursorType = CursorTypes.Inventory_Add;
+
+
                 _D_RelativePos = Location + MatrixExtensions.PVTranslation;
 
                 switch(drawType) {

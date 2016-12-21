@@ -118,8 +118,8 @@ namespace Game_Java_Port {
             
             float __weakLevelReduction = (float)Math.Pow(0.99f, level - 1);
 
-            float __strongLevelBonus = (float)Math.Pow(1.05f, level - 1);
-            float __weakLevelBonus = (float)Math.Pow(1.01f, level - 1);
+            float __strongLevelBonus = (float)Math.Pow(level,0.9f);
+            float __weakLevelBonus = (float)Math.Pow(level, 1d/3d);
 
             float DamageMult = 1;
 
@@ -128,7 +128,7 @@ namespace Game_Java_Port {
             float PrecMult = 1;
 
             if (Base.Precision > 0)
-                PrecMult = _RNG.NextFloat(0.75f,Math.Min(1.25f, 1 / Base.Precision));
+                PrecMult = _RNG.NextFloat(0.75f,1.25f);
 
             float BlSpdMult = _RNG.NextFloat(0.75f, 1.25f);
             float RangeMult = _RNG.NextFloat(0.75f, 1.25f);
@@ -142,14 +142,12 @@ namespace Game_Java_Port {
 
             float BulletCountMult = 1;
 
-            if (_RNG.Next(20) == 0) {
-                BulletCountMult = _RNG.Next(1, 3);
+            while (_RNG.Next(5) == 0) {
+                BulletCountMult += 1;
             }
 
             DamageMult /= BulletCountMult * 0.9f;
             
-            
-
             AttackSpeed = Base.AttackSpeed * ApsMult;
 
             Precision = Base.Precision * PrecMult;

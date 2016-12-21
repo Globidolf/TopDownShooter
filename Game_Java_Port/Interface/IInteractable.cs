@@ -24,10 +24,9 @@ namespace Game_Java_Port.Interface {
                     // all within range
                     .FindAll((obj) => Vector2.DistanceSquared(obj.Location, Game.instance._player.Location) <= GameVars.pickupRange * GameVars.pickupRange)
                     // ordered by distance to mouse
-                    .OrderBy((obj) => Vector2.DistanceSquared(obj.Location, GameStatus.MousePos))
+                    .OrderBy((obj) => Vector2.DistanceSquared(obj.Location + MatrixExtensions.PVTranslation, GameStatus.MousePos))
                     // is this the first?
                     .First() == interactable) {
-                GameStatus.Cursor.CursorType = CursorTypes.Interact;
                 return true;
             }
             return false;

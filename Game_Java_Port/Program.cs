@@ -175,7 +175,7 @@ namespace Game_Java_Port
             /*
             dataLoader.Load(RenderTarget, "test.bmp");
             dataLoader.Load(RenderTarget, "test.bmp");
-            */
+            */ 
         }
 
         public static void Resize() {

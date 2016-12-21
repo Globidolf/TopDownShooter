@@ -185,7 +185,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Mace";
-                temp.image = dataLoader.get(temp.Name + ".bmp");
+                temp.image = dataLoader.get(temp.Name);
                 temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Knockback;
@@ -207,7 +207,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Spear";
-                temp.image = dataLoader.get(temp.Name + ".bmp");
+                temp.image = dataLoader.get(temp.Name);
                 temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Knockback;
@@ -229,7 +229,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Greatsword";
-                temp.image = dataLoader.get(temp.Name + ".bmp");
+                temp.image = dataLoader.get(temp.Name);
                 temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Knockback;
@@ -251,7 +251,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Sword";
-                temp.image = dataLoader.get(temp.Name + ".bmp");
+                temp.image = dataLoader.get(temp.Name);
                 temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Knockback;
@@ -395,6 +395,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Pistol";
+                temp.image = dataLoader.get(temp.Name);
 
                 temp.Behaviour = BulletBehaviour.Normal;
                 temp.WType = WeaponType.Pistol;

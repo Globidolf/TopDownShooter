@@ -1,12 +1,10 @@
 ﻿
 
-using Microsoft.Win32.SafeHandles;
 using SharpDX;
 using SharpDX.Direct2D1;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Resources;
 using System.Runtime.InteropServices;
 
 namespace Game_Java_Port {

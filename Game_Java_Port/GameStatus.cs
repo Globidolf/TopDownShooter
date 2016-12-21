@@ -38,7 +38,11 @@ namespace Game_Java_Port
         public static Random RNG { get; set; } = new Random();
 
         public static DateTime TIME { get; } = DateTime.Now;
-        
+
+        public static Controls justPressed = Controls.none;
+
+        private static Controls pendingPresses = Controls.none;
+
 
         //stuff that shouldn't be exposed, to prevent concurrency and/or invalidation of data.
         #region fields
@@ -87,10 +91,6 @@ namespace Game_Java_Port
             public onKeyPressArgs(KeyEventArgs data, bool down = true) {
                 Data = data;
                 Down = down;
-                if(Down && !_kbstate.Contains(data.KeyCode))
-                    _kbstate.Add(data.KeyCode);
-                else if(!Down && _kbstate.Contains(data.KeyCode))
-                    _kbstate.Remove(data.KeyCode);
             }
         }
 
@@ -177,16 +177,20 @@ namespace Game_Java_Port
         /// lol jk just dont call, ok?
         /// </summary>
         public static void SetKeyState(KeyEventArgs args, bool Down = true) {
-            if(Down && !_kbstate.Contains(args.KeyCode))
-                _kbstate.Add(args.KeyCode);
-            else if(!Down && _kbstate.Contains(args.KeyCode))
-                _kbstate.Remove(args.KeyCode);
-            else {
-                onKeyEvent?.Invoke(new onKeyPressArgs(args, Down));
-                return;
+            onKeyPressArgs args2 = new onKeyPressArgs(args, Down);
+            onKeyEvent?.Invoke(args2);
+            if(Down && !_kbstate.Contains(args.KeyCode)) {
+                onKeyChangeEvent?.Invoke(args2);
+                if(!args2.Consumed) {
+                    if(GameVars.ControlMapping.ContainsValue(args.KeyValue))
+                        pendingPresses |= GameVars.ControlMapping.First((pair) => pair.Value == args.KeyValue).Key;
+                    _kbstate.Add(args.KeyCode);
+                }
+            } else if(!Down && _kbstate.Contains(args.KeyCode)) {
+                onKeyChangeEvent?.Invoke(args2);
+                if(!args2.Consumed)
+                    _kbstate.Remove(args.KeyCode);
             }
-            onKeyEvent?.Invoke(new onKeyPressArgs(args, Down));
-            onKeyChangeEvent?.Invoke(new onKeyPressArgs(args, Down));
         }
 
         /// <summary>
@@ -422,6 +426,9 @@ namespace Game_Java_Port
 
         public static void tick(object fu) {
 
+            justPressed = pendingPresses;
+            pendingPresses = Controls.none;
+
             Cursor.CursorType = CursorTypes.Normal;
             Cursor.Tick();
 
@@ -463,6 +470,8 @@ namespace Game_Java_Port
             Cursor.Tick();
 
             Cursor.Apply();
+
+            justPressed = Controls.none;
 
         }
 

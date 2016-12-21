@@ -82,23 +82,22 @@ namespace Game_Java_Port {
                     show ^= true;
             }
 
-            if(show) {
-                relArea = Area;
-                relLabel = _LabelArea;
+            lock(this)
+                if(show) {
+                    relArea = Area;
+                    relLabel = _LabelArea;
 
-                doDraw.Invoke();
+                    Vector2 target = getTarget();
+                    Vector2 Offset = new Vector2(target.X - Area.Width / 2, target.Y + 20);
 
-                Vector2 target = getTarget();
-                Vector2 Offset = new Vector2(target.X - Area.Width / 2, target.Y + 20);
+                    if(Area.Height > GameStatus.ScreenHeight / 2 && Offset.Y + Area.Height > GameStatus.ScreenHeight) {
+                        Offset.Y = GameStatus.ScreenHeight - Area.Height;
+                    } else if(Offset.Y + Area.Height > GameStatus.ScreenHeight)
+                        Offset.Y -= Area.Height + 40;
 
-                if(Area.Height > GameStatus.ScreenHeight / 2 && Offset.Y + Area.Height > GameStatus.ScreenHeight) {
-                    Offset.Y = GameStatus.ScreenHeight - Area.Height;
-                } else if(Offset.Y + Area.Height > GameStatus.ScreenHeight)
-                    Offset.Y -= Area.Height + 40;
-
-                relArea.Offset(Offset);
-                relLabel.Offset(Offset);
-            }
+                    relArea.Offset(Offset);
+                    relLabel.Offset(Offset);
+                }
         }
 
         public void Show() {
@@ -119,9 +118,9 @@ namespace Game_Java_Port {
         }
 
         public void Dispose() {
+            Hide();
             doDraw = null;
             getTarget = null;
-            Hide();
         }
     }
 }

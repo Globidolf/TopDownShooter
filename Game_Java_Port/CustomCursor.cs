@@ -15,6 +15,7 @@ namespace Game_Java_Port {
         Normal,
         Inventory_Equip,
         Inventory_Remove,
+        Inventory_Add,
         Inventory_Use,
         Interact
     }
@@ -33,11 +34,12 @@ namespace Game_Java_Port {
         public CursorTypes CursorType { get; set; } = CursorTypes.Normal;
 
         static Dictionary<CursorTypes, Bitmap> Cursors = new Dictionary<CursorTypes, Bitmap>()
-        {   { CursorTypes.Normal,           dataLoader.get("cursor") },
-            { CursorTypes.Inventory_Equip,  dataLoader.get("cursor_invE")   },
+        {   { CursorTypes.Normal,           dataLoader.get("cursor")      },
+            { CursorTypes.Inventory_Equip,  dataLoader.get("cursor_invE") },
+            { CursorTypes.Inventory_Add,    dataLoader.get("cursor_invA") },
             { CursorTypes.Inventory_Remove, dataLoader.get("cursor_invR") },
             { CursorTypes.Inventory_Use,    dataLoader.get("cursor_invU") },
-            { CursorTypes.Interact,         dataLoader.get("cursor_U") }
+            { CursorTypes.Interact,         dataLoader.get("cursor_U")    }
         };
 
         public CustomCursor(CursorTypes cursor, float Size = 8) {
