@@ -64,7 +64,7 @@ namespace Game_Java_Port
         private static List<Keys> _kbstate = new List<Keys>();
 
         internal static void MouseWheel(MouseEventArgs args) {
-            onScrollEvent?.Invoke(args);
+            onScrollEvent?.Invoke(null, args);
         }
 
 
@@ -79,7 +79,7 @@ namespace Game_Java_Port
         /// the consumed property can changed accessed after construcion to tell other receivers to ignore the press
         /// as it has been handled already.
         /// </summary>
-        public class onKeyPressArgs {
+        public class onKeyPressArgs : EventArgs {
             public bool Consumed { get; set; } = false;
             public bool Down { get; }
             public KeyEventArgs Data { get; }
@@ -99,7 +99,7 @@ namespace Game_Java_Port
         /// As with the KeyEventArgs, has a state property (Down) and
         /// a Consumed property, which can be modified for the same purpose.
         /// </summary>
-        public class onClickArgs {
+        public class onClickArgs : EventArgs {
             public bool Consumed { get; set; } = false;
             public Vector2 Position { get; }
             public MouseButtons Button { get; }
@@ -120,19 +120,19 @@ namespace Game_Java_Port
         /// <summary>
         /// Global onclick event. delegates the click to each and every listener that requires it.
         /// </summary>
-        public static event Action<onClickArgs> onClickEvent;
+        public static event EventHandler<onClickArgs> onClickEvent;
 
-        public static event Action<MouseEventArgs> onScrollEvent;
-
-        /// <summary>
-        /// Global onKey event. delegates the keypress to each and every listener that requires it.
-        /// </summary>
-        public static event Action<onKeyPressArgs> onKeyChangeEvent;
+        public static event EventHandler<MouseEventArgs> onScrollEvent;
 
         /// <summary>
         /// Global onKey event. delegates the keypress to each and every listener that requires it.
         /// </summary>
-        public static event Action<onKeyPressArgs> onKeyEvent;
+        public static event EventHandler<onKeyPressArgs> onKeyChangeEvent;
+
+        /// <summary>
+        /// Global onKey event. delegates the keypress to each and every listener that requires it.
+        /// </summary>
+        public static event EventHandler<onKeyPressArgs> onKeyEvent;
 
         #endregion
 
@@ -178,16 +178,16 @@ namespace Game_Java_Port
         /// </summary>
         public static void SetKeyState(KeyEventArgs args, bool Down = true) {
             onKeyPressArgs args2 = new onKeyPressArgs(args, Down);
-            onKeyEvent?.Invoke(args2);
+            onKeyEvent?.Invoke(null, args2);
             if(Down && !_kbstate.Contains(args.KeyCode)) {
-                onKeyChangeEvent?.Invoke(args2);
+                onKeyChangeEvent?.Invoke(null, args2);
                 if(!args2.Consumed) {
                     if(GameVars.ControlMapping.ContainsValue(args.KeyValue))
                         pendingPresses |= GameVars.ControlMapping.First((pair) => pair.Value == args.KeyValue).Key;
                     _kbstate.Add(args.KeyCode);
                 }
             } else if(!Down && _kbstate.Contains(args.KeyCode)) {
-                onKeyChangeEvent?.Invoke(args2);
+                onKeyChangeEvent?.Invoke(null, args2);
                 if(!args2.Consumed)
                     _kbstate.Remove(args.KeyCode);
             }
@@ -230,7 +230,7 @@ namespace Game_Java_Port
             else if(!Down && _mbstate.Contains(args.Button))
                 _mbstate.Remove(args.Button);
 
-            onClickEvent?.Invoke(new onClickArgs(args.Button, MousePos, Down));
+            onClickEvent?.Invoke(null, new onClickArgs(args.Button, MousePos, Down));
             //Console.WriteLine("Button " + args.Button.ToString() + " is now " + (Down ? "Down" : "Up"));
         }
 
@@ -416,8 +416,8 @@ namespace Game_Java_Port
 
             Array.ForEach(temp, (rend) =>
             {
-                if(rend is Background)
-                    ((Background)rend).removeFromGame();
+                if(rend is Background) lock(rend)
+                    ((Background)rend).Dispose();
             });
 
             lock(Renderables)
@@ -541,10 +541,13 @@ namespace Game_Java_Port
 
             addRenderable(Game.instance);
             addTickable(Game.instance);
+            addRenderable(Cursor);
+            addTickable(Cursor);
 
             Background back = new Background(dataLoader.get("GameBG.bmp"), settings: Background.Settings.Fill_Screen | Background.Settings.Parallax);
             back.ExtendX = ExtendMode.Wrap;
             back.ExtendY = ExtendMode.Wrap;
+
             GameMenu.MainMenu.open();
 
         }

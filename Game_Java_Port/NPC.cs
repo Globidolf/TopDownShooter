@@ -93,16 +93,7 @@ namespace Game_Java_Port {
             Area = __pos;
             __pos.Location = Game.instance.Location;
             Health = MaxHealth;
-            //weaponcodes
-            /* returning acid 68348639
-             * tracking smg 2056088395
-             * epic sg 1415295922
-             */
-            if(false) {
-                Weapon temp = new Weapon(Level, wt: WeapPreset.Pistol, rarity: ItemType.Uncommon);
-                temp.PickUp(this);
-                EquippedWeaponR = temp;
-            }
+
             Pencil.Color = Color.Blue;
             if(directAdd) {
                 Program.DebugLog.Add("Adding Subject " + ID + ". NPC(...a lot...).");
@@ -267,7 +258,8 @@ namespace Game_Java_Port {
                                 break;
                             case Game.GameState.Normal:
                                 Program.DebugLog.Add("Removing Subject " + ID + ". NPC.Tick().");
-                                removeFromGame();
+                                lock(this)
+                                    removeFromGame();
                                 break;
                         } // end switch
                     } // end if
@@ -278,21 +270,10 @@ namespace Game_Java_Port {
         private string displaystring = "";
 
         public override void draw(RenderTarget rt) {
-            base.draw(rt);
+            lock(this)
+                if (!disposed){
 
-            if(false) {
-                rt.FillRectangle(new RectangleF(400, 400, 400, 400), MenuHoverBrush);
-                string test = "";
-                foreach(var atr in Attributes) {
-                    test += atr.Key + ": " + atr.Value + "\n";
-                }
-                test += Location;
-                rt.DrawText(test, MenuFont, new RectangleF(400, 400, 400, 400), MenuBorderPen);
-            }
-
-            lock(Pencil)
-                if (!Pencil.IsDisposed){
-
+                    base.draw(rt);
 
                     if(this != Game.instance._player) {
                         if(Game.instance._player != null) {
@@ -321,6 +302,23 @@ namespace Game_Java_Port {
                 }
         }
 
+        bool disposed = false;
+
+        public override void despawn() {
+            base.despawn();
+            lock(GameObjects)
+                GameObjects.Remove(this);
+        }
+
+        protected override void Dispose(bool disposing) {
+            if(!disposed) {
+                if(_ActionInfo != null)
+                    _ActionInfo.Dispose();
+            }
+            disposed = true;
+            base.Dispose(disposing);
+        }
+
         public void setInputState(byte[] buffer, ref int pos) {
             if(this != Game.instance._player)
                 inputstate = buffer.getEnumShort<Controls>(ref pos);
@@ -336,12 +334,6 @@ namespace Game_Java_Port {
             base.addToGame();
             lock(GameObjects)
                 GameObjects.Add(this);
-        }
-
-        public override void removeFromGame() {
-            base.removeFromGame();
-            lock(GameObjects)
-                GameObjects.Remove(this);
         }
     }
 }

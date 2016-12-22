@@ -27,6 +27,7 @@ namespace Game_Java_Port.Interface {
 
     public static class CollidibleExtensions {
         public static bool CollidesWith(this ICollidible me, ICollidible other) {
+            
             //not even in detection range
             if(Vector2.DistanceSquared(me.Location, other.Location) > (me.Size / 2 + other.Size / 2) * (me.Size / 2 + other.Size / 2))
                 return false;

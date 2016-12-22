@@ -63,8 +63,8 @@ namespace Game_Java_Port {
             }
         }
 
-        private abstract class MenuElementBase : IRenderable {
-
+        private abstract class MenuElementBase : IRenderable, IDisposable {
+            
             public bool doDrawLabel = true;
             public virtual string Label { get; internal set; } = "";
             private Size2F _LabelSize;
@@ -283,10 +283,29 @@ namespace Game_Java_Port {
             /// </summary>
             /// <param name="g">the Graphics object from the Customdraw parameter</param>
             internal void drawHoverHighlight(RenderTarget rt) { if(_Hovering) rt.FillRectangle(Area, MenuHoverBrush); }
-            
+
+            #region IDisposable Support
+            public bool IsDisposed { get { return disposed; } }
+
+            private bool disposed = false;
+
+            protected virtual void Dispose(bool disposing) {
+
+                if(disposed)
+                    return;
+                if(disposing) {
+                    //nothing to dispose
+                    disposed = true;
+                }
+            }
+            public void Dispose() {
+                Dispose(true);
+            }
             #endregion
 
-            
+            #endregion
+
+
         }
         
         private class RegulatorButtons<T> : MenuElementListBase where T : struct, IComparable, IConvertible {
@@ -359,10 +378,10 @@ namespace Game_Java_Port {
                 Label = label;
                 Parent = parent;
 
-                Action<onClickArgs> defocus = null;
+                EventHandler<onClickArgs> defocus = null;
 
 
-                Action<onKeyPressArgs> KeyPressAction = (args) =>
+                EventHandler<onKeyPressArgs> KeyPressAction = (obj, args) =>
                 {
                     if(!args.Consumed && args.Down) {
                         //won't handle modifiers
@@ -394,7 +413,7 @@ namespace Game_Java_Port {
                     }
                 };
 
-                defocus = (args) =>
+                defocus = (obj, args) =>
                 {
                     if(args.Down && args.Button == Left && !InputArea.Contains(args.Position)) {
                         onFocusLost?.Invoke();
@@ -404,7 +423,7 @@ namespace Game_Java_Port {
                     }
                 };
 
-                onClickEvent += (args) =>
+                onClickEvent += (obj, args) =>
                 {
                     if(parent.isOpen && args.Down && args.Button == Left && !args.Consumed && InputArea.Contains(args.Position)) {
                         onFocus?.Invoke();
@@ -642,7 +661,7 @@ namespace Game_Java_Port {
             /// purpose is to un-register event handlers from the event to reduce cpu load
             /// and to raise the onchangedone event.
             /// </summary>
-            private Action<onClickArgs> stopregulation { get; }
+            private EventHandler<onClickArgs> stopregulation { get; }
 
             #endregion
 
@@ -668,7 +687,7 @@ namespace Game_Java_Port {
                 Parent = parent;
 
                 // set remotely called action using local data
-                stopregulation = (args2) =>
+                stopregulation = (obj, args2) =>
                 {
                     if(args2.Button == Left && !args2.Down) {
                         onClickEvent -= stopregulation;
@@ -678,7 +697,7 @@ namespace Game_Java_Port {
                 };
 
                 // set functionality
-                onClickEvent += (args) =>
+                onClickEvent += (obj, args) =>
                 {
                     if(parent.isOpen && !args.Consumed && args.Button == Left && args.Down && RegulatorArea.Contains(args.Position)) {
                         IsRegulating = true;
@@ -894,7 +913,7 @@ namespace Game_Java_Port {
             /// Set in the Constructor, this action is used to determine if the click is addressed to this button
             /// and only raise the real onClick event if that is true.
             /// </summary>
-            private Action<onClickArgs> _remoteOnClick;
+            private EventHandler<onClickArgs> _remoteOnClick;
 
 
             public Button(GameMenu parent, string label, Action<onClickArgs> onClickAction = null, bool logButtonClicks = false) {
@@ -903,7 +922,7 @@ namespace Game_Java_Port {
                 Parent = parent;
 
                 //makes the event raise under the condition that it was properly directed to this button.
-                _remoteOnClick = (args) =>
+                _remoteOnClick = (obj, args) =>
                 {
                     if(Area.Contains(args.Position) && parent.isOpen && !args.Consumed)
                         onClick?.Invoke(args);
@@ -923,21 +942,28 @@ namespace Game_Java_Port {
                     parent.Elements.Add(this);
             }
 
-            public void Dispose() {
-                //unregister the onclick event.
-                if(_remoteOnClick != null)
-                    onClickEvent -= _remoteOnClick;
-            }
+            private bool disposed = false;
 
+            protected override void Dispose(bool disposing) {
+                if(disposed)
+                    return;
+                if(disposing) {
+                    //unregister the onclick event.
+                    if(_remoteOnClick != null)
+                        onClickEvent -= _remoteOnClick;
+                }
+                disposed = true;
+                base.Dispose(disposing);
+            }
 
         }
 
         private class IconButton : MenuElementBase, IDisposable {
             Tooltip tooltip;
 
-            private Action<onClickArgs> _remoteOnClick;
+            private EventHandler<onClickArgs> _remoteOnClick;
 
-            Color IconColor = Color.Transparent;
+            Bitmap iconBG;
 
             ItemBase Item;
             bool isEquipped {
@@ -954,14 +980,15 @@ namespace Game_Java_Port {
             public IconButton(GameMenu parent, ItemBase item, Action<onClickArgs> onClick = null) {
 
                 //makes the event raise under the condition that it was properly directed to this button.
-                _remoteOnClick = (args) =>
+                _remoteOnClick = (obj, args) =>
                 {
                     if(Area.Contains(args.Position) && parent.isOpen && !args.Consumed) {
                         args.Consumed = true;
                         if(args.Button == Right && !args.Down) {
                             if(getKeyState(System.Windows.Forms.Keys.ShiftKey)) {
                                 item.Drop();
-                                Dispose();
+                                lock(this)
+                                    Dispose();
                             } else {
                                 if(item is IEquipable && Game.instance._player.getEquipedItem(((IEquipable)item).Slot) != item) {
                                     ((IEquipable)item).Equip(Game.instance._player);
@@ -980,7 +1007,7 @@ namespace Game_Java_Port {
                 Parent = parent;
                 Item = item;
                 tooltip = new Tooltip(item.ItemInfoText, Location: () => Area.Center, Validation: () => _Hovering);
-                IconColor = GameVars.RarityColors[item.Rarity];
+                iconBG = dataLoader.get("border_" + item.Rarity.ToString());
                 
                 lock(Parent.Elements)
                     Parent.Elements.Add(this);
@@ -988,13 +1015,9 @@ namespace Game_Java_Port {
 
 
             public override void draw(RenderTarget rt) {
-                drawBorder(rt);
-                Color4 temp = MenuHoverBrush.Color;
-                MenuHoverBrush.Color = IconColor;
-                rt.FillRectangle(Area, MenuHoverBrush);
-                MenuHoverBrush.Color = temp;
-                temp = MenuTextBrush.Color;
+                Color4 temp = MenuTextBrush.Color;
                 MenuTextBrush.Color = Color.Black;
+                rt.DrawBitmap(iconBG, Area, 1, BitmapInterpolationMode.Linear);
                 if(Item.image != null)
                     rt.DrawBitmap(Item.image, Area, 1, BitmapInterpolationMode.Linear);
                 if(Item is IEquipable)
@@ -1050,14 +1073,22 @@ namespace Game_Java_Port {
                 tooltip.Tick();
             }
 
-            public void Dispose() {
-                onClickEvent -= _remoteOnClick;
-                lock(Parent.Elements)
-                    Parent.Elements.Remove(this);
-                lock(Container.Children)
-                    Container.Children.Remove(this);
-                lock(tooltip)
-                    tooltip.Dispose();
+            private bool disposed = false;
+
+            protected override void Dispose(bool disposing) {
+                if(disposed)
+                    return;
+                if(disposing) {
+                    onClickEvent -= _remoteOnClick;
+                    lock(Parent.Elements)
+                        Parent.Elements.Remove(this);
+                    lock(Container.Children)
+                        Container.Children.Remove(this);
+                    lock(tooltip)
+                        tooltip.Dispose();
+                }
+                disposed = true;
+                base.Dispose(disposing);
             }
         }
 
@@ -1103,12 +1134,20 @@ namespace Game_Java_Port {
                 drawBorder(rt);
             }
 
-            public void Dispose() {
-                List<MenuElementBase> temp = Children.FindAll(ch => ch is IDisposable);
-                temp.ForEach(ch =>  ((IDisposable)ch).Dispose());
-                lock(Parent.Elements)
-                    Parent.Elements.Remove(this);
-                Parent = null;
+            private bool disposed = false;
+
+            protected override void Dispose(bool disposing) {
+                if(disposed)
+                    return;
+                if(disposing) {
+                    List<MenuElementBase> temp = Children.FindAll(ch => ch is IDisposable);
+                    temp.ForEach((ch) => { lock(ch) ((IDisposable)ch).Dispose(); });
+                    lock(Parent.Elements)
+                        Parent.Elements.Remove(this);
+                    Parent = null;
+                }
+                disposed = true;
+                base.Dispose(disposing);
             }
         }
     }

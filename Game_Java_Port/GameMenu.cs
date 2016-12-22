@@ -15,11 +15,11 @@ namespace Game_Java_Port {
 
         #region fields
 
-        public event Action onContinue;
+        public event EventHandler onContinue;
 
-        public event Action onOpen;
+        public event EventHandler onOpen;
 
-        public event Action<onClickArgs> OnClick;
+        public event EventHandler<onClickArgs> OnClick;
         private bool _isOpen;
         private Dictionary<string, object> _data = new Dictionary<string, object>();
 
@@ -99,14 +99,14 @@ namespace Game_Java_Port {
         /// This class will use presets. no need for a public constructor.
         /// </summary>
         private GameMenu() {
-            onScrollEvent += (args) =>
+            onScrollEvent += (obj, args) =>
             {
                 _ScrollOffset -= args.Delta / 10;
             };
-            onClickEvent += (args) =>
+            onClickEvent += (obj, args) =>
             {
                 if(OnClick != null)
-                    OnClick.Invoke(args);
+                    OnClick.Invoke(this, args);
             };
         }
 
@@ -273,7 +273,7 @@ namespace Game_Java_Port {
         }
 
         public void open() {
-            onOpen?.Invoke();
+            onOpen?.Invoke(this, EventArgs.Empty);
             Tick();
             Tick();
             Tick();
@@ -320,7 +320,7 @@ namespace Game_Java_Port {
             //direct iteration causes a deadlock
             lock(Elements)
                 elements.AddRange(Elements);
-            elements.ForEach((ele) => { lock(ele) ele.update(); });
+            elements.ForEach((ele) => { lock(ele) if (!ele.IsDisposed) ele.update(); });
         }
 
         public void update() {

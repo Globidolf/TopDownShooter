@@ -245,6 +245,7 @@ namespace Game_Java_Port {
 
                 //bullet won't be needed anymore. if it wasn't rendered yet, wait with removal...
             } else if(_rendered) {
+                lock(this)
                 Dispose();
             }
         }
@@ -386,13 +387,24 @@ namespace Game_Java_Port {
                 _speed *= 0.9f;
         }
 
-        public void Dispose() {
-            GameStatus.removeRenderable(this);
-            GameStatus.removeTickable(this);
+        private bool disposed = false;
 
-            lock(pencil) {
-                _pencil.Dispose();
+        public void Dispose() {
+            Dispose(true);
+        }
+
+        protected virtual void Dispose(bool disposing) {
+            if(disposed)
+                return;
+            if(disposing) {
+                GameStatus.removeRenderable(this);
+                GameStatus.removeTickable(this);
+                
+                    _pencil.Dispose();
+                
             }
+
+            disposed = true;
         }
 
         private void disposeList<T>(ref List<T> list) {

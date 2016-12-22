@@ -371,6 +371,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Revolver";
+                temp.image = dataLoader.get(temp.Name);
 
                 temp.Behaviour = BulletBehaviour.Normal;
                 temp.WType = WeaponType.Revolver;

@@ -10,7 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Game_Java_Port {
-    public abstract class CharacterBase : IRenderable, ITickable, ISerializable<CharacterBase>, IIndexable, ICollidible {
+    public abstract class CharacterBase : IRenderable, ITickable, ISerializable<CharacterBase>, IIndexable, ICollidible, IDisposable {
 
         #region base values
 
@@ -40,7 +40,7 @@ namespace Game_Java_Port {
 
         public abstract GenerationType GenType { get; }
         
-
+        public bool IsDisposed { get { return disposed; } }
 
         private float _CoolDown = 0;
 
@@ -516,12 +516,13 @@ namespace Game_Java_Port {
                             Game.instance.addMessage(Name + " was killed by " + by.Name + ".");
                             foreach(ItemBase item in Inventory.ToArray()) {
                                 item.Drop();
-                            }
+                        }
+                        despawn();
                         if(Rank != Rank.Player) {
                             Program.DebugLog.Add("Removing Subject " + ID + ". CharacterBase.Killed(CharacterBase).");
-                            removeFromGame();
-                        } else if(this == Game.instance._player)
+                        } else if(this == Game.instance._player) {
                             StartRespawn();
+                        }
                         break;
                         case Game.GameState.Host | Game.GameState.Multiplayer:
                             Game.instance._client.send(GameClient.CommandType.message, (Name + " was killed by " + by.Name + ".").serialize());
@@ -547,7 +548,8 @@ namespace Game_Java_Port {
                 lock (GameStatus.Corpses)
                     GameStatus.Corpses.Remove(this);
                 timer.Change(Timeout.Infinite, Timeout.Infinite);
-                timer.Dispose();
+                lock(timer)
+                    timer.Dispose();
             });
             timer.Change(5000, Timeout.Infinite);
 
@@ -650,8 +652,8 @@ namespace Game_Java_Port {
 
                 Vector2 otherSideRelative = Location + (Location - Target) + MatrixExtensions.PVTranslation;
 
-                lock(Pencil)
-                    if(!Pencil.IsDisposed) {
+                lock(this)
+                    if(!disposed) {
 
                         Color4 tempColor = Pencil.Color;
 
@@ -886,13 +888,22 @@ namespace Game_Java_Port {
 
         }
 
-        virtual public void removeFromGame() {
+
+        virtual public void despawn() {
             GameStatus.removeTickable(this);
             GameStatus.removeRenderable(this);
             lock(GameStatus.GameSubjects)
                 GameStatus.GameSubjects.Remove(this);
-            lock(Pencil)
-                Pencil.Dispose();
+        }
+
+
+        /// <summary>
+        /// Clears public references to this instance and disposes this object.
+        /// </summary>
+        public void removeFromGame() {
+            despawn();
+            lock(this)
+                Dispose();
         }
 
         virtual public void addToGame() {
@@ -1096,5 +1107,31 @@ namespace Game_Java_Port {
 
             Pencil.Color = temp;
         }
+
+        #region IDisposable Support
+        private bool disposed = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing) {
+            if(!disposed) {
+                if(disposing) {
+                    Pencil.Dispose();
+                    if(Image != null)
+                        Image.Dispose();
+                    Inventory.Clear();
+                    Equipment.Clear();
+                    Effects.Clear();
+                    _EquippedWeaponL = null;
+                    _EquippedWeaponR = null;
+                    comparsionobject = null;
+                    Attributes.Clear();
+                    AmmoStorage.Clear();
+                }
+                disposed = true;
+            }
+        }
+        public void Dispose() {
+            Dispose(true);
+        }
+        #endregion
     }
 }

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Linq;
 
 namespace Game_Java_Port {
-    class Host {
+    class Host : IDisposable {
         public readonly Random _HostGenRNG = new Random();
         public const float RefreshesPerSecond = 10;
         public bool ClientsChanged { get; set; }
@@ -19,9 +19,7 @@ namespace Game_Java_Port {
         public Thread CommunicatorThread { get; }
         public Timer RefresherThread { get; }
         public static object ComLock = new object();
-
-        public ulong ID_Offset = 0;
-
+        
         public static Func<Host, TimerCallback> RefreshAction = (host) =>
         { return (obj) => {
             if (Game.instance._client != null && GameStatus.GameSubjects.Count > 0)
@@ -48,9 +46,6 @@ namespace Game_Java_Port {
                         data = BitConverter.GetBytes(data.Count + CustomMaths.intsize).Concat(data).ToList();
                         newClient.GetStream().Write(data.ToArray(), 0, data.Count);
                     }
-                } else {
-                    host.ListenerThread.Change(Timeout.Infinite, Timeout.Infinite);
-                    host.ClientListener.Stop();
                 }
             };
         };
@@ -210,5 +205,30 @@ namespace Game_Java_Port {
 
             return sendBuffer.ToArray();
         }
+
+        #region IDisposable Support
+
+        private bool disposed = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing) {
+            if(!disposed) {
+                if(disposing) {
+                    lock(ListenerThread)
+                        ListenerThread.Dispose();
+                    lock(RefresherThread)
+                        RefresherThread.Dispose();
+                    foreach(TcpClient client in ClientList) lock(client)
+                        client.Close();
+                    lock(ClientListener)
+                        ClientListener.Stop();
+                }
+
+                disposed = true;
+            }
+        }
+        public void Dispose() {
+            Dispose(true);
+        }
+        #endregion
     }
 }

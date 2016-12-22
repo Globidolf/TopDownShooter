@@ -7,11 +7,11 @@ using SharpDX.Mathematics.Interop;
 using SharpDX;
 
 namespace Game_Java_Port {
-    public class Background : IRenderable, ITickable {
+    public class Background : IRenderable, ITickable, IDisposable {
 
         private float lifetime = 0;
 
-        public event Action TickAction;
+        public event EventHandler TickAction;
         
         public RectangleF Area { get; set; }
 
@@ -49,7 +49,7 @@ namespace Game_Java_Port {
         BitmapBrush tb {
             get {
                 if(_tb == null) {
-                    lock(img)
+                    lock(this)
                         _tb = new BitmapBrush(Program._RenderTarget, img);
                 }
                 return _tb;
@@ -90,7 +90,7 @@ namespace Game_Java_Port {
 
         public void draw(RenderTarget rt) {
             if(settings.HasFlag(Settings.Fill_Screen)) {
-                if (_tb != null) lock(_tb) if(!_tb.IsDisposed) {
+                lock(this) if (_tb != null && !disposed) {
                     rt.FillRectangle(Game.instance.Area, tb);
                 }
             } else {
@@ -99,8 +99,8 @@ namespace Game_Java_Port {
         }
 
         public void Tick() {
-            TickAction?.Invoke();
-            if (_tb != null) lock(_tb) if (!_tb.IsDisposed){
+            TickAction?.Invoke(this, EventArgs.Empty);
+            lock(this) if(_tb != null && !disposed) {
                     transform = Matrix3x2.Identity;
                     transform.TranslationVector += MatrixExtensions.PVTranslation;
                     tb.Transform = transform;
@@ -109,8 +109,8 @@ namespace Game_Java_Port {
             offset.Offset(MatrixExtensions.PVTranslation);
             if(settings.HasFlag(Settings.Decay)) {
                 lifetime -= 1 / GameVars.defaultGTPS;
-                if(lifetime <= 0)
-                    removeFromGame();
+                if(lifetime <= 0) lock(this)
+                    Dispose();
             }
         }
 
@@ -119,12 +119,26 @@ namespace Game_Java_Port {
             GameStatus.addRenderable(this);
         }
 
-        public void removeFromGame() {
-            GameStatus.removeTickable(this);
-            GameStatus.removeRenderable(this);
-            if (_tb != null)
-                lock (_tb)
-                    _tb.Dispose();
+        #region IDisposable Support
+        private bool disposed = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing) {
+            if(!disposed) {
+                if(disposing) {
+                    GameStatus.removeTickable(this);
+                    GameStatus.removeRenderable(this);
+                    if(_tb != null)
+                         _tb.Dispose();
+                    //DONT dispose the bitmap, set it to null instead. it is a shared resource and img is merely the reference
+                    img = null;
+                    TickAction = null;
+                }
+                disposed = true;
+            }
         }
+        public void Dispose() {
+            Dispose(true);
+        }
+        #endregion
     }
 }

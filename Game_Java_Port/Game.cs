@@ -12,7 +12,7 @@ using static Game_Java_Port.GameStatus;
 using static System.BitConverter;
 
 namespace Game_Java_Port {
-    class Game : ITickable, IRenderable {
+    class Game : ITickable, IRenderable, IDisposable {
 
         [Flags]
         public enum GameState {
@@ -82,7 +82,8 @@ namespace Game_Java_Port {
             {
                 lock(_messages)
                     _messages.Remove(msg);
-                timer.Dispose();
+                lock(timer)
+                    timer.Dispose();
             });
             timer.Change(GameVars.messageLifeTime,Timeout.Infinite);
         }
@@ -205,5 +206,32 @@ namespace Game_Java_Port {
                     rt.DrawText(msg, MenuFont, new RectangleF(20, ScreenHeight - ++i * 20, ScreenWidth/2 - 20, 400 - (i-1) * 20),MenuTextBrush);
             }
         }
+
+        #region IDisposable Support
+        private bool disposed = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing) {
+            if(!disposed) {
+                if(disposing) {
+                    if(GameHost != null) {
+                        GameHost.Listen = false;
+                        lock(GameHost)
+                            GameHost.Dispose();
+                    }
+                    if(_client != null) {
+                        _client.Listen = false;
+                        lock(_client)
+                            _client.Dispose();
+                    }
+                    _messages = null;
+                    _player = null;
+                }
+                disposed = true;
+            }
+        }
+        public void Dispose() {
+            Dispose(true);
+        }
+        #endregion
     }
 }

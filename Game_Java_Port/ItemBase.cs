@@ -8,6 +8,8 @@ using Game_Java_Port.Serializers;
 namespace Game_Java_Port {
     public abstract class ItemBase : IRenderable, ITickable, IDisposable, IInteractable, ISerializable<ItemBase>, IIndexable {
 
+        private bool disposed = false;
+
         public Random _RNG;
 
         private ulong _ID;
@@ -248,28 +250,33 @@ namespace Game_Java_Port {
                 }
 
                 if(UnOwnedTime > DespawnTime * GameVars.defaultGTPS) {
-                    lock(this) {
+                    lock(this) 
                         Dispose();
-                    }
+                    
                 }
             }
 
         }
 
+        
+        public void Dispose() {
+            Dispose(true);
+        }
 
-        /// <summary>
-        /// Call base.Dispose() if overriding.
-        /// Not doing so will result in a memory leak.
-        /// </summary>
-        public virtual void Dispose() {
-            lock (GameStatus.GameObjects)
-                GameStatus.GameObjects.Remove(this);
-            GameStatus.removeRenderable(this);
-            GameStatus.removeTickable(this);
-            Pencil.Dispose();
-            ItemInfo.Dispose();
-            ActionInfo.Dispose();
-            NameTooltip.Dispose();
+        protected virtual void Dispose(bool disposing) {
+            if(disposed)
+                return;
+            if(disposing) {
+                lock(GameStatus.GameObjects)
+                    GameStatus.GameObjects.Remove(this);
+                GameStatus.removeRenderable(this);
+                GameStatus.removeTickable(this);
+                Pencil.Dispose();
+                ItemInfo.Dispose();
+                ActionInfo.Dispose();
+                NameTooltip.Dispose();
+            }
+            disposed = true;
         }
 
         public virtual void AddToGame() {

@@ -31,6 +31,8 @@ namespace Game_Java_Port {
         private float _CoolDown;
         private float _Reload;
 
+        private bool disposed = false;
+
         public WeaponType WType { get; private set; }
         public BulletBehaviour Behaviour { get; private set; }
 
@@ -39,37 +41,42 @@ namespace Game_Java_Port {
         private ItemType _Rarity = ItemType.Common;
 
         public override ItemType Rarity { get { return _Rarity; } }
+
+        private uint calcPrice() {
+            float price = 5 * (float)Math.Pow(1.1f, Level);
+
+            switch(_Rarity) {
+                case ItemType.Garbage:
+                    price *= 0.2f;
+                    break;
+                case ItemType.Common:
+                default:
+                    break;
+                case ItemType.Uncommon:
+                    price *= 1.4f;
+                    break;
+                case ItemType.Rare:
+                    price *= 2.2f;
+                    break;
+                case ItemType.Epic:
+                    price *= 4.2f;
+                    break;
+                case ItemType.Legendary:
+                    price *= 10f;
+                    break;
+                case ItemType.Pearlescent:
+                    price *= 35f;
+                    break;
+                case ItemType.DevItem:
+                    price *= 100f;
+                    break;
+            }
+            return (uint)price;
+        }
+
         public override uint BasePrice {
             get {
-                float price = 5 * (float)Math.Pow(1.1f, Level);
-
-                switch(Rarity) {
-                    case ItemType.Garbage:
-                        price *= 0.2f;
-                        break;
-                    case ItemType.Common:
-                    default:
-                        break;
-                    case ItemType.Uncommon:
-                        price *= 1.4f;
-                        break;
-                    case ItemType.Rare:
-                        price *= 2.2f;
-                        break;
-                    case ItemType.Epic:
-                        price *= 4.2f;
-                        break;
-                    case ItemType.Legendary:
-                        price *= 10f;
-                        break;
-                    case ItemType.Pearlescent:
-                        price *= 35f;
-                        break;
-                    case ItemType.DevItem:
-                        price *= 100f;
-                        break;
-                }
-                return (uint)price;
+                return calcPrice();
             }
         }
 
@@ -210,7 +217,7 @@ namespace Game_Java_Port {
 
             uint mods = 0;
 
-            switch(Rarity) {
+            switch(_Rarity) {
                 // no special mod, just make all stats worse! :D
                 case ItemType.Garbage:
                     float __strongMalus = 0.8f + (float)_RNG.NextDouble() * 0.1f;
@@ -548,15 +555,18 @@ namespace Game_Java_Port {
                     });
                     uint i = BulletHitCount;
                     foreach(CharacterBase targ in targets) {
-                        if(i <= 0)
-                            break;
-                        else
-                            i--;
-                        Owner.Attack(targ, Owner.MeleeDamageR);
-                        if(Behaviour.HasFlag(BulletBehaviour.Knockback)) {
-                            targ.MovementVector.X += -(float)Math.Cos(Owner.Location.angleTo(targ.Location).Radians) * Math.Min(80000 / GameVars.defaultGTPS, ((Owner.MeleeDamageR / targ.MaxHealth)) * 10000 / GameVars.defaultGTPS);
-                            targ.MovementVector.Y += -(float)Math.Sin(Owner.Location.angleTo(targ.Location).Radians) * Math.Min(80000 / GameVars.defaultGTPS, ((Owner.MeleeDamageR / targ.MaxHealth)) * 10000 / GameVars.defaultGTPS);
-
+                        lock(targ) {
+                            if(i <= 0)
+                                break;
+                            else
+                                i--;
+                            if(!targ.IsDisposed) {
+                                Owner.Attack(targ, Owner.MeleeDamageR);
+                                if(Behaviour.HasFlag(BulletBehaviour.Knockback)) {
+                                    targ.MovementVector.X += -(float)Math.Cos(Owner.Location.angleTo(targ.Location).Radians) * Math.Min(80000 / GameVars.defaultGTPS, ((Owner.MeleeDamageR / targ.MaxHealth)) * 10000 / GameVars.defaultGTPS);
+                                    targ.MovementVector.Y += -(float)Math.Sin(Owner.Location.angleTo(targ.Location).Radians) * Math.Min(80000 / GameVars.defaultGTPS, ((Owner.MeleeDamageR / targ.MaxHealth)) * 10000 / GameVars.defaultGTPS);
+                                }
+                            }
                         }
                     }
 
@@ -570,7 +580,8 @@ namespace Game_Java_Port {
 
                 if(Ammo == 0 && WType == WeaponType.Throwable) {
                     Drop();
-                    Dispose();
+                    lock(this)
+                        Dispose();
                 }
 
                 _CoolDown += 1 / AttackSpeed;
@@ -639,10 +650,15 @@ namespace Game_Java_Port {
                 rt.DrawText("Reloading...", GameStatus.MenuFont, pos, weaponPen);
             }
         }
-
-        override public void Dispose() {
-            base.Dispose();
-            weaponPen.Dispose();
+        
+        override protected void Dispose(bool disposing) {
+            if(disposed)
+                return;
+            if(disposing) {
+                weaponPen.Dispose();
+            }
+            disposed = true;
+            base.Dispose(disposing);
         }
 
         public void Equip(CharacterBase on) {

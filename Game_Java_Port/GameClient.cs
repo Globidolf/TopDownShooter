@@ -10,7 +10,7 @@ using Game_Java_Port.Interface;
 
 namespace Game_Java_Port {
 
-    class GameClient {
+    class GameClient : IDisposable {
         private bool _initiated = false;
         public TcpClient Client { get; }
         public Thread ClientThread { get; }
@@ -72,7 +72,6 @@ namespace Game_Java_Port {
                     //make those commands stack
                     await Task.Delay(20);
                }
-               Client.Close();
            }));
             ClientThread.Start();
         }
@@ -324,6 +323,24 @@ namespace Game_Java_Port {
             });
             return;
         }
+
+        #region IDisposable Support
+        private bool disposed = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing) {
+            if(!disposed) {
+
+                if(disposing) {
+                    Client.Close();
+                }
+
+                disposed = true;
+            }
+        }
+        public void Dispose() {
+            Dispose(true);
+        }
+        #endregion
 
     }
 }

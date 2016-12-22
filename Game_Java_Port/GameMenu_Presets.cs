@@ -108,7 +108,7 @@ namespace Game_Java_Port {
                     new Button(temp, "New Game", (args) => {
                         if(checkargs(args)) {
                             temp.close();
-                            CharCreatorMenu.onContinue = async () =>
+                            CharCreatorMenu.onContinue = async (obj, args2) =>
                             {
                                 Game.instance.Host((int)temp.getRegulatorValue<int>("Port"));
                                 NPC player = (NPC)CharCreatorMenu._data["output"];
@@ -154,7 +154,7 @@ namespace Game_Java_Port {
                     new Button(temp, "Ok", (args) => {
                         if(checkargs(args)) {
                             temp.close();
-                            CharCreatorMenu.onContinue = async () =>
+                            CharCreatorMenu.onContinue = async (obj, args2) =>
                             {
                                 Game.instance.addMessage("Attempting to connect on " + temp.getInputValue("Adress") + ":" + (int)temp.getRegulatorValue<int>("Port") + "...");
                                 try {
@@ -205,7 +205,7 @@ namespace Game_Java_Port {
                     new Button(temp, "New Game", (args) => {
                         if(checkargs(args)) {
                             temp.close();
-                            CharCreatorMenu.onContinue = () =>
+                            CharCreatorMenu.onContinue = (obj, args2) =>
                             {
                                 // create and start when done
                                 NPC player = (NPC)CharCreatorMenu._data["output"];
@@ -214,13 +214,8 @@ namespace Game_Java_Port {
                                 Program.DebugLog.Add("Adding Subject " + player.ID + ". MainMenu -> New Game -> CharCreatorMenu.onContinue().");
                                 player.addToGame();
                                 // test data
-                                foreach(WeapPreset wp in Enum.GetValues(typeof(WeapPreset))){
-                                    new Weapon(10, wt: wp).PickUp(player);
-                                    new Weapon(25, wt: wp).PickUp(player);
-                                    new Weapon(50, wt: wp).PickUp(player);
-                                }
-                                for(uint i = 10; i <= 1000; i+= 10) {
-                                    new Weapon(i, 1, WeapPreset.Pistol, ItemType.Common).PickUp(player);
+                                foreach(ItemType rarity in Enum.GetValues(typeof(ItemType))) {
+                                    new Weapon(100, wt: WeapPreset.Pistol, rarity: rarity).PickUp(player);
                                 }
                             };
                             CharCreatorMenu.open();
@@ -364,7 +359,7 @@ namespace Game_Java_Port {
                         temp.resizeNumbers();
                     };
 
-                    temp.onOpen = () => {
+                    temp.onOpen = (obj, args2) => {
                         sum = points = Game.instance._player.AttributePoints;
                         temp._data["points"] = sum;
                         temp._data["sum"] = sum;
@@ -515,7 +510,7 @@ namespace Game_Java_Port {
 
                     };
 
-                    temp.onOpen = () =>
+                    temp.onOpen = (obj, args2) =>
                     {
                         sum = points = BaseAttributePoints;
                         temp._data["points"] = sum;
@@ -582,7 +577,7 @@ namespace Game_Java_Port {
                                         false);
                             ((NPC)temp._data["output"]).AttributePoints = 0;
                             temp.close();
-                            temp.onContinue?.Invoke();
+                            temp.onContinue?.Invoke(temp, EventArgs.Empty);
                             temp._data.Clear();
                         }
                     });
@@ -607,7 +602,7 @@ namespace Game_Java_Port {
                     GameMenu temp = new GameMenu();
                     temp.Name = name;
 
-                    Action<onKeyPressArgs> inputHandler = (args) => {
+                    EventHandler<onKeyPressArgs> inputHandler = (obj, args) => {
                         lock (args)
                             if(!args.Consumed) {
                                 if(args.Down) {
@@ -616,7 +611,7 @@ namespace Game_Java_Port {
                                         case System.Windows.Forms.Keys.Escape:
                                             args.Consumed = true;
                                             temp.close();
-                                            temp.onContinue?.Invoke();
+                                            temp.onContinue?.Invoke(temp, EventArgs.Empty);
                                             break;
                                     }
                                 }
@@ -650,7 +645,7 @@ namespace Game_Java_Port {
                         }
                     };
 
-                    temp.onOpen = () =>
+                    temp.onOpen = (obj, args2) =>
                     {
                         Console.WriteLine(justPressed);
                         weaponDetails = new TextElement(temp, "", new Size2F(ScreenWidth / 4, ScreenHeight), true);
@@ -659,10 +654,11 @@ namespace Game_Java_Port {
                         refresh();
                     };
 
-                    temp.onContinue += () =>
+                    temp.onContinue += (obj, args2) =>
                     {
                         onKeyEvent -= inputHandler;
-                        inventory.Dispose();
+                        lock(inventory)
+                            inventory.Dispose();
                         inventory = null;
                         temp.Elements.Clear();
                     };

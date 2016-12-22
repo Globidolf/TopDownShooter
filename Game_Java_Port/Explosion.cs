@@ -8,11 +8,10 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Game_Java_Port {
-    class Explosion : IRenderable, ITickable {
+    class Explosion : IRenderable, ITickable, IDisposable {
         float initialDuration;
         float Duration;
-
-
+        
         SolidColorBrush brush;
 
         public RectangleF Area { get; set; }
@@ -35,25 +34,42 @@ namespace Game_Java_Port {
         }
 
         public void draw(RenderTarget rt) {
-            lock(brush) 
-                if(!brush.IsDisposed)
+            lock(this)
+                if(!disposed)
                     rt.FillEllipse(ellipse, brush);
         }
 
         public void Tick() {
             ellipse = new Ellipse(Area.Center + MatrixExtensions.PVTranslation, Area.Width / 2, Area.Height / 2);
             if(Duration <= 0) {
-                GameStatus.removeRenderable(this);
-                GameStatus.removeTickable(this);
-                lock (brush)
-                    brush.Dispose();
+                lock(this)
+                    Dispose();
             } else {
                 Duration -= 1 / GameVars.defaultGTPS;
-                lock(brush) {
-                    if (!brush.IsDisposed)
+                lock(this) {
+                    if (!disposed)
                         brush.Color = new Color4(brush.Color.R, brush.Color.G, brush.Color.B, (Duration / initialDuration));
                 }
             }
         }
+
+        #region IDisposable Support
+        private bool disposed = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing) {
+            if(!disposed) {
+                if(disposing) {
+                    GameStatus.removeRenderable(this);
+                    GameStatus.removeTickable(this);
+                    brush.Dispose();
+                }
+                disposed = true;
+            }
+        }
+        
+        public void Dispose() {
+            Dispose(true);
+        }
+        #endregion
     }
 }
