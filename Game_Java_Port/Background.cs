@@ -84,6 +84,7 @@ namespace Game_Java_Port {
                 this.lifetime = lifetime;
                 this.settings |= Settings.Decay;
             }
+            Z = -5;
             if(add)
                 addToGame();
         }

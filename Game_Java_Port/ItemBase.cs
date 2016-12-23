@@ -64,7 +64,7 @@ namespace Game_Java_Port {
             }
         }
 
-        protected string ItemBaseInfo { get {
+        protected internal string ItemBaseInfo { get {
                 return Name + "\nValue: " + SellPrice;
             } }
 

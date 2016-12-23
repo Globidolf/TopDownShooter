@@ -178,6 +178,7 @@
     <Compile Include="Tileset.cs" />
     <Compile Include="Tooltip.cs" />
     <Compile Include="Weapon.cs" />
+    <Compile Include="WeaponTooltip.cs" />
     <Compile Include="Weapon_Presets.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

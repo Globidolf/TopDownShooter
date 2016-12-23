@@ -15,12 +15,12 @@ namespace Game_Java_Port {
 
         public float Padding { get; set; } = 2;
 
-        internal string Text { get; set; }
+        protected internal string Text { get; set; }
 
         public RectangleF Area { get; set; }
-        private RectangleF _LabelArea;
-        RectangleF relArea;
-        RectangleF relLabel;
+        protected internal RectangleF _LabelArea;
+        protected internal RectangleF relArea;
+        protected internal RectangleF relLabel;
 
         public int Z { get; set; } = 10000;
 
@@ -52,7 +52,8 @@ namespace Game_Java_Port {
                 GameStatus.addTickable(this);
         }
 
-        public void draw(RenderTarget rt) {
+
+        protected void drawBG(RenderTarget rt) {
             Matrix3x2 translation = Matrix3x2.Identity;
             translation.TranslationVector = relArea.Location;
             lock(GameStatus.BGBrush) {
@@ -60,7 +61,15 @@ namespace Game_Java_Port {
                 rt.FillRectangle(relArea, GameStatus.BGBrush);
                 GameStatus.BGBrush.Transform = Matrix3x2.Identity;
             }
+        }
+
+        protected void drawText(RenderTarget rt) {
             rt.DrawText(Text, GameStatus.MenuFont, relLabel, GameStatus.MenuTextBrush);
+        }
+
+        public virtual void draw(RenderTarget rt) {
+            drawBG(rt);
+            drawText(rt);
         }
 
         /// <summary>
@@ -71,7 +80,7 @@ namespace Game_Java_Port {
 
         public Func<bool> doDraw = () => true;
 
-        public void Tick() {
+        public virtual void Tick() {
 
             if (doDraw?.Invoke() == true != show) {
                 if(show)

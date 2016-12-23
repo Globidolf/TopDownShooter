@@ -47,7 +47,7 @@ namespace Game_Java_Port {
         public static Tileset Grass { get {
                 string name = "tiles_grass_16_64";
                 if(!Tilesets.ContainsKey(name))
-                    Tilesets.Add(name, new Tileset(32, dataLoader.get(name)));
+                    Tilesets.Add(name, new Tileset(16, dataLoader.get(name)));
 
                 return Tilesets[name];
             } }

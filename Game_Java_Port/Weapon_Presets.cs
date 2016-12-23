@@ -37,6 +37,8 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Boomerang";
+                temp.image = dataLoader.get(temp.Name);
+                temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Returning;
                 temp.WType = WeaponType.Throwable;
@@ -61,6 +63,8 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Throwing Knives";
+                temp.image = dataLoader.get(temp.Name);
+                temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Piercing;
                 temp.WType = WeaponType.Throwable;
@@ -85,6 +89,8 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Rock";
+                temp.image = dataLoader.get(temp.Name);
+                temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Bounce;
                 temp.WType = WeaponType.Throwable;
@@ -111,6 +117,8 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "SMG";
+                temp.image = dataLoader.get(temp.Name);
+                temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Normal;
                 temp.WType = WeaponType.SubMachineGun;
@@ -135,6 +143,8 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Sniper Rifle";
+                temp.image = dataLoader.get(temp.Name);
+                temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Piercing;
                 temp.WType = WeaponType.SniperRifle;
@@ -159,6 +169,8 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Rocket Launcher";
+                temp.image = dataLoader.get(temp.Name);
+                temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Explosive | BulletBehaviour.Knockback;
                 temp.WType = WeaponType.RocketLauncher;
@@ -275,6 +287,8 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "ElectroSphere";
+                temp.image = dataLoader.get(temp.Name);
+                temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Beam | BulletBehaviour.Tracking | BulletBehaviour.Piercing;
                 temp.WType = WeaponType.Electricity;
@@ -300,6 +314,7 @@ namespace Game_Java_Port {
                 Weapon temp = new Weapon();
                 temp.Name = "Assault Rifle";
                 temp.image = dataLoader.get(temp.Name);
+                temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Knockback;
                 temp.WType = WeaponType.AssaultRifle;
@@ -325,6 +340,7 @@ namespace Game_Java_Port {
                 Weapon temp = new Weapon();
                 temp.Name = "Acid Sprayer";
                 temp.image = dataLoader.get(temp.Name);
+                temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Piercing | BulletBehaviour.MultiHit;
                 temp.WType = WeaponType.Acid;
@@ -349,6 +365,8 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Shotgun";
+                temp.image = dataLoader.get(temp.Name);
+                temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Knockback;
                 temp.WType = WeaponType.Shotgun;
@@ -374,6 +392,7 @@ namespace Game_Java_Port {
                 Weapon temp = new Weapon();
                 temp.Name = "Revolver";
                 temp.image = dataLoader.get(temp.Name);
+                temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Normal;
                 temp.WType = WeaponType.Revolver;
@@ -399,6 +418,7 @@ namespace Game_Java_Port {
                 Weapon temp = new Weapon();
                 temp.Name = "Pistol";
                 temp.image = dataLoader.get(temp.Name);
+                temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Normal;
                 temp.WType = WeaponType.Pistol;

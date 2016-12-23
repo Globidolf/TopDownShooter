@@ -609,16 +609,7 @@ namespace Game_Java_Port {
         public override Tooltip ItemInfo {
             get {
                 if (itemInfo == null) {
-                    itemInfo = new Tooltip(ItemBaseInfo + "\n" +
-                    "Lv." + Level + " " + Rarity.ToString() + " " + WType.ToString() + "\n" +
-                    "Bullets: " + Behaviour.ToString() + "\n" +
-                    "Speed: " + BulletSpeed + "Px/s" + "\n" +
-                    "Damage: " + Damage.ToString("0.##") + "x" + BulletsPerShot + "^" + (BulletHitCount > uint.MaxValue / 12 ? "inf" : BulletHitCount.ToString()) + "\n" +
-                    "Precision: " + Precision.ToString("0.#%") +
-                    " (" + Math.Min(1, (Precision * (Game.state == Game.GameState.Menu ? 1 : Game.instance._player.PrecisionMult))).ToString("0.#%") + ")\n" +
-                    "Range: " + Range.ToString("0.##") + "\n" +
-                    "APS: " + AttackSpeed.ToString("0.##") + "\n" +
-                    "Seed: " + Seed + ":" + GenType,
+                    itemInfo = new WeaponTooltip(this,
                     Validation: () => ItemBaseInfoValidation() && Owner == null,
                     ticksInternal: true);
                 }

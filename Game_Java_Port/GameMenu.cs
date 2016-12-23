@@ -354,33 +354,11 @@ namespace Game_Java_Port {
 
             // max width
             lock(Elements)
-                if(Elements.Any //any start
-                    ((ele) =>
-                    {
-                        bool result = ele.GetType().Name.StartsWith("Regulator");
-                        if(ele is MenuElementListBase) {
-                            result = result || ((MenuElementListBase)ele).Children.Any((ele2) => ele2.GetType().Name.StartsWith("Regulator"));
-                        }
-                        return result;
-                    })          //any end
-                    ) {                 // if block start
+                if(Elements.Any(ele =>  ele.GetType().Name.StartsWith("Regulator") ||
+                (ele is MenuElementListBase && ((MenuElementListBase)ele).Children.Any(ele2 => ele2.GetType().Name.StartsWith("Regulator"))))
+              ) {
                     _Width = ScreenWidth - 2 * MenuPadding - (tooLarge ? ScrollBarWidth : 0);
-                }                       // if block end 
-            /*
-                else if(Elements.Any((ele) => ele is MenuElementListBase)) {
-                    Elements.FindAll((ele) => ele is MenuElementListBase).ForEach((ele) =>
-                    {
-                    // min width
-                    int tempWidth = 3 * ElementMargin + (int)LargestStringSize;
-                        ((MenuElementListBase)ele).Children.ForEach((chl) =>
-                        {
-                            tempWidth += (int)chl.Area.Width + ElementMargin;
-                        });
-                        if(tempWidth > _Width)
-                            _Width = tempWidth;
-                    });
-                }
-                */
+                }              
             #endregion
 
             _X = ScreenWidth / 2 - _Width / 2;
