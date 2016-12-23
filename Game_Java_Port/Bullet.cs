@@ -58,8 +58,8 @@ namespace Game_Java_Port {
 
         public void draw(RenderTarget rt) {
             if(_initiated) {
-                lock(pencil) {
-                    if(!pencil.IsDisposed) {
+                lock(this) {
+                    if(!disposed) {
                         Vector2 relativePos = pos + MatrixExtensions.PVTranslation;
                         Vector2 relativelastPos = lastPos + MatrixExtensions.PVTranslation;
                         rt.DrawLine(relativelastPos, relativePos, pencil, _source.Behaviour.HasFlag(BulletBehaviour.Beam) ? 1 + 10 - (float)Math.Sqrt(_distance) / _source.Range * 10 : 2);

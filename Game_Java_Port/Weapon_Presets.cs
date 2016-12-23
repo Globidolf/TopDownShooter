@@ -299,6 +299,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Assault Rifle";
+                temp.image = dataLoader.get(temp.Name);
 
                 temp.Behaviour = BulletBehaviour.Knockback;
                 temp.WType = WeaponType.AssaultRifle;
@@ -323,6 +324,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Acid Sprayer";
+                temp.image = dataLoader.get(temp.Name);
 
                 temp.Behaviour = BulletBehaviour.Piercing | BulletBehaviour.MultiHit;
                 temp.WType = WeaponType.Acid;

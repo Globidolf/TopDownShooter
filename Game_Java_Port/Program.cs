@@ -67,13 +67,6 @@ namespace Game_Java_Port
 
             loadImages();
 
-            GameStatus.addTickable(Game.instance);
-            GameStatus.addRenderable(Game.instance);
-
-            GameMenu mainMenu = GameMenu.MainMenu;
-
-            mainMenu.open();
-
             System.Windows.Forms.Cursor.Hide();
             GameStatus.Cursor = new CustomCursor(CursorTypes.Normal, 16);
 
@@ -108,13 +101,7 @@ namespace Game_Java_Port
 
             form.ResizeEnd += (obj, args) => formResized();
 
-            Background back = new Background(dataLoader.get("GameBG.bmp"), settings: Background.Settings.Fill_Screen | Background.Settings.Parallax);
-            back.ExtendX = ExtendMode.Wrap;
-            back.ExtendY = ExtendMode.Wrap;
-
-
-            GameStatus.addRenderable(GameStatus.Cursor);
-            GameStatus.addTickable(GameStatus.Cursor);
+            GameStatus.init();
 
             GameStatus.Running = true;
             

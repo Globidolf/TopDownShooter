@@ -423,7 +423,7 @@ namespace Game_Java_Port
             lock(Renderables)
                 Renderables.Clear();
         }
-
+        
         public static void tick(object fu) {
 
             justPressed = pendingPresses;
@@ -442,7 +442,7 @@ namespace Game_Java_Port
 
             Cursor.Tick();
 
-            if(!Paused) {
+            if(!Paused || fu == null) {
                 ITickable[] Tickables_Copy;
                 lock(Tickables) {
                     Tickables_Copy = Tickables.ToArray();
@@ -506,6 +506,7 @@ namespace Game_Java_Port
         }
 
         public static void reset() {
+
             if(Game.instance._client != null) {
                 Game.instance._client.Listen = false;
                 Game.instance._client = null;
@@ -539,17 +540,21 @@ namespace Game_Java_Port
 
             Game.instance._player = null;
 
+            init();
+        }
+
+        public static void init() {
+
             addRenderable(Game.instance);
             addTickable(Game.instance);
             addRenderable(Cursor);
             addTickable(Cursor);
 
-            Background back = new Background(dataLoader.get("GameBG.bmp"), settings: Background.Settings.Fill_Screen | Background.Settings.Parallax);
-            back.ExtendX = ExtendMode.Wrap;
-            back.ExtendY = ExtendMode.Wrap;
+            Background_Tiled back = new Background_Tiled(Tileset.Rock, Area: Game.instance.Area, settings: Background.Settings.Parallax | Background.Settings.Fill_Area);
 
             GameMenu.MainMenu.open();
 
+            tick(null);
         }
 
         /// <summary>

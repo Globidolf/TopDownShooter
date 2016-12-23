@@ -142,6 +142,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AI Library.cs" />
+    <Compile Include="Background_Tiled.cs" />
     <Compile Include="CharacterBase.cs" />
     <Compile Include="Background.cs" />
     <Compile Include="Bullet.cs" />
@@ -174,6 +175,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serializers\CharacterSerializer.cs" />
     <Compile Include="Serializers\ItemSerializer.cs" />
+    <Compile Include="Tileset.cs" />
     <Compile Include="Tooltip.cs" />
     <Compile Include="Weapon.cs" />
     <Compile Include="Weapon_Presets.cs" />

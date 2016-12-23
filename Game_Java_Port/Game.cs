@@ -103,6 +103,8 @@ namespace Game_Java_Port {
 
         public void Tick() {
 
+            lock(this)
+                if(!disposed)
             switch(state) {
                 case GameState.Normal:
                     int count;
@@ -178,7 +180,7 @@ namespace Game_Java_Port {
         public void draw(RenderTarget rt) {
 
             List<string> temp = new List<string>();
-            lock(_messages) {
+            lock(this) if (!disposed) {
                 temp.AddRange(_messages);
             }
             temp.Reverse();

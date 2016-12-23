@@ -386,6 +386,11 @@ namespace Game_Java_Port {
             return (T)minvalue;
         }
 
+        public static float mod(float left, float right) {
+            float rest = left % right;
+            return rest < 0 ? rest + right : rest;
+        }
+
         public static bool isInBetween( this AngleSingle a0, AngleSingle a1, AngleSingle a2) {
             //normalize all values
             a0.Wrap();

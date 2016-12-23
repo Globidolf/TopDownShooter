@@ -80,7 +80,7 @@ namespace Game_Java_Port {
                 // Transform pixels from BGRA to RGBA
                 int stride = bmp.Width * sizeof(int);
                 using(DataStream tempStream = new DataStream(bmp.Height * stride, true, true)) {
-                    // Lock System.Drawing.Bitmap
+                    
                     System.Drawing.Imaging.BitmapData bitmapData = bmp.LockBits(sourceArea, System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
 
                     // Convert all pixels 
@@ -98,8 +98,8 @@ namespace Game_Java_Port {
                             int rgba = R | (G << 8) | (B << 16) | (A << 24);
                             tempStream.Write(rgba);
                         }
-
                     }
+
                     bmp.UnlockBits(bitmapData);
                     tempStream.Position = 0;
 

@@ -12,7 +12,7 @@ namespace Game_Java_Port {
         private float lifetime = 0;
 
         public event EventHandler TickAction;
-        
+
         public RectangleF Area { get; set; }
 
         [Flags]
@@ -24,7 +24,7 @@ namespace Game_Java_Port {
             /// <summary>
             /// BG fills complete screen
             /// </summary>
-            Fill_Screen = 0x01,
+            Fill_Area = 0x01,
             /// <summary>
             /// BG is not bound to screen (Relative)
             /// </summary>
@@ -33,17 +33,19 @@ namespace Game_Java_Port {
             Decay = 0x01 << 2,
 
             Foreground = 0x01 << 3,
+
+            Tileset = 0x10
         }
 
         public Settings settings = Settings.Default;
 
-        
+
         public ExtendMode ExtendX { get { return tb.ExtendModeX; } set { tb.ExtendModeX = value; } }
         public ExtendMode ExtendY { get { return tb.ExtendModeY; } set { tb.ExtendModeY = value; } }
-        
+
         Bitmap img;
-        private Matrix3x2 transform;
-        private RectangleF offset;
+        protected Matrix3x2 transform;
+        protected RectangleF offset;
 
         private BitmapBrush _tb;
         BitmapBrush tb {
@@ -70,7 +72,7 @@ namespace Game_Java_Port {
 
         public DrawType drawType { get; set; } = DrawType.Image;
 
-        public Background(Bitmap bmp , RawVector2? location = null, float lifetime = 0, Settings settings = Settings.Default, bool add = true) {
+        public Background(Bitmap bmp, RawVector2? location = null, float lifetime = 0, Settings settings = Settings.Default, bool add = true) {
             img = bmp;
             Factory test = new Factory();
             if(location == null)
@@ -78,33 +80,37 @@ namespace Game_Java_Port {
 
             Area = new RectangleF(location.Value.X - bmp.Size.Width / 2, location.Value.Y - bmp.Size.Height / 2, bmp.Size.Width, bmp.Size.Height);
             this.settings = settings;
-            if (lifetime > 0) {
+            if(lifetime > 0) {
                 this.lifetime = lifetime;
                 this.settings |= Settings.Decay;
             }
-            if (add)
+            if(add)
                 addToGame();
         }
 
 
 
-        public void draw(RenderTarget rt) {
-            if(settings.HasFlag(Settings.Fill_Screen)) {
-                lock(this) if (_tb != null && !disposed) {
-                    rt.FillRectangle(Game.instance.Area, tb);
+        public virtual void draw(RenderTarget rt) {
+            lock(this)
+                if(!disposed) {
+                    if(settings.HasFlag(Settings.Fill_Area)) {
+                        if(_tb != null) {
+                            rt.FillRectangle(Game.instance.Area, tb);
+                        }
+                    } else {
+                        rt.DrawBitmap(img, offset, 1, BitmapInterpolationMode.Linear, new RectangleF(0, 0, img.Size.Width, img.Size.Height));
+                    }
                 }
-            } else {
-                rt.DrawBitmap(img, offset, 1, BitmapInterpolationMode.Linear, new RectangleF(0,0,img.Size.Width, img.Size.Height));
-            }
         }
 
-        public void Tick() {
+        public virtual void Tick() {
             TickAction?.Invoke(this, EventArgs.Empty);
             lock(this) if(_tb != null && !disposed) {
                     transform = Matrix3x2.Identity;
                     transform.TranslationVector += MatrixExtensions.PVTranslation;
                     tb.Transform = transform;
                 }
+
             offset = Area;
             offset.Offset(MatrixExtensions.PVTranslation);
             if(settings.HasFlag(Settings.Decay)) {

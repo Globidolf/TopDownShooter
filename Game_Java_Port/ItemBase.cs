@@ -203,7 +203,11 @@ namespace Game_Java_Port {
 
                     if(!Pencil.IsDisposed) {
                         if(Pencil.Color == (Color4)Color.Transparent) {
-                            Pencil.Color = GameVars.RarityColors[Rarity];
+                            try {
+                                Pencil.Color = GameVars.RarityColors[Rarity];
+                            } catch(Exception) {
+                                Pencil.Color = CustomMaths.fromArgb(255, 255, 0, 255);
+                            }
                         }
 
                         switch(drawType) {
