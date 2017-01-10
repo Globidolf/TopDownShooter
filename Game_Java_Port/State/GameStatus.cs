@@ -15,6 +15,8 @@ namespace Game_Java_Port
 {
     public static class GameStatus {
 
+        private static object ORDER = new object();
+
         private static ulong nextID = 0;
 
         public static ulong GetFirstFreeID { get {
@@ -199,7 +201,8 @@ namespace Game_Java_Port
         /// <param name="Name">the name of the menu to look for</param>
         /// <returns>the menu looked for or null if it wasn't found</returns>
         public static GameMenu getMenu(string Name) {
-            return _RegisteredMenus.Find((Menu) => { return Menu.Name == Name; });
+            lock(_RegisteredMenus)
+                return _RegisteredMenus.Find((Menu) => { return Menu.Name == Name; });
         }
 
         /// <summary>
@@ -207,10 +210,11 @@ namespace Game_Java_Port
         /// </summary>
         /// <param name="menu">the menu to register</param>
         public static void addMenu(GameMenu menu) {
-            if(!_RegisteredMenus.Contains(menu))
-                _RegisteredMenus.Add(menu);
-            else
-                throw new Exception("A menu was Registered twice. This happens when a fucktard develops a game.");
+            lock(_RegisteredMenus)
+                if(!_RegisteredMenus.Contains(menu))
+                    _RegisteredMenus.Add(menu);
+                else
+                    throw new Exception("A menu was Registered twice. This happens when a fucktard develops a game.");
         } // especially proud of the above line
 
 
@@ -239,13 +243,13 @@ namespace Game_Java_Port
         /// </summary>
         /// <param name="request">The menu object to look for</param>
         /// <returns>True if the menu was found, false otherwise</returns>
-        public static bool hasMenu(GameMenu request) { return _RegisteredMenus.Contains(request); }
+        public static bool hasMenu(GameMenu request) { lock(_RegisteredMenus) return _RegisteredMenus.Contains(request); }
         /// <summary>
         /// Checks if there is a menu with the given name registered
         /// </summary>
         /// <param name="Name">The name to look for</param>
         /// <returns>True if a menu with the name was found, false otherwise</returns>
-        public static bool hasMenu(string Name) { return _RegisteredMenus.Exists((Menu) => Menu.Name == Name); }
+        public static bool hasMenu(string Name) { lock(_RegisteredMenus) return _RegisteredMenus.Exists((Menu) => Menu.Name == Name); }
 
         #endregion
 
@@ -269,20 +273,14 @@ namespace Game_Java_Port
 
         // menu settings
 
-        private static BitmapBrush _BGBrush;
+        private static SolidColorBrush _BGBrush;
 
-        public static BitmapBrush BGBrush {
+        public static SolidColorBrush BGBrush {
             get {
                 if(_BGBrush == null) {
                     _BGBrush =
-                    new BitmapBrush(
-                    Program._RenderTarget,
-                    dataLoader.get("MenuBG.bmp"),
-                    new BitmapBrushProperties() {
-                        ExtendModeX = ExtendMode.Wrap,
-                        ExtendModeY = ExtendMode.Wrap,
-                        InterpolationMode = BitmapInterpolationMode.NearestNeighbor
-                    });
+                        new SolidColorBrush(Program._RenderTarget,
+                        Color.Black);
                 }
                 return _BGBrush;
             }
@@ -347,7 +345,7 @@ namespace Game_Java_Port
         /// <summary>
         /// If there is any menu that is open this will return true. otherwise false.
         /// </summary>
-        public static bool isMenuOpen { get { return _RegisteredMenus.Exists((menu) => { return menu.isOpen; }); } }
+        public static bool isMenuOpen { get { lock(_RegisteredMenus) return _RegisteredMenus.Exists((menu) => { return menu.isOpen; }); } }
 
         #endregion
 
@@ -426,53 +424,57 @@ namespace Game_Java_Port
         
         public static void tick(object fu) {
 
-            justPressed = pendingPresses;
-            pendingPresses = Controls.none;
+            lock(Program.Pause) {
 
-            Cursor.CursorType = CursorTypes.Normal;
-            Cursor.Tick();
+                justPressed = pendingPresses;
+                pendingPresses = Controls.none;
 
-            MatrixExtensions.Tick();
-            _RegisteredMenus.ForEach((menu) =>
-            {
-                if(menu.isOpen)
-                    menu.Tick();
-            });
+                Cursor.CursorType = CursorTypes.Normal;
+                Cursor.Tick();
+
+                MatrixExtensions.Tick();
+                lock(_RegisteredMenus)
+                    _RegisteredMenus.ForEach((menu) =>
+                    {
+                        if(menu.isOpen)
+                            menu.Tick();
+                    });
 
 
-            Cursor.Tick();
+                Cursor.Tick();
 
-            if(!Paused || fu == null) {
-                ITickable[] Tickables_Copy;
-                lock(Tickables) {
-                    Tickables_Copy = Tickables.ToArray();
+                if(!Paused || fu == null) {
+                    ITickable[] Tickables_Copy;
+                    lock(Tickables) {
+                        Tickables_Copy = Tickables.ToArray();
+                    }
+                    foreach(ITickable tickable in Tickables_Copy) {
+                        // each tick locks itself when ticking so the next tick has to wait for the previous to complete.
+                        if(tickable != null)
+                            lock(tickable)
+                                tickable.Tick();
+                    }
+
+                    // remove all corpses after one minute
+                    lock(Corpses) {
+                        CharacterBase[] keys = Corpses.Keys.ToArray();
+
+                        foreach(CharacterBase key in keys)
+                            Corpses[key]++;
+                    }
+
+                    lock(Corpses) {
+                        List<KeyValuePair<CharacterBase, uint>> Corpses_Copy = Corpses.ToList();
+                        Corpses_Copy.FindAll((pair) => pair.Value > GameVars.defaultGTPS * 60).ForEach((pair) => Corpses.Remove(pair.Key));
+                    }
                 }
-                foreach(ITickable tickable in Tickables_Copy) {
-                    // each tick locks itself when ticking so the next tick has to wait for the previous to complete.
-                    if (tickable != null) lock(tickable)
-                        tickable.Tick();
-                }
 
-                // remove all corpses after one minute
-                lock(Corpses) {
-                    CharacterBase[] keys = Corpses.Keys.ToArray();
+                Cursor.Tick();
 
-                    foreach(CharacterBase key in keys)
-                        Corpses[key]++;
-                }
+                Cursor.Apply();
 
-                lock(Corpses) {
-                    List<KeyValuePair<CharacterBase, uint>> Corpses_Copy = Corpses.ToList();
-                    Corpses_Copy.FindAll((pair) => pair.Value > GameVars.defaultGTPS * 60).ForEach((pair) => Corpses.Remove(pair.Key));
-                }
+                justPressed = Controls.none;
             }
-
-            Cursor.Tick();
-
-            Cursor.Apply();
-
-            justPressed = Controls.none;
-
         }
 
 
@@ -550,7 +552,7 @@ namespace Game_Java_Port
             addRenderable(Cursor);
             addTickable(Cursor);
 
-            Background_Tiled back = new Background_Tiled(Tileset.Rock, Area: Game.instance.Area, settings: Background.Settings.Parallax | Background.Settings.Fill_Area);
+            Background_Tiled back = new Background_Tiled(Tileset.BG_Dark_Grass, Area: Game.instance.Area, settings: Background.Settings.Parallax | Background.Settings.Fill_Area);
 
             GameMenu.MainMenu.open();
 

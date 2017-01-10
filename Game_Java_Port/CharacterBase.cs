@@ -25,7 +25,7 @@ namespace Game_Java_Port {
 
         public const uint BaseAttributeValue = 5;
         public const uint BaseAttributePoints = 20;
-        public const uint BaseAttributePointsPerLevel = 2;
+        public const uint BaseAttributePointsPerLevel = 3;
 
         public const uint BaseExpToLevel = 100;
         public const uint BaseExpIncPerLevel = 10;
@@ -535,7 +535,7 @@ namespace Game_Java_Port {
                 }
         }
 
-        protected void StartRespawn() {
+        virtual protected void StartRespawn() {
 
             Timer timer = null;
             Game.instance.addMessage("You died. Lost all Exp and Items. Respawning in 5 seconds...");

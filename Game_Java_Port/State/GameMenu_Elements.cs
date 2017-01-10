@@ -101,8 +101,8 @@ namespace Game_Java_Port {
                     _Container = value;
                 }
             }
-            internal int TextYOffset { get { return 1; } }
-            internal int TextXOffset { get { return 5; } }
+            internal int TextYOffset { get { return Parent.TextYOffset; } }
+            internal int TextXOffset { get { return Parent.TextXOffset; } }
 
             internal Color? TextColor = null;
 
@@ -309,9 +309,7 @@ namespace Game_Java_Port {
         }
         
         private class RegulatorButtons<T> : MenuElementListBase where T : struct, IComparable, IConvertible {
-
-
-
+            
             public RegulatorButtons(Regulator<T> regulator, T? stepsize = null) {
                 if(stepsize == null)
                     stepsize = (T)Convert.ChangeType((float.Parse(regulator.MaxValue.ToString()) - float.Parse(regulator.MinValue.ToString())) / 20f, typeof(T));
@@ -443,9 +441,9 @@ namespace Game_Java_Port {
 
                 // if editing, make a '_' blink at the end of the text...
                 if(!Editing || (Program.stopwatch.ElapsedMilliseconds * 0.003f) % 3 == 0)
-                    rt.DrawText(Value, MenuFont, InputArea, MenuTextBrush);
+                    rt.DrawText(Value, MenuFont, _TextDisplayArea, MenuTextBrush);
                 else
-                    rt.DrawText(Value + "_", MenuFont, InputArea, MenuTextBrush);
+                    rt.DrawText(Value + "_", MenuFont, _TextDisplayArea, MenuTextBrush);
             }
 
             RectangleF _InputArea;
@@ -456,6 +454,8 @@ namespace Game_Java_Port {
                 }
             }
 
+            RectangleF _TextDisplayArea;
+
             public override void update() {
                 base.update();
                 _InputArea = new RectangleF(
@@ -463,6 +463,8 @@ namespace Game_Java_Port {
                         Area.Top,
                         Area.Width - (int)Parent.LargestStringSize,
                         Area.Height);
+                _TextDisplayArea = _InputArea;
+                _TextDisplayArea.Offset(TextXOffset, 0);
             }
 
         }
@@ -613,9 +615,9 @@ namespace Game_Java_Port {
             RectangleF RegulatorArea {
                 get {
                     return new RectangleF(
-                        Area.Left + (Container == null ? (int)Parent.LargestStringSize : 0) + (int)(Parent.LrgstRegNumSz[0] + Parent.LrgstRegNumSz[1]),
+                        Area.Left + (Container == null ? (int)Parent.LargestStringSize : 0) + (int)(Parent.LrgstRegNumSz[0] + Parent.LrgstRegNumSz[1] + 4 * TextXOffset),
                         Area.Top,
-                        Area.Width - (Container == null ? (int)Parent.LargestStringSize : 0) - (int)(Parent.LrgstRegNumSz[0] + Parent.LrgstRegNumSz[1] + Parent.LrgstRegNumSz[2]),
+                        Area.Width - (Container == null ? (int)Parent.LargestStringSize : 0) - (int)(Parent.LrgstRegNumSz[0] + Parent.LrgstRegNumSz[1] + Parent.LrgstRegNumSz[2] + 6 * TextXOffset),
                         Area.Height);
                 }
             }
@@ -776,21 +778,21 @@ namespace Game_Java_Port {
                                 RegulatorArea.Top + RegulatorArea.Height / 2),
                     MenuPadding / 3, MenuPadding / 3);
                 _ValueArea = new RectangleF(
-                    RegulatorArea.Left - Parent.LrgstRegNumSz[0] - Parent.LrgstRegNumSz[1] + TextXOffset,
+                    RegulatorArea.Left - (Parent.LrgstRegNumSz[0] + Parent.LrgstRegNumSz[1] + 3 * TextXOffset),
                     RegulatorArea.Top + TextYOffset,
                     Area.Width,
                     Area.Height);
                 _MaxValueArea = new RectangleF(
-                    RegulatorArea.Right + TextXOffset,
+                    RegulatorArea.Right + TextXOffset ,
                     RegulatorArea.Top + TextYOffset,
                     Area.Width,
                     Area.Height);
                 _MinValueArea = new RectangleF(
-                    RegulatorArea.Left - Parent.LrgstRegNumSz[1] + TextXOffset,
+                    RegulatorArea.Left - Parent.LrgstRegNumSz[1] ,
                     RegulatorArea.Top + TextYOffset,
                     Area.Width,
                     Area.Height);
-                Vector2 textOffset = new Vector2(TextXOffset / 2, TextYOffset);
+                Vector2 textOffset = new Vector2(TextXOffset, TextYOffset);
                 _SepTop = _MinValueArea.TopLeft - textOffset;
                 _SepBot = _MinValueArea.BottomLeft - textOffset;
 
@@ -1006,7 +1008,10 @@ namespace Game_Java_Port {
                 
                 Parent = parent;
                 Item = item;
-                tooltip = new Tooltip(item.ItemInfoText, Location: () => Area.Center, Validation: () => _Hovering);
+                if (item is Weapon)
+                    tooltip = new WeaponTooltip((Weapon)item, Location: () => Area.Center, Validation: () => _Hovering);
+                else
+                    tooltip = new Tooltip(item.ItemInfoText, Location: () => Area.Center, Validation: () => _Hovering);
                 iconBG = dataLoader.get("border_" + item.Rarity.ToString());
                 
                 lock(Parent.Elements)
@@ -1023,19 +1028,7 @@ namespace Game_Java_Port {
                 if(Item is IEquipable)
                     if(Game.instance._player.getEquipedItem(((IEquipable)Item).Slot) == Item)
                         rt.DrawText("E", MenuFont, Area, MenuTextBrush);
-
-                RectangleF coinArea = Area;
-                coinArea.Offset(0, 22);
-                coinArea.Size = new Size2F(8, 8);
                 
-                RectangleF offset = Area;
-                offset.Offset(8, 18);
-                offset = RectangleF.Intersect(Area, offset);
-
-                rt.DrawBitmap(dataLoader.get("Coin.bmp"), coinArea, 1, BitmapInterpolationMode.Linear);
-                
-                rt.DrawText(Item.SellPrice.ToString(), MenuFont, offset, MenuTextBrush);
-
                 MenuTextBrush.Color = temp;
             }
 

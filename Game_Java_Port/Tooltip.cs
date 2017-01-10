@@ -13,6 +13,8 @@ namespace Game_Java_Port {
 
         bool show = false;
 
+        protected Menu_BG_Tiled frame;
+
         public float Padding { get; set; } = 2;
 
         protected internal string Text { get; set; }
@@ -48,19 +50,10 @@ namespace Game_Java_Port {
 
             Text = text;
 
+            frame = Menu_BG_Tiled.Default;
+
             if (!ticksInternal)
                 GameStatus.addTickable(this);
-        }
-
-
-        protected void drawBG(RenderTarget rt) {
-            Matrix3x2 translation = Matrix3x2.Identity;
-            translation.TranslationVector = relArea.Location;
-            lock(GameStatus.BGBrush) {
-                GameStatus.BGBrush.Transform = translation;
-                rt.FillRectangle(relArea, GameStatus.BGBrush);
-                GameStatus.BGBrush.Transform = Matrix3x2.Identity;
-            }
         }
 
         protected void drawText(RenderTarget rt) {
@@ -68,7 +61,7 @@ namespace Game_Java_Port {
         }
 
         public virtual void draw(RenderTarget rt) {
-            drawBG(rt);
+            frame.draw(rt);
             drawText(rt);
         }
 
@@ -106,6 +99,8 @@ namespace Game_Java_Port {
 
                     relArea.Offset(Offset);
                     relLabel.Offset(Offset);
+                    frame.Area = relArea;
+                    frame.Tick();
                 }
         }
 

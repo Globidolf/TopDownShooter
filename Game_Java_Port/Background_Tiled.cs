@@ -48,7 +48,7 @@ namespace Game_Java_Port {
             }
         }
 
-        BitmapBrush bmpb = new BitmapBrush(Program._RenderTarget, Tileset.Grass.Source);
+        BitmapBrush bmpb = new BitmapBrush(Program._RenderTarget, Tileset.BG_Grass.Source);
 
         public override void draw(RenderTarget rt) {
             

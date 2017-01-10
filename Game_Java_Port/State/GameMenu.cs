@@ -23,6 +23,11 @@ namespace Game_Java_Port {
         private bool _isOpen;
         private Dictionary<string, object> _data = new Dictionary<string, object>();
 
+        private Menu_BG_Tiled MenuFrame;
+
+        internal int TextYOffset { get { return 1; } }
+        internal int TextXOffset { get { return 5; } }
+
         #endregion
         #region properties
 
@@ -98,7 +103,7 @@ namespace Game_Java_Port {
         /// <summary>
         /// This class will use presets. no need for a public constructor.
         /// </summary>
-        private GameMenu() {
+        private GameMenu(Menu_BG_Tiled bg = null) {
             onScrollEvent += (obj, args) =>
             {
                 _ScrollOffset -= args.Delta / 10;
@@ -108,6 +113,10 @@ namespace Game_Java_Port {
                 if(OnClick != null)
                     OnClick.Invoke(this, args);
             };
+            if(bg != null)
+                MenuFrame = bg;
+            else
+                MenuFrame = Menu_BG_Tiled.Default;
         }
 
         #endregion
@@ -210,8 +219,8 @@ namespace Game_Java_Port {
                                 using(SharpDX.DirectWrite.TextLayout tl = new SharpDX.DirectWrite.TextLayout(Program.DW_Factory, element.Label, MenuFont, 1000, 1000))
                                     size = tl.Metrics.Width;
 
-                    if(size > LargestStringSize)
-                        LargestStringSize = size;
+                    if(size + 2 * TextXOffset > LargestStringSize)
+                        LargestStringSize = size + 2 * TextXOffset;
                 }
                 foreach(MenuElementBase ele in Elements)
                     ele.invalidateWidths();
@@ -308,14 +317,20 @@ namespace Game_Java_Port {
         public void draw(RenderTarget rt) {
             //draws the border of the menu and each element afterwards
 
-            rt.FillRectangle(Area, BGBrush);
-            rt.DrawRectangle(Area, MenuBorderPen);
+            if (MenuFrame != null) {
+                MenuFrame.draw(rt);
+            } else {
+                rt.FillRectangle(Area, BGBrush);
+                rt.DrawRectangle(Area, MenuBorderPen);
+            }
             lock(Elements)
                 Elements.ForEach((ele) => ele.draw(rt));
         }
 
         public void Tick() {
             update();
+
+
             List<MenuElementBase> elements = new List<MenuElementBase>();
             //direct iteration causes a deadlock
             lock(Elements)
@@ -358,12 +373,21 @@ namespace Game_Java_Port {
                 (ele is MenuElementListBase && ((MenuElementListBase)ele).Children.Any(ele2 => ele2.GetType().Name.StartsWith("Regulator"))))
               ) {
                     _Width = ScreenWidth - 2 * MenuPadding - (tooLarge ? ScrollBarWidth : 0);
+                    // rounds width down to the nearest 64x multiplier available.
+                    if(MenuFrame != null)
+                        _Width = _Width / 64 * 64;
                 }              
             #endregion
 
             _X = ScreenWidth / 2 - _Width / 2;
             _Y = ScreenHeight / 2 - _height / 2;
             _Area = new RectangleF(_X, _Y, _Width + (tooLarge ? ScrollBarWidth : 0), Height);
+            if(MenuFrame != null) {
+                lock(MenuFrame) {
+                    MenuFrame.Area = _Area;
+                    MenuFrame.Tick();
+                }
+            }
         }
 
         #endregion

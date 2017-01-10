@@ -12,22 +12,44 @@ namespace Game_Java_Port {
         private Weapon Item;
 
         public WeaponTooltip(Weapon item, Func<Vector2> Location = null, Func<bool> Validation = null, bool ticksInternal = false) : base(
-            item.ItemBaseInfo + "\n" +
+                    //Giving the base the following text will make the resulting tooltip have a size large enough to contain all information we want to display.
+                    //minus 20px width which we add manually (icon size)
+                    item.ItemBaseInfo + "\n" +
                     "Lv." + item.Level + " " + item.Rarity.ToString() + " " + item.WType.ToString() + "\n" +
-                    "Bullets: " + item.Behaviour.ToString() + "\n" +
-                    "Speed: " + item.BulletSpeed + "Px/s" + "\n" +
-                    "Damage: " + item.Damage.ToString("0.##") + "x" + item.BulletsPerShot + "^" + (item.BulletHitCount > uint.MaxValue / 12 ? "inf" : item.BulletHitCount.ToString()) + "\n" +
-                    "Precision: " + item.Precision.ToString("0.#%") +
-                    " (" + Math.Min(1, (item.Precision * (Game.state == Game.GameState.Menu ? 1 : Game.instance._player.PrecisionMult))).ToString("0.#%") + ")\n" +
-                    "Range: " + item.Range.ToString("0.##") + "\n" +
-                    "APS: " + item.AttackSpeed.ToString("0.##") + "\n" +
-                    "Seed: " + item.Seed + ":" + item.GenType
+                    item.Behaviour.ToString() + "\n" +
+                    item.BulletSpeed + "Px/s" + "\n" +
+                    item.Damage.ToString("0.##") + "x" + item.BulletsPerShot + "^" + (item.BulletHitCount > uint.MaxValue / 12 ? "inf" : item.BulletHitCount.ToString()) + "\n" +
+                    item.Precision.ToString("0.#%") +
+                    Math.Min(1, (item.Precision * (Game.state == Game.GameState.Menu ? 1 : Game.instance._player.PrecisionMult))).ToString("0.#%") + ")\n" +
+                    item.Range.ToString("0.##") + "\n" +
+                    item.AttackSpeed.ToString("0.##") + "\n" +
+                    item.Seed + ":" + item.GenType
             , Location, Validation, ticksInternal) {
             Item = item;
+            RectangleF temp = Area;
+            temp.Width += 20;
+            Area = temp;
+            switch(Item.Rarity) {
+                case ItemType.Pearlescent:
+                    frame = Menu_BG_Tiled.Pearlescent;
+                    break;
+                case ItemType.Epic:
+                    frame = Menu_BG_Tiled.Epic;
+                    break;
+                case ItemType.Legendary:
+                    frame = Menu_BG_Tiled.Legendary;
+                    break;
+                case ItemType.Rare:
+                    frame = Menu_BG_Tiled.Rare;
+                    break;
+                default:
+                    frame = Menu_BG_Tiled.Default;
+                    break;
+            }
         }
 
         public override void draw(RenderTarget rt) {
-            drawBG(rt);
+            frame.draw(rt);
             RectangleF temp = relLabel;
             rt.DrawBitmap(Item.image, new RectangleF(temp.X, temp.Y, 16, 16), 1, BitmapInterpolationMode.Linear);
             rt.DrawBitmap(dataLoader.get("Coin"), new RectangleF(temp.X, temp.Y + temp.Height - 20, 16,16), 1, BitmapInterpolationMode.Linear);
@@ -35,6 +57,8 @@ namespace Game_Java_Port {
             rt.DrawBitmap(dataLoader.get("Attack"), new RectangleF(temp.X, temp.Y, 16, 16), 1, BitmapInterpolationMode.Linear);
             temp.Offset(0, 20);
             rt.DrawBitmap(dataLoader.get("Precision"), new RectangleF(temp.X, temp.Y, 16, 16), 1, BitmapInterpolationMode.Linear);
+            temp.Offset(0, 20);
+            rt.DrawBitmap(dataLoader.get("Firerate"), new RectangleF(temp.X, temp.Y, 16, 16), 1, BitmapInterpolationMode.Linear);
             temp.Offset(0, 20);
             temp = relLabel;
             temp.Offset(20, 0);
@@ -44,9 +68,12 @@ namespace Game_Java_Port {
             temp.Offset(0, 20);
             rt.DrawText(Item.Precision.ToString("0.##%"), GameStatus.MenuFont, temp, GameStatus.MenuTextBrush);
             temp.Offset(0, 20);
+            rt.DrawText(Item.AttackSpeed.ToString("0.## / s"), GameStatus.MenuFont, temp, GameStatus.MenuTextBrush);
+            temp.Offset(0, 20);
 
             temp = new RectangleF(relLabel.X + 20, relLabel.Y + relLabel.Height - 20, relLabel.Width, 20);
             rt.DrawText(Item.SellPrice.ToString("#,##0"), GameStatus.MenuFont, temp, GameStatus.MenuTextBrush);
         }
+
     }
 }

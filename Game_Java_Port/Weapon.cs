@@ -43,7 +43,7 @@ namespace Game_Java_Port {
         public override ItemType Rarity { get { return _Rarity; } }
 
         private uint calcPrice() {
-            float price = 5 * (float)Math.Pow(1.1f, Level);
+            float price = 50 * (float)Math.Pow(Level, 1.1f);
 
             switch(_Rarity) {
                 case ItemType.Garbage:
@@ -65,10 +65,10 @@ namespace Game_Java_Port {
                     price *= 10f;
                     break;
                 case ItemType.Pearlescent:
-                    price *= 35f;
+                    price *= 50f;
                     break;
                 case ItemType.DevItem:
-                    price *= 100f;
+                    price *= 300f;
                     break;
             }
             return (uint)price;

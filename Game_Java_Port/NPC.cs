@@ -306,8 +306,15 @@ namespace Game_Java_Port {
 
         public override void despawn() {
             base.despawn();
+            if(_ActionInfo != null)
+                _ActionInfo.Hide();
             lock(GameObjects)
                 GameObjects.Remove(this);
+        }
+
+        protected override void StartRespawn() {
+            base.StartRespawn();
+            _ActionInfo.Show();
         }
 
         protected override void Dispose(bool disposing) {
