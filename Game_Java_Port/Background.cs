@@ -51,7 +51,6 @@ namespace Game_Java_Port {
         BitmapBrush tb {
             get {
                 if(_tb == null) {
-                    lock(this)
                         _tb = new BitmapBrush(Program._RenderTarget, img);
                 }
                 return _tb;
@@ -92,7 +91,6 @@ namespace Game_Java_Port {
 
 
         public virtual void draw(RenderTarget rt) {
-            lock(this)
                 if(!disposed) {
                     if(settings.HasFlag(Settings.Fill_Area)) {
                         if(_tb != null) {
@@ -106,17 +104,23 @@ namespace Game_Java_Port {
 
         public virtual void Tick() {
             TickAction?.Invoke(this, EventArgs.Empty);
-            lock(this) if(_tb != null && !disposed) {
+             if(_tb != null && !disposed) {
                     transform = Matrix3x2.Identity;
                     transform.TranslationVector += MatrixExtensions.PVTranslation;
                     tb.Transform = transform;
                 }
 
-            offset = Area;
-            offset.Offset(MatrixExtensions.PVTranslation);
+            RectangleF temp = Area;
+            temp.Offset(MatrixExtensions.PVTranslation);
+
+            temp.X = (float)Math.Floor(temp.X);
+            temp.Y = (float)Math.Floor(temp.Y);
+
+            offset = temp;
+
             if(settings.HasFlag(Settings.Decay)) {
-                lifetime -= 1 / GameVars.defaultGTPS;
-                if(lifetime <= 0) lock(this)
+                lifetime -= GameStatus.TimeMultiplier;
+                if(lifetime <= 0)
                     Dispose();
             }
         }

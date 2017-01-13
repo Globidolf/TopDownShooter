@@ -32,11 +32,8 @@ namespace Game_Java_Port {
                            GameStatus.reset();
                        } else if(Client.Available > 0) {
                            buffer = new byte[Client.Available];
-                           lock(clientStream) {
                                clientStream.Read(buffer, 0, buffer.Length);
                                clientStream.Flush();
-                           }
-                           lock(this) {
                                commandStack = new List<string>();
 
                                List<byte[]> commands = new List<byte[]>();
@@ -59,7 +56,6 @@ namespace Game_Java_Port {
                                    errorcmd = cmd;
                                    parseCommand(cmd);
                                });
-                           }
                        }
                    } catch(Exception e) {
                        e.Data.Add("command", errorcmd);
@@ -157,11 +153,8 @@ namespace Game_Java_Port {
 
             CharacterBase interactor;
             IInteractable interact;
-
-            lock(GameStatus.GameSubjects) {
+            
                 interactor = GameStatus.GameSubjects.First((subj) => subj.ID == ID_act_src);
-            }
-            lock (GameStatus.GameObjects)
                 interact = GameStatus.GameObjects.First((obj) => obj.ID == ID_act_on);
 
             interact.interact((NPC)interactor);
@@ -191,7 +184,6 @@ namespace Game_Java_Port {
                 Game.instance._client.send(CommandType.updatePos, Game.instance.SerializePos());
                 Game.instance._client.send(CommandType.updateSpeed, Game.instance.SerializeSpeed());
                 Game.instance._client.send(CommandType.updateAim, Game.instance.SerializeAimDir());
-                lock(Game.instance)
                     Game.instance.statechanged = false;
             }
 
@@ -202,10 +194,8 @@ namespace Game_Java_Port {
             while(i < count && pos < buffer.Length) {
                 ulong ID = buffer.getULong(ref pos);
                 CharacterBase target;
-                lock(GameStatus.GameSubjects) {
 
                     target = GameStatus.GameSubjects.First((obj) => obj.ID == ID);
-                }
 
                 target.setState(buffer, ref pos);
                 i++;
@@ -215,9 +205,7 @@ namespace Game_Java_Port {
         private void updatePos(byte[] buffer, ref int pos) {
             ulong ID = buffer.getULong(ref pos);
             NPC target = null;
-            lock(GameStatus.GameSubjects) {
                 target = (NPC)GameStatus.GameSubjects.First((obj) => obj.ID == ID);
-            }
             if(target != Game.instance._player) {
                 target.Location = new Vector2(buffer.getFloat(ref pos), buffer.getFloat(ref pos));
             } else {
@@ -229,9 +217,7 @@ namespace Game_Java_Port {
         private void updateSpeed(byte[] buffer, ref int pos) {
             ulong ID = buffer.getULong(ref pos);
             NPC target = null;
-            lock(GameStatus.GameSubjects) {
                 target = (NPC)GameStatus.GameSubjects.First((obj) => obj.ID == ID);
-            }
             if(target != Game.instance._player) {
                     target.MovementVector.X = buffer.getFloat(ref pos);
                     target.MovementVector.Y = buffer.getFloat(ref pos);
@@ -243,9 +229,7 @@ namespace Game_Java_Port {
         private void updateAim(byte[] buffer, ref int pos) {
             ulong ID = buffer.getULong(ref pos);
             NPC target = null;
-            lock(GameStatus.GameSubjects) {
                 target = (NPC)GameStatus.GameSubjects.First((obj) => obj.ID == ID);
-            }
             if (target != Game.instance._player) {
                 target.AimDirection = new AngleSingle(buffer.getFloat(ref pos),AngleType.Radian);
             } else {
@@ -256,18 +240,14 @@ namespace Game_Java_Port {
         private void updateState(byte[] buffer, ref int pos) {
             ulong ID = buffer.getULong(ref pos);
             NPC target = null;
-            lock(GameStatus.GameSubjects) {
                 target = (NPC)GameStatus.GameSubjects.First((obj) => obj.ID == ID);
-            }
             target.setInputState(buffer, ref pos);
         }
 
         private void remove(byte[] buffer, ref int pos) {
             ulong ID = buffer.getULong(ref pos);
             CharacterBase remove;
-            lock(GameStatus.GameSubjects) {
                 remove = GameStatus.GameSubjects.First((obj) => obj.ID == ID);
-            }
             Program.DebugLog.Add("Removing Subject " + remove.ID + ". GameClient.remove(byte[],ref int).");
             remove.removeFromGame();
         }
@@ -275,9 +255,7 @@ namespace Game_Java_Port {
         private void updateWpnRngState(byte[] buffer, ref int pos) {
             ulong ID = buffer.getULong(ref pos);
             NPC target = null;
-            lock(GameStatus.GameSubjects) {
                 target = (NPC)GameStatus.GameSubjects.First((obj) => obj.ID == ID);
-            }
             target.setWeaponRandomState(buffer, ref pos);
         }
 

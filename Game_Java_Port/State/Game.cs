@@ -75,14 +75,11 @@ namespace Game_Java_Port {
         public DrawType drawType { get; set; } = DrawType.Rectangle;
 
         public void addMessage(string msg) {
-            lock(_messages)
                 _messages.Add(msg);
             Timer timer = null;
             timer = new Timer((obj) =>
             {
-                lock(_messages)
                     _messages.Remove(msg);
-                lock(timer)
                     timer.Dispose();
             });
             timer.Change(GameVars.messageLifeTime,Timeout.Infinite);
@@ -102,16 +99,14 @@ namespace Game_Java_Port {
 
 
         public void Tick() {
-
-            lock(this)
+            
                 if(!disposed)
             switch(state) {
                 case GameState.Normal:
                     int count;
-                    lock(GameSubjects)
                         count = GameSubjects.Count;
 
-                        if(RNG.Next((int)GameVars.defaultGTPS * count / 3) == 0) {
+                        if(RNG.NextFloat(0, 0.3f / TimeMultiplier) <= 1) {
                             NPC rndSpwn = new NPC(_player.Level, add: false);
                             float range = rndSpwn.EquippedWeaponR != null ? rndSpwn.WeaponRangeR : rndSpwn.MeleeRangeR;
                             range = rndSpwn.EquippedWeaponL != null ? Math.Max(range, rndSpwn.WeaponRangeL) : range;
@@ -125,11 +120,10 @@ namespace Game_Java_Port {
                     break;
                 case GameState.Host | GameState.Multiplayer:
                     List<CharacterBase> players;
-                    lock(GameSubjects)
                         players = GameSubjects.FindAll((subj) => subj.Team == FactionNames.Players);
                     players.ForEach((subj) =>
                     {
-                        if(GameHost._HostGenRNG.Next((int)GameVars.defaultGTPS * GameSubjects.Count / 3) == 0) {
+                        if(GameHost._HostGenRNG.NextFloat(0, 3 / TimeMultiplier) <= 1) {
                             NPC rndSpwn = new NPC(subj.Level, add: false);
                             float range = rndSpwn.EquippedWeaponR != null ? rndSpwn.WeaponRangeR : rndSpwn.MeleeRangeR;
                             rndSpwn.Location = new Vector2(
@@ -180,7 +174,7 @@ namespace Game_Java_Port {
         public void draw(RenderTarget rt) {
 
             List<string> temp = new List<string>();
-            lock(this) if (!disposed) {
+             if (!disposed) {
                 temp.AddRange(_messages);
             }
             temp.Reverse();
@@ -217,12 +211,10 @@ namespace Game_Java_Port {
                 if(disposing) {
                     if(GameHost != null) {
                         GameHost.Listen = false;
-                        lock(GameHost)
                             GameHost.Dispose();
                     }
                     if(_client != null) {
                         _client.Listen = false;
-                        lock(_client)
                             _client.Dispose();
                     }
                     _messages = null;

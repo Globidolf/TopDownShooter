@@ -41,17 +41,12 @@ namespace Game_Java_Port {
             this.Area = Area.HasValue ? Area.Value : this.Area;
             this.Tiles = Tiles;
             Random RNG = Seed.HasValue ? new Random(Seed.Value) : new Random();
-            for(int y = 0; (y-1) * Tiles.TileSize < this.Area.Height; y++) {
-                for (int x = 0; (x-1) * Tiles.TileSize < this.Area.Width; x++) {
-                    buffer.Add(new TileArea(new Point(x,y),Tiles.getRandomTile(RNG)));
-                }
-            }
+                for(int y = 0; (y - 1) * Tiles.TileSize.Height < this.Area.Height; y++) 
+                    for(int x = 0; (x - 1) * Tiles.TileSize.Width < this.Area.Width; x++) 
+                        buffer.Add(new TileArea(new Point(x, y), Tiles.getRandomTile(RNG)));
         }
 
-        BitmapBrush bmpb = new BitmapBrush(Program._RenderTarget, Tileset.BG_Grass.Source);
-
         public override void draw(RenderTarget rt) {
-            
             foreach(TileArea tile in buffer) {
                 
                 rt.DrawBitmap(tile.Tile, tile.Area, 1, BitmapInterpolationMode.Linear);
@@ -61,29 +56,28 @@ namespace Game_Java_Port {
         public override void Tick() {
             //base.Tick();
             List<TileArea> backbuffer = new List<TileArea>();
-
-            buffer.ForEach(t =>
-            {
-                RectangleF bounds = new RectangleF(
-                    Area.X + t.X * Tiles.TileSize,
-                    Area.Y + t.Y * Tiles.TileSize,
-                    Tiles.TileSize, Tiles.TileSize);
-                switch(settings) {
-                    case Settings.Parallax | Settings.Fill_Area:
-                        bounds.X = CustomMaths.mod(bounds.X + MatrixExtensions.PVTranslation.X, Area.Width + Tiles.TileSize) - Tiles.TileSize;
-                        bounds.Y = CustomMaths.mod(bounds.Y + MatrixExtensions.PVTranslation.Y, Area.Height + Tiles.TileSize) - Tiles.TileSize;
-                        break;
-                    case Settings.Parallax:
-                        bounds.Location += MatrixExtensions.PVTranslation;
-                        break;
-                }
-                bounds.X = (float)Math.Floor(bounds.X);
-                bounds.Y = (float)Math.Floor(bounds.Y);
-                backbuffer.Add(new TileArea(
-                    new Point(t.X, t.Y), t.Tile,
-                    bounds));
-            });
-            buffer = backbuffer;
+                buffer.ForEach(t =>
+                {
+                    RectangleF bounds = new RectangleF(
+                        Area.X + t.X * Tiles.TileSize.Width,
+                        Area.Y + t.Y * Tiles.TileSize.Height,
+                        Tiles.TileSize.Width, Tiles.TileSize.Height);
+                    switch(settings) {
+                        case Settings.Parallax | Settings.Fill_Area:
+                            bounds.X = CustomMaths.mod(bounds.X + MatrixExtensions.PVTranslation.X, Area.Width + Tiles.TileSize.Width) - Tiles.TileSize.Width;
+                            bounds.Y = CustomMaths.mod(bounds.Y + MatrixExtensions.PVTranslation.Y, Area.Height + Tiles.TileSize.Height) - Tiles.TileSize.Height;
+                            break;
+                        case Settings.Parallax:
+                            bounds.Location += MatrixExtensions.PVTranslation;
+                            break;
+                    }
+                    bounds.X = (float)Math.Floor(bounds.X);
+                    bounds.Y = (float)Math.Floor(bounds.Y);
+                    backbuffer.Add(new TileArea(
+                        new Point(t.X, t.Y), t.Tile,
+                        bounds));
+                });
+                buffer = backbuffer;
         }
 
         protected override void Dispose(bool disposing) {

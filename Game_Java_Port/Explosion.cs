@@ -34,7 +34,6 @@ namespace Game_Java_Port {
         }
 
         public void draw(RenderTarget rt) {
-            lock(this)
                 if(!disposed)
                     rt.FillEllipse(ellipse, brush);
         }
@@ -42,14 +41,11 @@ namespace Game_Java_Port {
         public void Tick() {
             ellipse = new Ellipse(Area.Center + MatrixExtensions.PVTranslation, Area.Width / 2, Area.Height / 2);
             if(Duration <= 0) {
-                lock(this)
                     Dispose();
             } else {
-                Duration -= 1 / GameVars.defaultGTPS;
-                lock(this) {
+                Duration -= GameStatus.TimeMultiplier;
                     if (!disposed)
                         brush.Color = new Color4(brush.Color.R, brush.Color.G, brush.Color.B, (Duration / initialDuration));
-                }
             }
         }
 

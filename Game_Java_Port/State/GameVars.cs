@@ -10,9 +10,7 @@ namespace Game_Java_Port {
 
     class GameVars {
         public static Random ClientRNG = new Random();
-        public const float defaultFPS = 59;
-        public const float defaultGTPS = 60;
-
+        
         public const float WeaponInfoMargin = 5;
 
         public const bool debugMode = true;
@@ -22,6 +20,8 @@ namespace Game_Java_Port {
 
         public const float pickupRange = 200;
         public const float pickupMouseRange = 50;
+
+
 
         public static Dictionary<Controls, int> ControlMapping { get; set; } = new Dictionary<Controls, int>() {
                 {Controls.move_left,        (int)Keys.A },
@@ -34,24 +34,49 @@ namespace Game_Java_Port {
                 {Controls.open_pausemenu,   (int)Keys.Escape },
                 {Controls.open_inventory,   (int)Keys.E },
                 {Controls.fire,             (int)MouseButtons.Left },
-                {Controls.reload,          (int)Keys.R }
+                {Controls.reload,           (int)Keys.R }
             };
 
+        // dictionary replacement instance
+        public static _RarityColors RarityColors = new _RarityColors();
 
-        public static Dictionary<ItemType, Color> RarityColors { get; } = new Dictionary<ItemType, Color>() {
-            {ItemType.Set,          CustomMaths.fromArgb(0xff,0x4a,0xe4,0x4a) },
-            {ItemType.Quest,        CustomMaths.fromArgb(0xff,0x4a,0x4a,0xe4) },
-            {ItemType.Special,      CustomMaths.fromArgb(0xff,0x4a,0xe4,0xe4) },
-            {ItemType.Garbage,      CustomMaths.fromArgb(0xff,0xaa,0xaa,0xaa) },
-            {ItemType.Common,       CustomMaths.fromArgb(0xff,0xee,0xee,0xee) },
-            {ItemType.Uncommon,     CustomMaths.fromArgb(0xff,0xaa,0xee,0xaa) },
-            {ItemType.Rare,         CustomMaths.fromArgb(0xff,0xaa,0xaa,0xee) },
-            {ItemType.Epic,         CustomMaths.fromArgb(0xff,0xee,0xaa,0xee) },
-            {ItemType.Legendary,    CustomMaths.fromArgb(0xff,0xee,0xdd,0x55) },
-            {ItemType.Pearlescent,  CustomMaths.fromArgb(0xff,0x55,0xee,0xdd) },
-            {ItemType.DevItem,      CustomMaths.fromArgb(0xff,0x00,0x22,0x33) },
-            {ItemType.Gold,         CustomMaths.fromArgb(0xff,0xdd,0xdd,0x22) }
-        };
+        // dictionary replacement class
+        public class _RarityColors {
+
+            // initialize colors for performance
+            private static Color Set          = CustomMaths.fromArgb(0xff, 0x4a, 0xe4, 0x4a) ;
+            private static Color Quest        = CustomMaths.fromArgb(0xff, 0x4a, 0x4a, 0xe4) ;
+            private static Color Special      = CustomMaths.fromArgb(0xff, 0x4a, 0xe4, 0xe4) ;
+            private static Color Garbage      = CustomMaths.fromArgb(0xff, 0xaa, 0xaa, 0xaa) ;
+            private static Color Common       = CustomMaths.fromArgb(0xff, 0xee, 0xee, 0xee) ;
+            private static Color Uncommon     = CustomMaths.fromArgb(0xff, 0xaa, 0xee, 0xaa) ;
+            private static Color Rare         = CustomMaths.fromArgb(0xff, 0xaa, 0xaa, 0xee) ;
+            private static Color Epic         = CustomMaths.fromArgb(0xff, 0xee, 0xaa, 0xee) ;
+            private static Color Legendary    = CustomMaths.fromArgb(0xff, 0xee, 0xdd, 0x55) ;
+            private static Color Pearlescent  = CustomMaths.fromArgb(0xff, 0x55, 0xee, 0xdd) ;
+            private static Color DevItem      = CustomMaths.fromArgb(0xff, 0x00, 0x22, 0x33) ;
+            private static Color Gold         = CustomMaths.fromArgb(0xff, 0xdd, 0xdd, 0x22) ;
+            private static Color Default      = CustomMaths.fromArgb(0xff, 0xff, 0x00, 0xff) ;
+
+            // dictionary replacement accessor
+            public Color this[ItemType index] { get {
+                    switch (index) {
+                        case ItemType.Set          :    return Set         ;
+                        case ItemType.Quest        :    return Quest       ;
+                        case ItemType.Special      :    return Special     ;
+                        case ItemType.Garbage      :    return Garbage     ;
+                        case ItemType.Common       :    return Common      ;
+                        case ItemType.Uncommon     :    return Uncommon    ;
+                        case ItemType.Rare         :    return Rare        ;
+                        case ItemType.Epic         :    return Epic        ;
+                        case ItemType.Legendary    :    return Legendary   ;
+                        case ItemType.Pearlescent  :    return Pearlescent ;
+                        case ItemType.DevItem      :    return DevItem     ;
+                        case ItemType.Gold         :    return Gold;
+                        default                    :    return Default ;
+                }
+                } }
+        }
 
         public static Color Random {
             get {

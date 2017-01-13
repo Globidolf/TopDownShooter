@@ -37,6 +37,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -142,7 +143,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AI Library.cs" />
-    <Compile Include="Background_Tiled.cs" />
+    <Compile Include="Logics\Animated_Tileset.cs" />
+    <Compile Include="Logics\Background_Tiled.cs" />
     <Compile Include="CharacterBase.cs" />
     <Compile Include="Background.cs" />
     <Compile Include="Bullet.cs" />
@@ -151,6 +153,7 @@
     <Compile Include="Logics\dataLoader.cs" />
     <Compile Include="Explosion.cs" />
     <Compile Include="Logics\Faction.cs" />
+    <Compile Include="Logics\SpriteFont.cs" />
     <Compile Include="Menu_BG_Tiled.cs" />
     <Compile Include="State\Game.cs" />
     <Compile Include="State\GameClient.cs" />

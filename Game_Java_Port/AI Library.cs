@@ -29,7 +29,6 @@ namespace Game_Java_Port {
         private static Action<NPC> NonConduction_AI = (me) =>
                 {
                     IOrderedEnumerable<CharacterBase> orderedList;
-                    lock(GameSubjects)
                         orderedList = GameSubjects.OrderBy((subj) => Vector2.Distance(subj.Location, me.Location));
 
                     CharacterBase closestEnemy = ResultOrNull(orderedList, Seek_By_Disposition(me, Faction.Disposition.Enemy));
@@ -104,30 +103,34 @@ namespace Game_Java_Port {
 
         public static Action<NPC> Wander = (me) =>
                 {
-                    if (me.RNG.Next(5 * (int)GameVars.defaultGTPS) == 0) {
+                    if (me.RNG.NextFloat(0, 5 / TimeMultiplier) <= 1) {
                         me.IsMoving ^= true;
                     }
-                    if(me.RNG.Next(10 * (int)GameVars.defaultGTPS) == 0) {
+                    if(me.RNG.NextFloat(0, 1 / TimeMultiplier) <= 1) {
                         me.AimDirection = new AngleSingle(me.RNG.Next(360), AngleType.Degree);
                     }
 
                     AngleSingle movementAngle = me.DirectionVector.toAngle();
-                    movementAngle = movementAngle.track(me.AimDirection, (float)Math.PI * 6 / GameVars.defaultGTPS * 0.8f);
+                    movementAngle = movementAngle.track(me.AimDirection, (float)Math.PI * TimeMultiplier / 3);
 
                     me.DirectionVector = movementAngle.toVector();
                 };
 
         public static Action<NPC, CharacterBase> Search = (me, target) =>
                 {
-                    me.AimDirection = me.AimDirection.track(me.Location.angleTo(target.Location) + new AngleSingle(me.RNG.NextFloat(-0.5f, 0.5f), AngleType.Revolution), 0.01f);
+                    me.AimDirection = me.AimDirection.track(
+                        me.Location.angleTo(target.Location) + new AngleSingle(me.RNG.NextFloat(-0.5f, 0.5f), AngleType.Revolution)
+                        ,(float)Math.PI * TimeMultiplier);
+
+
 
                     AngleSingle movementAngle = me.DirectionVector.toAngle();
 
-                    movementAngle = movementAngle.track(me.AimDirection, (float)Math.PI * 6 / GameVars.defaultGTPS * 0.8f);
+                    movementAngle = movementAngle.track(me.AimDirection, (float)Math.PI * TimeMultiplier / 3);
 
                     me.DirectionVector = movementAngle.toVector();
 
-                    if(me.AimDirection.offset(me.Location.angleTo(target.Location), true).Revolutions < 0.1)
+                    if(me.AimDirection.difference(me.Location.angleTo(target.Location), true).Revolutions < 0.1)
                         me.IsMoving = true;
                     else
                         me.IsMoving = false;
@@ -137,11 +140,13 @@ namespace Game_Java_Port {
                 {
                     float distance = Vector2.Distance(target.Location, me.Location);
 
-                    me.AimDirection = me.Location.angleTo(target.Location);
+                    me.AimDirection = me.AimDirection.track(
+                    me.Location.angleTo(target.Location)
+                        ,(float)Math.PI * TimeMultiplier);
 
                     AngleSingle movementAngle = me.DirectionVector.toAngle();
 
-                    movementAngle = movementAngle.track(me.AimDirection, (float)Math.PI * 6 / GameVars.defaultGTPS * 0.8f);
+                    movementAngle = movementAngle.track(me.AimDirection, (float)Math.PI * TimeMultiplier / 3);
 
                     me.DirectionVector = movementAngle.toVector();
 
@@ -156,10 +161,9 @@ namespace Game_Java_Port {
                     me.AimDirection = me.Location.angleTo(target.Location) + (lookback ? AngleSingle.ZeroAngle : AngleSingle.StraightAngle);
 
                     AngleSingle movementAngle = me.DirectionVector.toAngle();
-
                     movementAngle = movementAngle.track(
                         me.AimDirection + (lookback ? AngleSingle.StraightAngle : AngleSingle.ZeroAngle),
-                        (float)Math.PI * 6 / GameVars.defaultGTPS * 0.8f);
+                        (float)Math.PI * TimeMultiplier / 3);
 
                     me.DirectionVector = movementAngle.toVector();
                     
@@ -217,7 +221,6 @@ namespace Game_Java_Port {
             }
 
             if(LastAimDirection != me.AimDirection) {
-                lock(Game.instance)
                     Game.instance.statechanged = true;
                 LastAimDirection = me.AimDirection;
             }
@@ -225,9 +228,7 @@ namespace Game_Java_Port {
 
             if(me.justPressed(Controls.interact)) {
                 IOrderedEnumerable<IInteractable> list;
-                lock(GameObjects) {
                     list = GameObjects.OrderBy((obj) => { return Vector2.Distance(obj.Location + MatrixExtensions.PVTranslation, MousePos); });
-                }
                 
                 if (list.Any((obj) => {
                     return obj != me &&
@@ -336,7 +337,7 @@ namespace Game_Java_Port {
 
                     AngleSingle movementAngle = me.DirectionVector.toAngle();
                     if (distance > dist) {
-                        movementAngle = movementAngle.track(me.AimDirection, (float)Math.PI * 6 / GameVars.defaultGTPS * 0.8f);
+                        movementAngle = movementAngle.track(me.AimDirection, (float)Math.PI * TimeMultiplier / 3);
                     } else {
                         //determine by seed if clock- or counter-clockwise (RNG won't work for this)
                         int sign = (me.Seed % 2 == 0) ? 1 : -1;
@@ -346,7 +347,7 @@ namespace Game_Java_Port {
                         //turn point at half viewradius (bit more than 92 to ensure some distance)
                         angle += new AngleSingle((distance / (me.ViewRadius * 2) - 1) * sign * 92, AngleType.Degree);
 
-                        movementAngle = movementAngle.track(angle, (float)Math.PI * 6 / GameVars.defaultGTPS * 0.8f);
+                        movementAngle = movementAngle.track(angle, (float)Math.PI * TimeMultiplier / 3);
                     }
 
                     me.DirectionVector = movementAngle.toVector();

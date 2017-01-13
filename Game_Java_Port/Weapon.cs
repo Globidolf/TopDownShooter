@@ -513,6 +513,8 @@ namespace Game_Java_Port {
 
             // todo: unique mods
 
+            init();
+
             if(add)
                 AddToGame();
         }
@@ -539,7 +541,7 @@ namespace Game_Java_Port {
                     List<CharacterBase> targets = new List<CharacterBase>();
 
                     lock(GameStatus.GameSubjects)
-                        targets.AddRange(GameStatus.GameSubjects.OrderBy((targ) => Owner.AimDirection.offset(Owner.Location.angleTo(targ.Location), true)));
+                        targets.AddRange(GameStatus.GameSubjects.OrderBy((targ) => Owner.AimDirection.difference(Owner.Location.angleTo(targ.Location), true)));
 
                     targets.Remove(Owner);
 
@@ -563,8 +565,10 @@ namespace Game_Java_Port {
                             if(!targ.IsDisposed) {
                                 Owner.Attack(targ, Owner.MeleeDamageR);
                                 if(Behaviour.HasFlag(BulletBehaviour.Knockback)) {
-                                    targ.MovementVector.X += -(float)Math.Cos(Owner.Location.angleTo(targ.Location).Radians) * Math.Min(80000 / GameVars.defaultGTPS, ((Owner.MeleeDamageR / targ.MaxHealth)) * 10000 / GameVars.defaultGTPS);
-                                    targ.MovementVector.Y += -(float)Math.Sin(Owner.Location.angleTo(targ.Location).Radians) * Math.Min(80000 / GameVars.defaultGTPS, ((Owner.MeleeDamageR / targ.MaxHealth)) * 10000 / GameVars.defaultGTPS);
+
+                                    targ.MovementVector += Owner.Location.angleTo(targ.Location).toVector() * Owner.MeleeDamageR;
+                                    //targ.MovementVector.X += -(float)Math.Cos(Owner.Location.angleTo(targ.Location).Radians) * Math.Min(80000 / GameVars.TicksPerSecond, ((Owner.MeleeDamageR / targ.MaxHealth)) * 10000 / GameVars.TicksPerSecond);
+                                    //targ.MovementVector.Y += -(float)Math.Sin(Owner.Location.angleTo(targ.Location).Radians) * Math.Min(80000 / GameVars.TicksPerSecond, ((Owner.MeleeDamageR / targ.MaxHealth)) * 10000 / GameVars.TicksPerSecond);
                                 }
                             }
                         }
@@ -591,9 +595,9 @@ namespace Game_Java_Port {
         public override void Tick() {
             base.Tick();
             if (_CoolDown > 0)
-                _CoolDown -= GameVars.defaultGTPS / 1000;
+                _CoolDown -= GameStatus.TimeMultiplier;
             if(_Reload > 0)
-                _Reload -= GameVars.defaultGTPS / 1000;
+                _Reload -= GameStatus.TimeMultiplier;
         }
 
         private void makebgpen() {
@@ -623,9 +627,8 @@ namespace Game_Java_Port {
 
         public override void draw(RenderTarget rt) {
             base.draw(rt);
-            CharacterBase temp = Owner;
 
-            if (!Game.state.HasFlag(Game.GameState.Menu) && temp == Game.instance._player && _Reload > 0) {
+            if (!Game.state.HasFlag(Game.GameState.Menu) && Owner == Game.instance._player && _Reload > 0) {
                 int width = 150;
                 RectangleF pos = new RectangleF(-width/2,0,width,20);
                 RectangleF sub = new RectangleF(-width/2,0,width* (ReloadSpeed - _Reload * 1000) / ReloadSpeed, 20);

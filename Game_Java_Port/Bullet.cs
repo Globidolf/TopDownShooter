@@ -8,10 +8,11 @@ using System.Drawing.Drawing2D;
 using SharpDX.Mathematics.Interop;
 using SharpDX.Direct2D1;
 using SharpDX;
+using Game_Java_Port.Logics;
 
 namespace Game_Java_Port {
     class Bullet : IRenderable, ITickable, IDisposable {
-
+        
         CharacterBase _sourceOwner;
         Weapon _source;
 
@@ -27,8 +28,8 @@ namespace Game_Java_Port {
 
         public RectangleF Area { get; set; }
 
-        //public SizeF Size2d { get { return new SizeF((float)Math.Abs(Math.Sin(_direction)) * _speed, (float)Math.Abs(Math.Cos(_direction) * _speed)); } set { } }
-        
+        List<Vector2> Statics;
+
         uint _hitsRemain;
 
         float _speed;
@@ -56,39 +57,35 @@ namespace Game_Java_Port {
                 return _pencil;
             } }
 
+
         public void draw(RenderTarget rt) {
             if(_initiated) {
-                lock(this) {
                     if(!disposed) {
                         Vector2 relativePos = pos + MatrixExtensions.PVTranslation;
                         Vector2 relativelastPos = lastPos + MatrixExtensions.PVTranslation;
-                        rt.DrawLine(relativelastPos, relativePos, pencil, _source.Behaviour.HasFlag(BulletBehaviour.Beam) ? 1 + 10 - (float)Math.Sqrt(_distance) / _source.Range * 10 : 2);
+                        //rt.DrawLine(relativelastPos, relativePos, pencil, _source.Behaviour.HasFlag(BulletBehaviour.Beam) ? 1 + 10 - (float)Math.Sqrt(_distance) / _source.Range * 10 : 2);
                         //g.DrawLine(pencil, relativePos, relativelastPos);
 
 
-                        if(_source.Behaviour.HasFlag(BulletBehaviour.Beam)) {
-                            int iterations = 4;
-                            float distance = Vector2.Distance(pos, lastPos);
-                            float offset = distance * (float)_RNG.NextDouble();
-                            float length = 1 + (float)_RNG.NextDouble() * (distance - offset) / 2;
-                            AngleSingle dir = lastPos.angleTo(pos);
-                            Vector2 split1 = relativelastPos.move(dir, offset);
-                            Vector2 split2;
-                            while(offset < distance && length > (distance - offset) / 12 && iterations > 0) {
 
-                                offset += distance * (float)_RNG.NextDouble();
-                                length /= 2;
-                                dir.Radians += (float)(-Math.PI / 2 + _RNG.NextDouble() * Math.PI);
-                                split2 = split1.move(dir, length);
+                        Matrix3x2 temp = rt.Transform, temp2 = Matrix3x2.Rotation(((GetHashCode()/1000f) % 1f + (float)Program.stopwatch.Elapsed.TotalSeconds % 1f) * (float)Math.PI * 2 ,
+                            relativelastPos + new Vector2(Animated_Tileset.Bullet_Acid.Size.Width /2, Animated_Tileset.Bullet_Acid.Size.Height / 2));
 
-                                rt.DrawLine(split1, split2, pencil);
+                        rt.Transform = temp2;
 
-                                split1 = split2;
-                                iterations--;
-                            }
+                        rt.DrawBitmap(Animated_Tileset.Bullet_Acid.Frame, new RectangleF(relativelastPos.X, relativelastPos.Y,
+                            Animated_Tileset.Bullet_Acid.Size.Width, Animated_Tileset.Bullet_Acid.Size.Height), 1, BitmapInterpolationMode.NearestNeighbor);
+
+                        rt.Transform = temp;
+
+                        if (Statics != null) {
+                            Statics.Aggregate((pointA, pointB) => {
+                                rt.DrawLine(pointA, pointB, pencil);
+                                return pointB;
+                            } );
                         }
+
                     }
-                }
                 _rendered = true;
             }
         }
@@ -102,7 +99,6 @@ namespace Game_Java_Port {
         private List<CharacterBase> TargetList {
             get {
                 List<CharacterBase> temp = new List<CharacterBase>();
-                lock(GameStatus.GameSubjects)
                     temp.AddRange(GameStatus.GameSubjects);
                 temp.RemoveAll((targ) =>
                 {
@@ -136,6 +132,10 @@ namespace Game_Java_Port {
         public DrawType drawType { get; set; } = DrawType.Polygon;
 
         public Bullet(Weapon source, int? seed = null, List<CharacterBase> reserved = null) {
+
+            if (source.WType == WeaponType.Acid) {
+                
+            }
 
             //initialize RNG
             if(seed == null)
@@ -202,17 +202,17 @@ namespace Game_Java_Port {
 
                     // increase speed and direction towards source
                     if(_source.Behaviour.HasFlag(BulletBehaviour.Returning)) {
-                        
+
                         _speed = Math.Max(
                             10,
-                            _speed * (0.96f + 0.1f * (1 - pos.angleTo(_sourceOwner.Area.Center).offset( _direction, true).Revolutions))
+                            _speed * (0.96f + 0.1f * (1 - pos.angleTo(_sourceOwner.Area.Center).difference(_direction, true).Revolutions))
                             );
-                        
+
                         if(_sourceOwner != null) {
-                            float trckStr = (float)
-                                Math.PI * 6 / GameVars.defaultGTPS *
+                            float trckStr =
+                                (float)Math.PI * GameStatus.TimeMultiplier / 3 *
                                 Math.Min(Math.Max(_speed / 1000, 0.1f), 2) *
-                                Math.Min(Math.Max(_source.Range / 1000, 0.5f), 8) * 
+                                Math.Min(Math.Max(_source.Range / 1000, 0.5f), 8) *
                                 (0.9f + (float)_RNG.NextDouble() * 0.2f);
                             _direction = _direction.track(pos.angleTo(_sourceOwner.Area.Center), trckStr);
                         }
@@ -226,7 +226,7 @@ namespace Game_Java_Port {
                             nextTarget();
                         if(_currentTarget != null) {
                             float trckStr = (float)
-                                Math.PI * 6 / GameVars.defaultGTPS *
+                                Math.PI * 3 * GameStatus.TimeMultiplier *
                                 Math.Min(Math.Max(_speed / 1000, 0.1f), 2) *
                                 Math.Min(Math.Max(_source.Range / 1000, 0.5f), 2) *
                                 (0.9f + (float)_RNG.NextDouble() * 0.2f);
@@ -237,7 +237,32 @@ namespace Game_Java_Port {
                 }
 
                 Hitscan();
-                
+
+                // add lightning effects
+                if(_source.Behaviour.HasFlag(BulletBehaviour.Beam)) {
+                    Statics = new List<Vector2>();
+                    int iterations = 4;
+                    float distance = Vector2.Distance(pos, lastPos);
+                    float offset = distance * (float)_RNG.NextDouble();
+                    float length = 1 + (float)_RNG.NextDouble() * (distance - offset) / 2;
+                    AngleSingle dir = lastPos.angleTo(pos);
+                    Vector2 split1 = (lastPos + MatrixExtensions.PVTranslation).move(dir, offset);
+                    Statics.Add(split1);
+                    while(offset < distance && length > (distance - offset) / 12 && iterations > 0) {
+
+                        offset += distance * (float)_RNG.NextDouble();
+                        length /= 2;
+                        dir.Radians += (float)(-Math.PI / 2 + _RNG.NextDouble() * Math.PI);
+
+
+                        split1 = split1.move(dir, length);
+
+                        Statics.Add(split1);
+
+                        iterations--;
+                    }
+                }
+
                 //basic removal check. TODO add all disposals here and remove them elsewhere
                 if(_distance >= (_source.Range * _source.Range) - 1 || _hitsRemain == 0) {
                     _disposeMe = true;
@@ -245,7 +270,6 @@ namespace Game_Java_Port {
 
                 //bullet won't be needed anymore. if it wasn't rendered yet, wait with removal...
             } else if(_rendered) {
-                lock(this)
                 Dispose();
             }
         }
@@ -255,10 +279,10 @@ namespace Game_Java_Port {
             lastPos = pos;
             float _add;
             //current position is moving according to it's speed, or if the range isn't sufficient, according to that.
-            if(_distance + (_speed * _speed) / GameVars.defaultGTPS > (_source.Range * _source.Range)) {
+            if(_distance + (_speed * _speed) * GameStatus.TimeMultiplier > (_source.Range * _source.Range)) {
                 pos = lastPos.move(_direction, _source.Range - (float)Math.Sqrt(_distance));
             } else {
-                pos = lastPos.move(_direction, _speed / GameVars.defaultGTPS);
+                pos = lastPos.move(_direction, _speed * GameStatus.TimeMultiplier);
             }
 
             //check each object in the target list (all objects minus the ignored ones), sorted by their distance to the previous position
@@ -289,8 +313,9 @@ namespace Game_Java_Port {
                     }
                     //make the target move depending on relative damage, size and direction
                     if(_source.Behaviour.HasFlag(BulletBehaviour.Knockback)) {
-                        targ.MovementVector.X += -(float)Math.Cos(_direction.Radians) * Math.Min(80000 / GameVars.defaultGTPS, ((_damage / targ.MaxHealth)) * 10000 / GameVars.defaultGTPS);
-                        targ.MovementVector.Y += -(float)Math.Sin(_direction.Radians) * Math.Min(80000 / GameVars.defaultGTPS, ((_damage / targ.MaxHealth)) * 10000 / GameVars.defaultGTPS);
+                        targ.MovementVector += _direction.toVector() * _damage;
+                        //targ.MovementVector.X += -(float)Math.Cos(_direction.Radians) * Math.Min(80000 / GameVars.TicksPerSecond, ((_damage / targ.MaxHealth)) * 10000 / GameVars.TicksPerSecond);
+                        //targ.MovementVector.Y += -(float)Math.Sin(_direction.Radians) * Math.Min(80000 / GameVars.TicksPerSecond, ((_damage / targ.MaxHealth)) * 10000 / GameVars.TicksPerSecond);
                     }
 
                     // change target if not multihit and target matches
@@ -324,8 +349,8 @@ namespace Game_Java_Port {
                         _speed = 0;
                         pos = lastPos;
                     } else {
-                        _speed = Vector2.Distance(lastPos, targ.collisionPoint(lastPos, pos)) * GameVars.defaultGTPS;
-                        pos = lastPos.move(_direction, _speed / GameVars.defaultGTPS);
+                        _speed = Vector2.Distance(lastPos, targ.collisionPoint(lastPos, pos)) / GameStatus.TimeMultiplier;
+                        pos = lastPos.move(_direction, _speed * GameStatus.TimeMultiplier);
                     }
                     _add = (float)Math.Sqrt(_distance) + (float)Math.Sqrt(pos.squareDist(lastPos));
                     _distance = _add * _add;
@@ -364,15 +389,15 @@ namespace Game_Java_Port {
                         _currentTarget = TargetList.OrderBy((targ) => Vector2.Distance(pos, targ.Location)).First();
 
                     //update speed and direction to instantly hit the next target
-                    _speed = Vector2.Distance(pos, _currentTarget.Location) * GameVars.defaultGTPS;
+                    _speed = Vector2.Distance(pos, _currentTarget.Location) / GameStatus.TimeMultiplier;
                     _direction = pos.angleTo(_currentTarget.Location);
 
 
                     //normal bullets will smartly seek a target the user is aiming at. if it is too far away to even hit it'll try to find a closer one
-                } else lock(LockOnTargetList) if (LockOnTargetList.Count > 0) {
-                    _currentTarget = LockOnTargetList.OrderBy((targ) => _direction.offset(pos.angleTo(targ.Area.Center),true)).First();
+                } else if (LockOnTargetList.Count > 0) {
+                    _currentTarget = LockOnTargetList.OrderBy((targ) => _direction.difference(pos.angleTo(targ.Area.Center),true)).First();
                 } else {
-                    _currentTarget = TargetList.OrderBy((targ) => _direction.offset(pos.angleTo(targ.Area.Center), true)).First(); }
+                    _currentTarget = TargetList.OrderBy((targ) => _direction.difference(pos.angleTo(targ.Area.Center), true)).First(); }
 
                 //no targets are left, dispose
             } else
@@ -400,6 +425,7 @@ namespace Game_Java_Port {
                 GameStatus.removeRenderable(this);
                 GameStatus.removeTickable(this);
                 
+                if (_pencil != null)
                     _pencil.Dispose();
                 
             }
@@ -429,7 +455,7 @@ namespace Game_Java_Port {
 
                 //beam always hits instantly
                 if(_source.Behaviour.HasFlag(BulletBehaviour.Beam))
-                    _speed = _source.Range * GameVars.defaultGTPS;
+                    _speed = _source.Range / GameStatus.TimeMultiplier;
                 else
                     _speed = _source.BulletSpeed;
 

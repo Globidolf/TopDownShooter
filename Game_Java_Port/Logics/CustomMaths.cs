@@ -105,7 +105,7 @@ namespace Game_Java_Port {
             return hash;
         }
 
-        public static AngleSingle offset(this AngleSingle angle, AngleSingle to, bool abs = false) {
+        public static AngleSingle difference(this AngleSingle angle, AngleSingle to, bool abs = false) {
 
             AngleSingle result = new AngleSingle((float)Math.Atan2(Math.Sin((angle - to).Radians), Math.Cos((angle - to).Radians)), AngleType.Radian);
             if(abs)
@@ -225,10 +225,8 @@ namespace Game_Java_Port {
         public static byte[] saveRNG(this Random RNG) {
             byte[] result;
             using(MemoryStream temp = new MemoryStream()) {
-
-                lock(RNG) {
+                
                     new BinaryFormatter().Serialize(temp, RNG);
-                }
                 result = temp.ToArray();
             }
             return result;
@@ -259,10 +257,13 @@ namespace Game_Java_Port {
 
         #endregion
 
+        private static Dictionary<int, Color> ColorCache = new Dictionary<int, Color>();
+
         public static Color fromArgb(byte A, byte R, byte G, byte B) {
-            
-            int rgba = R | (G << 8) | (B << 16) | (A << 24);
-            return Color.FromRgba(rgba);
+            int index = BitConverter.ToInt32(new byte[] { A, R, G, B }, 0);
+            if(!ColorCache.ContainsKey(index))
+                ColorCache.Add(index, Color.FromRgba(index));
+            return ColorCache[index];
         }
 
         public const int bytesize = sizeof(byte);

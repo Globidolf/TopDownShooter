@@ -1,4 +1,5 @@
 ﻿using Game_Java_Port.Interface;
+using Game_Java_Port.Logics;
 using Game_Java_Port.Serializers;
 using SharpDX;
 using SharpDX.Direct2D1;
@@ -86,15 +87,17 @@ namespace Game_Java_Port {
             Attributes[Attribute.Wisdom] = Wis;
             Attributes[Attribute.Luck] = Luc;
 
-            RectangleF __pos = new RectangleF();
+            Image = dataLoader.get("player");
 
-            __pos.Width = __pos.Height = 10;
+            drawType = DrawType.Image;
+            
 
-            Area = __pos;
-            __pos.Location = Game.instance.Location;
+            Area = new RectangleF(Game.instance.Location.X, Game.instance.Location.Y, Image.PixelSize.Width, Image.PixelSize.Height);
             Health = MaxHealth;
 
             Pencil.Color = Color.Blue;
+
+
             if(directAdd) {
                 Program.DebugLog.Add("Adding Subject " + ID + ". NPC(...a lot...).");
                 addToGame();
@@ -156,6 +159,7 @@ namespace Game_Java_Port {
                 w.PickUp(this);
                 w.Equip(this);
             }
+
             float minSize = 12;
             float viewmult = 2.6f;
             switch(Rank) {
@@ -211,30 +215,30 @@ namespace Game_Java_Port {
         float removeCounter = 5;
 
         public override void Tick() {
-            bool isdead;
-            lock(Corpses)
-                isdead = Corpses.ContainsKey(this);
+            bool isdead = Corpses.ContainsKey(this);
 
 
             if(!isdead) {
                 Vector2 relativePos = Location + MatrixExtensions.PVTranslation;
                 float distanceToPlayers = float.PositiveInfinity;
-
-                lock(GameSubjects) {
-                    if(GameSubjects.Any((subj) => subj.Team == FactionNames.Players)) {
+                
+                    if(GameSubjects.Any((subj) => subj.Team == FactionNames.Players)) 
                         GameSubjects.FindAll((subj) => subj.Team == FactionNames.Players).ForEach((subj) =>
                         {
                             float temp;
                             if((temp = Vector2.DistanceSquared(Location, subj.Location)) < distanceToPlayers)
                                 distanceToPlayers = temp;
                         });
-                    }
-                }
                 displaystring = Name + " (Level " + Level + " " + Rank.ToString() + ") [" + Team.ToString() + "]";
 
+                Size2 measuredSize = SpriteFont.DEFAULT.MeasureString(displaystring);
+                hpRect = new RectangleF(relativePos.X - measuredSize.Width / 2, relativePos.Y - Size - 35, measuredSize.Width, measuredSize.Height);
+
+                /*
                 using(SharpDX.DirectWrite.TextLayout tl = new SharpDX.DirectWrite.TextLayout(Program.DW_Factory, displaystring, MenuFont, 1000, 1000))
                     hpRect = new RectangleF(relativePos.X - tl.Metrics.Width / 2, relativePos.Y - Size - 35, tl.Metrics.Width, tl.Metrics.Height);
-                
+                */
+
                 hpLeftRect = new RectangleF(hpRect.X, hpRect.Y, hpRect.Width / MaxHealth * Health, hpRect.Height);
 
                 if(distanceToPlayers < (ScreenHeight * ScreenHeight + ScreenWidth * ScreenWidth)) {
@@ -247,9 +251,8 @@ namespace Game_Java_Port {
                             Cursor.CursorType = CursorTypes.Interact;
                     }
                 } else {
-                    removeCounter -= 1 / GameVars.defaultGTPS;
+                    removeCounter -= TimeMultiplier;
                     if(removeCounter <= 0) {
-                        lock(Corpses)
                             Corpses.Add(this,0);
                         switch(Game.state) {
                             case Game.GameState.Host | Game.GameState.Multiplayer:
@@ -258,7 +261,6 @@ namespace Game_Java_Port {
                                 break;
                             case Game.GameState.Normal:
                                 Program.DebugLog.Add("Removing Subject " + ID + ". NPC.Tick().");
-                                lock(this)
                                     removeFromGame();
                                 break;
                         } // end switch
@@ -270,8 +272,7 @@ namespace Game_Java_Port {
         private string displaystring = "";
 
         public override void draw(RenderTarget rt) {
-            lock(this)
-                if (!disposed){
+                if (!disposed && removeCounter == 5){
 
                     base.draw(rt);
 
@@ -288,13 +289,19 @@ namespace Game_Java_Port {
                             Pencil.Color = Color.White;
                             rt.DrawRectangle(hpRect, Pencil);
                             Pencil.Color = temp;
-                            rt.DrawText(Health.ToString("0.##") + " / " + MaxHealth.ToString("0.##"), MenuFont, hpRect, Pencil);
+
+                            SpriteFont.DEFAULT.directDrawText(Health.ToString("0.##") + " / " + MaxHealth.ToString("0.##"), hpRect, rt);
+
+                            //rt.DrawText(Health.ToString("0.##") + " / " + MaxHealth.ToString("0.##"), MenuFont, hpRect, Pencil);
                             hpRect.Offset(0, -20);
                             
                             Pencil.Color = Color.Black;
                             rt.FillRectangle(hpRect, Pencil);
                             Pencil.Color = temp;
-                            rt.DrawText(displaystring, MenuFont, hpRect, Pencil);
+
+                            SpriteFont.DEFAULT.directDrawText(displaystring, hpRect, rt);
+
+                            //rt.DrawText(displaystring, MenuFont, hpRect, Pencil);
 
                         }
                     } else
@@ -308,13 +315,14 @@ namespace Game_Java_Port {
             base.despawn();
             if(_ActionInfo != null)
                 _ActionInfo.Hide();
-            lock(GameObjects)
                 GameObjects.Remove(this);
         }
 
-        protected override void StartRespawn() {
-            base.StartRespawn();
-            _ActionInfo.Show();
+        protected override void Respawn() {
+            base.Respawn();
+            if(_ActionInfo != null)
+                _ActionInfo.Show();
+                GameObjects.Add(this);
         }
 
         protected override void Dispose(bool disposing) {
@@ -339,7 +347,6 @@ namespace Game_Java_Port {
 
         public override void addToGame() {
             base.addToGame();
-            lock(GameObjects)
                 GameObjects.Add(this);
         }
     }

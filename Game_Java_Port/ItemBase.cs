@@ -28,7 +28,7 @@ namespace Game_Java_Port {
 
         public const uint DespawnTime = 60;
 
-        public uint UnOwnedTime { get; private set; }
+        public float UnOwnedTime { get; private set; }
 
         public abstract ItemType Rarity { get; }
         private SolidColorBrush Pencil { get; set; } = new SolidColorBrush(Program._RenderTarget, Color.Transparent);
@@ -105,7 +105,6 @@ namespace Game_Java_Port {
         public void PickUp(CharacterBase by) {
             UnOwnedTime = 0;
             if(Owner == null) {
-                lock(GameStatus.GameObjects)
                     GameStatus.GameObjects.Remove(this);
                 Owner = by;
                 Owner.Inventory.Add(this);
@@ -163,7 +162,6 @@ namespace Game_Java_Port {
                     Owner.EquippedWeaponR = null;
                 Owner.Inventory.Remove(this);
                 Owner = null;
-                lock(GameStatus.GameObjects)
                     GameStatus.GameObjects.Add(this);
             }
         }
@@ -197,37 +195,29 @@ namespace Game_Java_Port {
 
         public virtual void draw(RenderTarget rt) {
             if(Owner == null) {
-
-
-                lock(this) {
-
+                
                     if(!Pencil.IsDisposed) {
-                        if(Pencil.Color == (Color4)Color.Transparent) {
-                            try {
-                                Pencil.Color = GameVars.RarityColors[Rarity];
-                            } catch(Exception) {
-                                Pencil.Color = CustomMaths.fromArgb(255, 255, 0, 255);
-                            }
-                        }
 
                         switch(drawType) {
                             case DrawType.Circle:
                                 rt.FillEllipse(_D_Ellipse, Pencil);
                                 break;
                             case DrawType.Image:
-                                rt.DrawBitmap(image, _D_ImgRect, 1, BitmapInterpolationMode.Linear);
+                                rt.DrawBitmap(image, _D_ImgRect, 1, BitmapInterpolationMode.NearestNeighbor);
                                 break;
                         }
-                    }
                 }
             }
         }
 
 
+        public virtual void init() {
+            Pencil.Color = GameVars.RarityColors[Rarity];
+        }
 
         public virtual void Tick() {
             if(Owner == null) {
-                UnOwnedTime++;
+                UnOwnedTime+= GameStatus.TimeMultiplier;
 
                 NameTooltip.Tick();
                 ActionInfo.Tick();
@@ -253,11 +243,8 @@ namespace Game_Java_Port {
                         break;
                 }
 
-                if(UnOwnedTime > DespawnTime * GameVars.defaultGTPS) {
-                    lock(this) 
+                if(UnOwnedTime > DespawnTime) 
                         Dispose();
-                    
-                }
             }
 
         }
@@ -271,7 +258,6 @@ namespace Game_Java_Port {
             if(disposed)
                 return;
             if(disposing) {
-                lock(GameStatus.GameObjects)
                     GameStatus.GameObjects.Remove(this);
                 GameStatus.removeRenderable(this);
                 GameStatus.removeTickable(this);
@@ -287,7 +273,6 @@ namespace Game_Java_Port {
             GameStatus.addRenderable(this);
             GameStatus.addTickable(this);
             if (Owner != null)
-                lock(GameStatus.GameObjects)
                     GameStatus.GameObjects.Add(this);
         }
 

@@ -1,4 +1,5 @@
 ﻿using Game_Java_Port.Interface;
+using Game_Java_Port.Logics;
 using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
@@ -36,8 +37,7 @@ namespace Game_Java_Port {
                 RectangleF temp = base.calcArea();
 
                 temp.Height = ElementHeight + ElementMargin * 2;
-
-                lock(Children)
+                
                     Children.ForEach(ch => temp.Height = Math.Max(temp.Height, ch.Height + ElementMargin * 2));
                 
                 return temp;
@@ -51,7 +51,6 @@ namespace Game_Java_Port {
 
             public override void update() {
                 base.update();
-                lock(Children)
                     _Hovering = _Hovering && !Children.Exists(ch => ch.Area.Contains(MousePos));
 
                 _ContentArea = new RectangleF(
@@ -67,16 +66,19 @@ namespace Game_Java_Port {
             
             public bool doDrawLabel = true;
             public virtual string Label { get; internal set; } = "";
-            private Size2F _LabelSize;
-            public Size2F LabelSize { get {
+            private Size2 _LabelSize;
+            public Size2 LabelSize { get {
                     //init
-                    if(_LabelSize == default(Size2F)) {
+                    if(_LabelSize == default(Size2)) {
                         //measure
+                        _LabelSize = SpriteFont.DEFAULT.MeasureString(Label);
+                        /*
                         using(TextLayout tl = new TextLayout(Program.DW_Factory, Label, MenuFont, ScreenWidth, ScreenHeight))
                             _LabelSize = new Size2F(tl.Metrics.Width, tl.Metrics.Height);
+                            */
                         //no size -> 1,1
-                        if(_LabelSize == default(Size2F))
-                            _LabelSize = new Size2F(1, 1);
+                        if(_LabelSize == default(Size2))
+                            _LabelSize = new Size2(1, 1);
                     }
                     return _LabelSize;
                 } }
@@ -87,13 +89,12 @@ namespace Game_Java_Port {
                     return _Container;
                 }
                 set {
-                    if(_Container != null) lock(_Container.Children)
+                    if(_Container != null)
                         _Container.Children.Remove(this);
                     if(value != null) {
-                        if(value.Children.Contains(this)) lock(value.Children)
+                        if(value.Children.Contains(this))
                             value.Children.Remove(this);
-                        lock(value.Children)
-                            value.Children.Add(this);
+                        value.Children.Add(this);
                         if(!(this is Button))
                             doDrawLabel = false;
                     } else if(!(this is Button))
@@ -143,7 +144,6 @@ namespace Game_Java_Port {
 
                 if(Container == null) {
                     float Y = Parent._Y + ElementMargin;
-                    lock(Parent.Elements)
                         Parent.Elements.FindAll((ele) =>
                         {
                             return ele.Container == null && ele.Position < Position;
@@ -178,10 +178,8 @@ namespace Game_Java_Port {
             }
 
             virtual public void update() {
-                lock(this) {
                     _Area = calcArea();
                     _LabelArea = calcLabelArea();
-                }
                 _Hovering = _Area.Contains(MousePos);
             }
             //private int _position = 0;
@@ -190,7 +188,6 @@ namespace Game_Java_Port {
             internal int Position {
                 get {
                     if(Container == null) {
-                        lock(Parent.Elements)
                             return Parent.Elements.IndexOf(this);
                     } else
                         return Container.Position;
@@ -233,7 +230,6 @@ namespace Game_Java_Port {
                     return _Area;
                 }
                 set {
-                    lock(this)
                         _CustomArea = value;
                 }
             }
@@ -266,13 +262,18 @@ namespace Game_Java_Port {
             /// <param name="g">the Graphics object from the Customdraw parameter</param>
             internal void drawLabel(RenderTarget rt) {
                 if(doDrawLabel) {
+                    Bitmap text = SpriteFont.DEFAULT.generateText(Label, _LabelArea);
+                    /*
                     if(TextColor != null) {
                         Color4 tempColor = MenuTextBrush.Color;
                         MenuTextBrush.Color = (Color)TextColor;
+                        
                         rt.DrawText(Label, MenuFont, _LabelArea, MenuTextBrush);
                         MenuTextBrush.Color = tempColor;
-                    } else
-                        rt.DrawText(Label, MenuFont, _LabelArea, MenuTextBrush);
+                    } else*/
+
+                        rt.DrawBitmap(text, new RectangleF((int)_LabelArea.X, (int)_LabelArea.Y, text.PixelSize.Width, text.PixelSize.Height), 1, BitmapInterpolationMode.NearestNeighbor);
+                    text.Dispose();
                 }
             }
 
@@ -354,14 +355,29 @@ namespace Game_Java_Port {
                 dec.Container = this;
                 regulator.Container = this;
                 inc.Container = this;
-                lock(Parent.Elements)
                     Parent.Elements.Add(this);
             }
         }
         
         private class InputField : MenuElementBase {
 
-            public string Value { get; set; }
+            private Bitmap _textBMP;
+            private Bitmap _textBMP_;
+
+            private string _Value;
+
+            public string Value { get { return _Value; } set {
+                    if (_Value != value) {
+                        update();
+                        _Value = value;
+                        if(_textBMP != null)
+                            _textBMP.Dispose();
+                        _textBMP = SpriteFont.DEFAULT.generateText(value, _TextDisplayArea);
+                        if(_textBMP_ != null)
+                            _textBMP_.Dispose();
+                        _textBMP_ = SpriteFont.DEFAULT.generateText(value + "_", _TextDisplayArea);
+                    }
+                } }
 
             public bool Editing { get; private set; } = false;
 
@@ -440,10 +456,27 @@ namespace Game_Java_Port {
                 rt.DrawRectangle(InputArea, MenuBorderPen);
 
                 // if editing, make a '_' blink at the end of the text...
-                if(!Editing || (Program.stopwatch.ElapsedMilliseconds * 0.003f) % 3 == 0)
+
+                RectangleF dest = _TextDisplayArea, dest2 = _TextDisplayArea;
+
+                Size2 tempsize = SpriteFont.DEFAULT.MeasureString(Value, new Size2((int)dest.Width, (int)dest.Height));
+                dest.Size = new Size2F(tempsize.Width, tempsize.Height);
+
+                tempsize = SpriteFont.DEFAULT.MeasureString(Value + "_", new Size2((int)dest2.Width, (int)dest2.Height));
+                dest2.Size = new Size2F(tempsize.Width, tempsize.Height);
+
+
+                if (Editing && (Program.stopwatch.ElapsedMilliseconds / 1000) % 2 == 0)
+                    rt.DrawBitmap(_textBMP_, dest2, 1, BitmapInterpolationMode.NearestNeighbor);
+                else
+                    rt.DrawBitmap(_textBMP, dest, 1, BitmapInterpolationMode.NearestNeighbor);
+
+                /*
+                if(!Editing || (Program.stopwatch.ElapsedMilliseconds / 3000) % 3 == 0)
                     rt.DrawText(Value, MenuFont, _TextDisplayArea, MenuTextBrush);
                 else
                     rt.DrawText(Value + "_", MenuFont, _TextDisplayArea, MenuTextBrush);
+                */
             }
 
             RectangleF _InputArea;
@@ -732,8 +765,7 @@ namespace Game_Java_Port {
 
                 if(List != null)
                     Container = List;
-
-                lock(Parent.Elements)
+                
                     parent.Elements.Add(this);
             }
 
@@ -830,22 +862,26 @@ namespace Game_Java_Port {
             }
             private Size2F Size;
 
+            private Bitmap _TextBMP;
+
             private string _Text;
             internal string Text { get {
                     return _Text;
                 } set {
-                    _Text = value;
-                    resize();
+                    if(_Text != value) {
+                        _Text = value;
+                        if(_TextBMP != null) 
+                            _TextBMP.Dispose();
+                        _TextBMP = SpriteFont.DEFAULT.generateText(Text, _CustomSize);
+                        resize();
+                    }
                 }
             }
 
 
             private void resize() {
-                lock(this) {
-                    using(TextLayout tl = new TextLayout(Program.DW_Factory, _Text, MenuFont, _CustomSize.Width, _CustomSize.Height))
-                        Size = new Size2F(tl.Metrics.Width, tl.Metrics.Height);
-                    update();
-                }
+                Size = _TextBMP.Size;
+                update();
             }
 
             public TextElement(GameMenu parent, string Text, Size2F size = default(Size2F), bool downscale = false) {
@@ -855,17 +891,21 @@ namespace Game_Java_Port {
                 Parent = parent;
                 lock(Parent.Elements)
                     parent.Elements.Add(this);
-                _Text = Text;
 
                 _DownScale = downscale;
 
-                resize();
-
+                this.Text = Text;
             }
 
             public override void draw(RenderTarget rt) {
                 drawBorder(rt);
-                rt.DrawText(Text, MenuFont, _LabelArea, MenuTextBrush);
+                RectangleF dest = _LabelArea;
+                dest.Size = Size;
+                lock(_TextBMP) {
+                    if (!_TextBMP.IsDisposed)
+                        rt.DrawBitmap(_TextBMP, dest, 1, BitmapInterpolationMode.NearestNeighbor);
+                }
+                //rt.DrawText(Text, MenuFont, _LabelArea, MenuTextBrush);
             }
 
             internal override void invalidateWidths() {
@@ -1019,16 +1059,18 @@ namespace Game_Java_Port {
             }
 
 
+
             public override void draw(RenderTarget rt) {
                 Color4 temp = MenuTextBrush.Color;
                 MenuTextBrush.Color = Color.Black;
-                rt.DrawBitmap(iconBG, Area, 1, BitmapInterpolationMode.Linear);
+                rt.DrawBitmap(iconBG, Area, 1, BitmapInterpolationMode.NearestNeighbor);
                 if(Item.image != null)
-                    rt.DrawBitmap(Item.image, Area, 1, BitmapInterpolationMode.Linear);
+                    rt.DrawBitmap(Item.image, Area, 1, BitmapInterpolationMode.NearestNeighbor);
+                /*
                 if(Item is IEquipable)
                     if(Game.instance._player.getEquipedItem(((IEquipable)Item).Slot) == Item)
                         rt.DrawText("E", MenuFont, Area, MenuTextBrush);
-                
+                 */
                 MenuTextBrush.Color = temp;
             }
 

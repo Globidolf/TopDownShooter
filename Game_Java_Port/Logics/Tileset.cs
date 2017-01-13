@@ -11,7 +11,7 @@ namespace Game_Java_Port {
     public class Tileset {
         
         public readonly Bitmap Source;
-        public readonly int TileSize;
+        public readonly Size2 TileSize;
         private Bitmap[] _Tiles;
 
         private Tileset _Flat;
@@ -21,28 +21,35 @@ namespace Game_Java_Port {
         public Tileset Flat { get { return _Flat; } }
 
         private static Dictionary<string, Tileset> Tilesets = new Dictionary<string, Tileset>();
-        
 
-        private Tileset(int TileSize, string SourceName) : this(TileSize, dataLoader.get(SourceName)){
+        private Tileset(int TileSize, string SourceName) : this(TileSize, TileSize, dataLoader.get(SourceName)) {
+            Bitmap flat = dataLoader.get(SourceName + "_flat");
+
+            if(flat != null) {
+                _Flat = new Tileset(TileSize, TileSize, flat);
+            }
+        }
+
+        private Tileset(int TileWidth, int TileHeight, string SourceName) : this(TileWidth, TileHeight, dataLoader.get(SourceName)){
 
             Bitmap flat = dataLoader.get(SourceName + "_flat");
 
             if(flat != null) {
-                _Flat = new Tileset(TileSize, flat);
+                _Flat = new Tileset(TileWidth, TileHeight, flat);
             }
         }
 
-        private Tileset(int TileSize, Bitmap Source) {
+        private Tileset(int TileWidth, int TileHeight, Bitmap Source) {
             
-            this.TileSize = TileSize;
+            TileSize = new Size2(TileWidth, TileHeight);
             this.Source = Source;
-            int cols = Source.PixelSize.Width / TileSize;
-            int rows = Source.PixelSize.Height / TileSize;
+            int cols = Source.PixelSize.Width / TileSize.Width;
+            int rows = Source.PixelSize.Height / TileSize.Height;
             _Tiles = new Bitmap[cols * rows];
             for(int y = 0; y < rows; y++) {
                 for (int x = 0; x < cols; x++) {
-                    _Tiles[x + y * cols] = new Bitmap(Program._RenderTarget, new Size2(TileSize, TileSize), new BitmapProperties(new PixelFormat(SharpDX.DXGI.Format.R8G8B8A8_UNorm, AlphaMode.Premultiplied)));
-                    _Tiles[x + y * cols].CopyFromBitmap(Source, Point.Zero, new Rectangle(x * TileSize, y * TileSize, TileSize, TileSize));
+                    _Tiles[x + y * cols] = new Bitmap(Program._RenderTarget, TileSize, new BitmapProperties(new PixelFormat(SharpDX.DXGI.Format.R8G8B8A8_UNorm, AlphaMode.Premultiplied)));
+                    _Tiles[x + y * cols].CopyFromBitmap(Source, Point.Zero, new Rectangle(x * TileSize.Width, y * TileSize.Height, TileSize.Width, TileSize.Height));
                 }
             }
         }
@@ -73,6 +80,16 @@ namespace Game_Java_Port {
         */
 
         public static Tileset Frame_Default { get { return getTileset("tiled_menu_default_32_96", 32); } }
+        
+        public static Tileset Font_Default { get { return getTileset("font_default2_6_8", 6,8); } }
+
+        public static Tileset Anim_Bullet_Acid { get { return getTileset("bullet_acid_16_32", 16,16); } }
+
+        private static Tileset getTileset(string name, int resX, int resY) {
+            if(!Tilesets.ContainsKey(name))
+                Tilesets.Add(name, new Tileset(resX, resY, name));
+            return Tilesets[name];
+        }
         private static Tileset getTileset(string name, int res) {
 
             if(!Tilesets.ContainsKey(name))

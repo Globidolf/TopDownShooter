@@ -26,22 +26,23 @@ namespace Game_Java_Port.Interface {
     }
 
     public static class CollidibleExtensions {
-        public static bool CollidesWith(this ICollidible me, ICollidible other) {
-            
+
+        public static bool CollidesWith(this ICollidible me, CollisionType pseudotype, Vector2 pseudolocation, float pseudosize, RectangleF? pseudoarea = null, List<Vector2> pseudopoly = null) {
+
             //not even in detection range
-            if(Vector2.DistanceSquared(me.Location, other.Location) > (me.Size / 2 + other.Size / 2) * (me.Size / 2 + other.Size / 2))
+            if(Vector2.DistanceSquared(me.Location, pseudolocation) > (me.Size / 2 + pseudosize / 2) * (me.Size / 2 + pseudosize / 2))
                 return false;
             switch(me.ColType) {
                 case CollisionType.Circle: // check with half size like above
-                    switch(other.ColType) {
+                    switch(pseudotype) {
                         case CollisionType.Circle: // exactly the same as above, as we enter this, we can return true immediately
                             return true;
                         case CollisionType.Rect: // check if the other rect expanded by 'me's size contains 'me's location. as simple as this
                             return new RectangleF(
-                                other.Area.X - me.Size / 2,
-                                other.Area.Y - me.Size / 2,
-                                other.Area.Width + me.Size,
-                                other.Area.Height + me.Size).Contains(me.Location);
+                                pseudoarea.Value.X - me.Size / 2,
+                                pseudoarea.Value.Y - me.Size / 2,
+                                pseudoarea.Value.Width + me.Size,
+                                pseudoarea.Value.Height + me.Size).Contains(me.Location);
                         case CollisionType.Poly:
                             // TODO: check for collision
                             return true;
@@ -49,16 +50,16 @@ namespace Game_Java_Port.Interface {
                             throw new NotImplementedException("Unknown Collision Type!");
                     }
                 case CollisionType.Rect:
-                    switch(other.ColType) {
+                    switch(pseudotype) {
                         case CollisionType.Circle: // same check as above just with inverted assignments
                             return new RectangleF(
-                                me.Area.X -      other.Size / 2,
-                                me.Area.Y -      other.Size / 2,
-                                me.Area.Width +  other.Size,
-                                me.Area.Height + other.Size)
-                                          .Contains(other.Location);
+                                me.Area.X - pseudosize / 2,
+                                me.Area.Y - pseudosize / 2,
+                                me.Area.Width +  pseudosize,
+                                me.Area.Height + pseudosize)
+                                          .Contains(pseudolocation);
                         case CollisionType.Rect: // predefined method available
-                            return me.Area.Intersects(other.Area);
+                            return me.Area.Intersects(pseudoarea.Value);
                         case CollisionType.Poly:
                             // TODO: check for collision
                             return true;
@@ -71,6 +72,10 @@ namespace Game_Java_Port.Interface {
                 default:
                     throw new NotImplementedException("Unknown Collision Type!");
             }
+        }
+
+        public static bool CollidesWith(this ICollidible me, ICollidible other) {
+            return (me.CollidesWith(other.ColType, other.Location, other.Size, other.Area, other.Poly));
         }
     }
 }

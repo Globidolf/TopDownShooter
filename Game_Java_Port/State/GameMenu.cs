@@ -7,6 +7,7 @@ using static Game_Java_Port.GameStatus;
 using static System.Windows.Forms.MouseButtons;
 using SharpDX;
 using SharpDX.Direct2D1;
+using Game_Java_Port.Logics;
 
 namespace Game_Java_Port {
     public partial class GameMenu : IRenderable, ITickable {
@@ -125,10 +126,11 @@ namespace Game_Java_Port {
         #region methods
 
 
+
+
         public void resizeNumbers(bool makeSmaller = false) {
 
             float[] curMaxSizes = new float[] { 0, 0, 0 };
-            lock(Elements)
                 foreach(MenuElementBase element in Elements) {
 
                     Type eletype = element.GetType();
@@ -180,18 +182,12 @@ namespace Game_Java_Port {
                             default:
                                 throw new NotImplementedException("Cast not implemented yet: " + types[0].Name);
                         }
-                        float[] numsize;
+                        float[] numsize = new float[3];
 
-
-                        lock(Program.DW_Factory) {
-                            numsize = new float[3];
-                            using(SharpDX.DirectWrite.TextLayout tl = new SharpDX.DirectWrite.TextLayout(Program.DW_Factory, float.Parse(val.ToString()).ToString("0.##"), MenuFont, 1000, 1000))
-                                numsize[0] = tl.Metrics.Width;
-                            using(SharpDX.DirectWrite.TextLayout tl = new SharpDX.DirectWrite.TextLayout(Program.DW_Factory, float.Parse(min.ToString()).ToString("0.##"), MenuFont, 1000, 1000))
-                                numsize[1] = tl.Metrics.Width;
-                            using(SharpDX.DirectWrite.TextLayout tl = new SharpDX.DirectWrite.TextLayout(Program.DW_Factory, float.Parse(max.ToString()).ToString("0.##"), MenuFont, 1000, 1000))
-                                numsize[2] = tl.Metrics.Width;
-                        }
+                    
+                            numsize[0] = SpriteFont.DEFAULT.MeasureString(float.Parse(val.ToString()).ToString("0.##")).Width;
+                            numsize[1] = SpriteFont.DEFAULT.MeasureString(float.Parse(min.ToString()).ToString("0.##")).Width;
+                            numsize[2] = SpriteFont.DEFAULT.MeasureString(float.Parse(max.ToString()).ToString("0.##")).Width;
 
                         for(int i = 0; i < 3; i++) {
                             if(makeSmaller) {
@@ -212,28 +208,24 @@ namespace Game_Java_Port {
         }
 
         public void resizeStrings() {
-            lock(Elements) {
                 foreach(MenuElementBase element in Elements) {
                     float size = 0;
-                    lock(Program.DW_Factory) lock(MenuFont) if(!Program.DW_Factory.IsDisposed && !MenuFont.IsDisposed)
-                                using(SharpDX.DirectWrite.TextLayout tl = new SharpDX.DirectWrite.TextLayout(Program.DW_Factory, element.Label, MenuFont, 1000, 1000))
-                                    size = tl.Metrics.Width;
+
+                    size = SpriteFont.DEFAULT.MeasureString(element.Label).Width;
+                
 
                     if(size + 2 * TextXOffset > LargestStringSize)
                         LargestStringSize = size + 2 * TextXOffset;
                 }
                 foreach(MenuElementBase ele in Elements)
                     ele.invalidateWidths();
-            }
         }
 
         public string getInputValue(string Label) {
-            lock(Elements)
                 foreach(InputField input in Elements.FindAll((ele) => ele is InputField)) {
                     if(input.Label == Label)
                         return input.Value;
                 }
-            lock(Elements)
                 foreach(MenuElementListBase container in Elements.FindAll((ele) => ele is MenuElementListBase)) {
                     foreach(InputField input in container.Children.FindAll((ele) => ele is InputField)) {
                         if(input.Label == Label)
@@ -251,7 +243,6 @@ namespace Game_Java_Port {
         /// <param name="Label">The Label of the Regulator to look for</param>
         /// <returns>Returns the Value of the Regulator or null, if it was not found</returns>
         public T? getRegulatorValue<T>(string Label) where T : struct, IComparable, IConvertible {
-            lock(Elements) {
                 foreach(Regulator<T> reg in Elements.FindAll((obj) => obj is Regulator<T>)) {
                     if(reg.Label == Label)
                         return reg.Value;
@@ -262,7 +253,6 @@ namespace Game_Java_Port {
                         if(reg.Label == Label)
                             return reg.Value;
                     }
-                }
             }
             return null;
         }
@@ -309,8 +299,7 @@ namespace Game_Java_Port {
 
             if(onFocusLost != null)
                 temp.onFocusLost += onFocusLost;
-
-            lock(Elements)
+            
                 Elements.Add(temp);
         }
         
@@ -323,26 +312,23 @@ namespace Game_Java_Port {
                 rt.FillRectangle(Area, BGBrush);
                 rt.DrawRectangle(Area, MenuBorderPen);
             }
-            lock(Elements)
-                Elements.ForEach((ele) => ele.draw(rt));
+            
+            Elements.ForEach((ele) =>
+            {
+                ele.draw(rt);
+            });
         }
 
         public void Tick() {
             update();
-
-
-            List<MenuElementBase> elements = new List<MenuElementBase>();
-            //direct iteration causes a deadlock
-            lock(Elements)
-                elements.AddRange(Elements);
-            elements.ForEach((ele) => { lock(ele) if (!ele.IsDisposed) ele.update(); });
+            
+            Elements.ForEach((ele) => { lock(ele) if (!ele.IsDisposed) ele.update(); });
         }
 
         public void update() {
 
             #region height
             _height = ElementMargin;
-            lock(Elements)
                 Elements.FindAll((ele) => ele.Container == null).ForEach((ele) =>
                 {
                     _height += ElementMargin + ele.Height;
@@ -362,13 +348,11 @@ namespace Game_Java_Port {
 
             //default width
             resizeStrings();
-            lock(Elements)
                 _Width = (int)(
                     (Elements.Any() ? Elements.Max((ele) => ele.Area.Width) : 0)
                     + 2 * ElementMargin) - (tooLarge ? ScrollBarWidth : 0);
 
             // max width
-            lock(Elements)
                 if(Elements.Any(ele =>  ele.GetType().Name.StartsWith("Regulator") ||
                 (ele is MenuElementListBase && ((MenuElementListBase)ele).Children.Any(ele2 => ele2.GetType().Name.StartsWith("Regulator"))))
               ) {
@@ -383,10 +367,8 @@ namespace Game_Java_Port {
             _Y = ScreenHeight / 2 - _height / 2;
             _Area = new RectangleF(_X, _Y, _Width + (tooLarge ? ScrollBarWidth : 0), Height);
             if(MenuFrame != null) {
-                lock(MenuFrame) {
                     MenuFrame.Area = _Area;
                     MenuFrame.Tick();
-                }
             }
         }
 

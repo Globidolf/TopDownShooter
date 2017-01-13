@@ -58,6 +58,15 @@ namespace Game_Java_Port {
                 Area = rect;
             }
         }
+
+
+        Vector2 relativePos;
+        Vector2 relativeTarget;
+
+        Vector2 otherSideRelative;
+
+        RectangleF relativeArea;
+
         private bool _dead { get; set; } = false;
         public Bitmap Image { get; set; }
 
@@ -469,7 +478,16 @@ namespace Game_Java_Port {
             return temp;
         }
 
-        public Dictionary<Attribute, uint> Attributes { get; set; } = generateBaseAttributes();
+        private Dictionary<Attribute, uint> _Attributes;
+
+        public Dictionary<Attribute, uint> Attributes { get {
+                if(_Attributes == null)
+                    _Attributes = generateBaseAttributes();
+                return _Attributes;
+            } set {
+                _Attributes = value;
+            }
+        }
         public Random RNG { get; internal set; }
 
         public Serializer<CharacterBase> Serializer { get { return Serializers.CharacterSerializer.Instance; } }
@@ -505,7 +523,6 @@ namespace Game_Java_Port {
         protected void Killed(CharacterBase by) {
             // get boolean value during shortest possible lock.
             bool isdead;
-            lock(GameStatus.Corpses)
                 if(!(isdead = GameStatus.Corpses.ContainsKey(this))) 
                     GameStatus.Corpses.Add(this, 0);
 
@@ -521,7 +538,7 @@ namespace Game_Java_Port {
                         if(Rank != Rank.Player) {
                             Program.DebugLog.Add("Removing Subject " + ID + ". CharacterBase.Killed(CharacterBase).");
                         } else if(this == Game.instance._player) {
-                            StartRespawn();
+                            StartRespawn(5000, true);
                         }
                         break;
                         case Game.GameState.Host | Game.GameState.Multiplayer:
@@ -535,10 +552,17 @@ namespace Game_Java_Port {
                 }
         }
 
-        virtual protected void StartRespawn() {
+        virtual protected void Respawn() {
+            GameStatus.addTickable(this);
+            GameStatus.addRenderable(this);
+                GameStatus.GameSubjects.Add(this);
+        }
+
+        virtual protected void StartRespawn(int duration = 5000, bool showMessage = false, string customMessage = "You died. Lost all Exp and Items. Respawning in 5 seconds...") {
 
             Timer timer = null;
-            Game.instance.addMessage("You died. Lost all Exp and Items. Respawning in 5 seconds...");
+            if (showMessage)
+                Game.instance.addMessage(customMessage);
             Location = GameStatus.RNG.NextVector2(new Vector2(-10000, -10000), new Vector2(10000, 10000));
             Health = MaxHealth;
             Exp = 0;
@@ -547,11 +571,11 @@ namespace Game_Java_Port {
             {
                 lock (GameStatus.Corpses)
                     GameStatus.Corpses.Remove(this);
+                Respawn();
                 timer.Change(Timeout.Infinite, Timeout.Infinite);
-                lock(timer)
                     timer.Dispose();
             });
-            timer.Change(5000, Timeout.Infinite);
+            timer.Change(duration, Timeout.Infinite);
 
         }
 
@@ -615,9 +639,8 @@ namespace Game_Java_Port {
                 if(_CoolDown <= 0) {
                     //melee attack
                     List<CharacterBase> targets = new List<CharacterBase>();
-
-                    lock(GameStatus.GameSubjects)
-                        targets.AddRange(GameStatus.GameSubjects.OrderBy((targ) => AimDirection.offset(Area.Center.angleTo(targ.Area.Center), true)));
+                    
+                        targets.AddRange(GameStatus.GameSubjects.OrderBy((targ) => AimDirection.difference(Area.Center.angleTo(targ.Area.Center), true)));
 
                     targets.Remove(this);
 
@@ -646,98 +669,89 @@ namespace Game_Java_Port {
             if(!Game.state.HasFlag(Game.GameState.Menu)) {
 
 
+                if(!disposed) {
 
-                Vector2 relativePos = Location + MatrixExtensions.PVTranslation;
-                Vector2 relativeTarget = Target + MatrixExtensions.PVTranslation;
-
-                Vector2 otherSideRelative = Location + (Location - Target) + MatrixExtensions.PVTranslation;
-
-                lock(this)
-                    if(!disposed) {
-
-                        Color4 tempColor = Pencil.Color;
+                    Color4 tempColor = Pencil.Color;
 
 
-                        switch(drawType) {
-                            case DrawType.Rectangle:
-                                Area.Offset(MatrixExtensions.PVTranslation);
-                                rt.FillRectangle(Area, Pencil);
+                    switch(drawType) {
+                        case DrawType.Rectangle:
+                            rt.FillRectangle(relativeArea, Pencil);
 
-                                Area.Offset(-MatrixExtensions.PVTranslation);
-                                break;
-                            case DrawType.Image:
-                                Area.Offset(MatrixExtensions.PVTranslation);
-                                rt.DrawBitmap(Image, Area, 1, BitmapInterpolationMode.Linear);
-                                Area.Offset(-MatrixExtensions.PVTranslation);
-                                break;
-                            case DrawType.Circle:
-                                rt.FillEllipse(new Ellipse(relativePos, Size / 2, Size / 2), Pencil);
-                                break;
-                            case DrawType.None:
-                            default:
-                                break;
-                        }
+                            break;
+                        case DrawType.Image:
 
-                        switch(Game.instance._player.Team.Dispositions.ContainsKey(Team) ? Game.instance._player.Team.Dispositions[Team] : Game.instance._player.Team.DefaultDisposition) {
-                            case Faction.Disposition.Allied:
-                                Pencil.Color = Color.Green;
-                                break;
-                            case Faction.Disposition.Enemy:
-                                Pencil.Color = Color.Red;
-                                break;
-                            case Faction.Disposition.Fear:
-                                Pencil.Color = Color.Purple;
-                                break;
-                            case Faction.Disposition.Neutral:
-                                Pencil.Color = Color.LightGray;
-                                break;
-                        }
+                            Matrix3x2 temp = rt.Transform;
 
-                        switch(drawType) {
-                            case DrawType.Polygon:
-                                Poly.Aggregate((prev, current) =>
-                                {
-                                    rt.DrawLine(prev, current, Pencil);
-                                    return current;
-                                });
+                            rt.Transform = Matrix3x2.Rotation(AimDirection.Radians, relativePos);
 
-                                break;
-                            case DrawType.Rectangle:
-                                Area.Offset(MatrixExtensions.PVTranslation);
-                                Area.Inflate(0.5f, 0.5f);
-                                rt.FillRectangle(Area, Pencil);
-                                Area.Inflate(2, 2);
+                            rt.DrawBitmap(Image, relativeArea, 1, BitmapInterpolationMode.Linear);
+                            rt.Transform = temp;
+                            break;
+                        case DrawType.Circle:
+                            rt.FillEllipse(new Ellipse(relativePos, Size / 2, Size / 2), Pencil);
+                            break;
+                        case DrawType.None:
+                        default:
+                            break;
+                    }
 
-                                Area.Offset(-MatrixExtensions.PVTranslation);
-                                break;
-                            case DrawType.Circle:
-                                rt.FillEllipse(new Ellipse(relativePos, Size / 4, Size / 4), Pencil);
-                                break;
-                            case DrawType.None:
-                            default:
-                                break;
-                        }
+                    switch(Game.instance._player.Team.Dispositions.ContainsKey(Team) ? Game.instance._player.Team.Dispositions[Team] : Game.instance._player.Team.DefaultDisposition) {
+                        case Faction.Disposition.Allied:
+                            Pencil.Color = Color.Green;
+                            break;
+                        case Faction.Disposition.Enemy:
+                            Pencil.Color = Color.Red;
+                            break;
+                        case Faction.Disposition.Fear:
+                            Pencil.Color = Color.Purple;
+                            break;
+                        case Faction.Disposition.Neutral:
+                            Pencil.Color = Color.LightGray;
+                            break;
+                    }
 
-                        Pencil.Color = Team.FactionColor;
+                    switch(drawType) {
+                        case DrawType.Polygon:
+                            Poly.Aggregate((prev, current) =>
+                            {
+                                rt.DrawLine(prev, current, Pencil);
+                                return current;
+                            });
 
-                        switch(drawType) {
-                            case DrawType.Rectangle:
-                                Area.Offset(MatrixExtensions.PVTranslation);
-                                rt.DrawRectangle(Area, Pencil);
+                            break;
+                        case DrawType.Rectangle:
+                            relativeArea.Inflate(0.5f, 0.5f);
+                            rt.FillRectangle(relativeArea, Pencil);
+                            relativeArea.Inflate(2, 2);
+                            break;
+                        case DrawType.Circle:
+                            rt.FillEllipse(new Ellipse(relativePos, Size / 4, Size / 4), Pencil);
+                            break;
+                        case DrawType.None:
+                        default:
+                            break;
+                    }
 
-                                Area.Offset(-MatrixExtensions.PVTranslation);
-                                break;
-                            case DrawType.Circle:
-                                rt.DrawEllipse(new Ellipse(relativePos, Size / 2, Size / 2), Pencil);
-                                break;
-                            case DrawType.Polygon:
-                            case DrawType.Image:
-                            case DrawType.None:
-                            default:
-                                break;
-                        }
+                    Pencil.Color = Team.FactionColor;
 
-                        Pencil.Color = tempColor;
+                    switch(drawType) {
+                        case DrawType.Rectangle:
+                            rt.DrawRectangle(relativeArea, Pencil);
+                            break;
+                        case DrawType.Circle:
+                            rt.DrawEllipse(new Ellipse(relativePos, Size / 2, Size / 2), Pencil);
+                            break;
+                        case DrawType.Polygon:
+                        case DrawType.Image:
+                        case DrawType.None:
+                        default:
+                            break;
+                    }
+
+                    Pencil.Color = tempColor;
+
+                    if(false) {
 
                         float range = Math.Max(WeaponRangeR, MeleeRangeR);
 
@@ -766,18 +780,16 @@ namespace Game_Java_Port {
                                 if(PrecisionR == 0) {
                                     rt.DrawEllipse(new Ellipse(relativePos, range, range), lgb);
                                 } else {
-                                    if(laser != null)
-                                        lock(laser) {
-                                            if(laser != null) {
-                                                rt.DrawLine(laser[0], laser[1], lgb);
-                                                if(laser.Length == 3)
-                                                    rt.DrawLine(laser[0], laser[2], lgb);
-                                            }
-                                        }
+                                    if(laser != null) {
+                                        rt.DrawLine(laser[0], laser[1], lgb);
+                                        if(laser.Length == 3)
+                                            rt.DrawLine(laser[0], laser[2], lgb);
+                                    }
                                 }
                             }
                         }
                     }
+                }
             }
         }
 
@@ -788,55 +800,58 @@ namespace Game_Java_Port {
 
         public virtual void Tick() {
             if(_CoolDown > 0)
-                _CoolDown -= GameVars.defaultGTPS / 1000;
+                _CoolDown -= GameStatus.TimeMultiplier;
 
             if(IsMoving) {
                 applyAcceleration();
             }
 
             slowDown();
-            
+
             RectangleF temp = Area;
-            temp.Location += MovementVector / GameVars.defaultGTPS;
-
-            Area = temp;
-
-            temp.Location -= MovementVector / GameVars.defaultGTPS;
 
             List<CharacterBase> list = new List<CharacterBase>();
-
-            lock(GameStatus.GameSubjects)
+            
                 list.AddRange(GameStatus.GameSubjects);
 
 
             list.Remove(this);
 
+            if(list.Any((subj) => subj.CollidesWith(ColType, temp.Center, Size, Area, Poly))) {
+                while(list.Any((subj) => subj.CollidesWith(ColType, temp.Center, Size, Area, Poly))) {
 
-            while(list.Any((subj) => subj.CollidesWith(this))){
+                    list.RemoveAll((subj) => !subj.CollidesWith(ColType, temp.Center, Size, Area, Poly));
 
-                list.RemoveAll((subj) => !subj.CollidesWith(this));
+                    list = list.OrderBy((subj) => Vector2.DistanceSquared(subj.Location, Location)).ToList();
 
-                list = list.OrderBy((subj) => Vector2.DistanceSquared(subj.Location, Location)).ToList();
+                    CharacterBase closest = list.First();
 
-                CharacterBase closest = list.First();
+                    temp.Location = Area.Location.move(
+                        closest.Location.angleTo(Location),
+                        (float)Math.Ceiling(closest.Size / 2 + Size / 2 -
+                        Vector2.Distance(Location, closest.Location)));
+                }
+                Area = temp;
+            } else {
+                temp.Location += MovementVector * GameStatus.TimeMultiplier;
 
-                temp.Location = Area.Location.move(
-                    closest.Location.angleTo(Location),
-                    (float)Math.Ceiling(closest.Size/2 + Size/2 -
-                    Vector2.Distance(Location, closest.Location)));
                 Area = temp;
             }
 
             float range = Math.Max(WeaponRangeR, MeleeRangeR);
             Target = Location + AimDirection.toVector() * range;
 
-            if(laser != null) {
-                lock(laser) {
-                    generatelaserlines(range);
-                }
-            } else
+            /*
                 generatelaserlines(range);
 
+    */
+            relativePos = Location + MatrixExtensions.PVTranslation;
+            relativeTarget = Target + MatrixExtensions.PVTranslation;
+
+            otherSideRelative = Location + (Location - Target) + MatrixExtensions.PVTranslation;
+
+            temp.Offset(MatrixExtensions.PVTranslation);
+            relativeArea = temp;
         }
 
         private void generatelaserlines(float range) {
@@ -892,7 +907,6 @@ namespace Game_Java_Port {
         virtual public void despawn() {
             GameStatus.removeTickable(this);
             GameStatus.removeRenderable(this);
-            lock(GameStatus.GameSubjects)
                 GameStatus.GameSubjects.Remove(this);
         }
 
@@ -902,14 +916,12 @@ namespace Game_Java_Port {
         /// </summary>
         public void removeFromGame() {
             despawn();
-            lock(this)
                 Dispose();
         }
 
         virtual public void addToGame() {
             GameStatus.addTickable(this);
             GameStatus.addRenderable(this);
-            lock(GameStatus.GameSubjects)
                 GameStatus.GameSubjects.Add(this);
         }
 
@@ -1115,16 +1127,6 @@ namespace Game_Java_Port {
             if(!disposed) {
                 if(disposing) {
                     Pencil.Dispose();
-                    if(Image != null)
-                        Image.Dispose();
-                    Inventory.Clear();
-                    Equipment.Clear();
-                    Effects.Clear();
-                    _EquippedWeaponL = null;
-                    _EquippedWeaponR = null;
-                    comparsionobject = null;
-                    Attributes.Clear();
-                    AmmoStorage.Clear();
                 }
                 disposed = true;
             }

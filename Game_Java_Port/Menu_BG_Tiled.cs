@@ -135,7 +135,6 @@ namespace Game_Java_Port {
         }
 
         public void draw(RenderTarget rt) {
-            lock(this)
                 if(!disposed) {
                     if(!flat) {
                         rt.FillRectangle(BGArea, BGBrush);
@@ -160,14 +159,14 @@ namespace Game_Java_Port {
             
             temp = Area;
             // fix size and center location
-            if((temp.Width + temp.Height) % Tile.TileSize != 0) {
+            if((temp.Width % Tile.TileSize.Width) + (temp.Height % Tile.TileSize.Height) != 0) {
                 Vector2 offset = Vector2.Zero;
                 if(scaleUp) {
-                    offset.X = (int)Math.Ceiling(temp.Width / Tile.TileSize + 1) * Tile.TileSize - temp.Width;
-                    offset.Y = (int)Math.Ceiling(temp.Height / Tile.TileSize + 1) * Tile.TileSize - temp.Height;
+                    offset.X = (int)Math.Ceiling(temp.Width / Tile.TileSize.Width + 1) * Tile.TileSize.Width - temp.Width;
+                    offset.Y = (int)Math.Ceiling(temp.Height / Tile.TileSize.Height + 1) * Tile.TileSize.Height - temp.Height;
                 } else {
-                    offset.X = ((int)temp.Width / Tile.TileSize + 1) * Tile.TileSize - temp.Width;
-                    offset.Y = ((int)temp.Height / Tile.TileSize + 1) * Tile.TileSize - temp.Height;
+                    offset.X = ((int)temp.Width / Tile.TileSize.Width + 1) * Tile.TileSize.Width - temp.Width;
+                    offset.Y = ((int)temp.Height / Tile.TileSize.Height + 1) * Tile.TileSize.Height - temp.Height;
                 }
                 temp.Width += offset.X;
                 temp.Height += offset.Y;
@@ -177,21 +176,21 @@ namespace Game_Java_Port {
                 Area = temp;
             }
 
-            tl = tr = bl = br = new RectangleF(Area.X, Area.Y, Tile.TileSize, Tile.TileSize);
+            tl = tr = bl = br = new RectangleF(Area.X, Area.Y, Tile.TileSize.Width, Tile.TileSize.Height);
 
-            temp.Width -= Tile.TileSize * 2;
-            temp.Height -= Tile.TileSize * 2;
+            temp.Width -= Tile.TileSize.Width * 2;
+            temp.Height -= Tile.TileSize.Height * 2;
 
             temptop = templeft = tempbottom = tempright = temp;
 
-            temp.Offset(Tile.TileSize, Tile.TileSize);
+            temp.Offset(Tile.TileSize.Width, Tile.TileSize.Height);
 
-            templeft.Width = tempright.Width = temptop.Height = tempbottom.Height = Tile.TileSize;
+            templeft.Width = tempright.Width = temptop.Height = tempbottom.Height = Tile.TileSize.Height;
 
-            templeft.Offset(0, Tile.TileSize);
-            tempright.Offset(temp.Width + Tile.TileSize, Tile.TileSize);
-            tempbottom.Offset(Tile.TileSize, temp.Height + Tile.TileSize);
-            temptop.Offset(Tile.TileSize, 0);
+            templeft.Offset(0, Tile.TileSize.Height);
+            tempright.Offset(temp.Width + Tile.TileSize.Width, Tile.TileSize.Height);
+            tempbottom.Offset(Tile.TileSize.Width, temp.Height + Tile.TileSize.Height);
+            temptop.Offset(Tile.TileSize.Width, 0);
             
             br.X = tr.X = tempright.X;
             br.Y = bl.Y = tempbottom.Y;
@@ -233,7 +232,6 @@ namespace Game_Java_Port {
             }
         }
         public void Dispose() {
-            lock(this)
                 Dispose(true);
         }
         #endregion

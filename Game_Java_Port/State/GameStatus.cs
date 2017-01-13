@@ -15,9 +15,9 @@ namespace Game_Java_Port
 {
     public static class GameStatus {
 
-        private static object ORDER = new object();
-
         private static ulong nextID = 0;
+
+        public static double LastTick, CurrentTick, MsPassed;
 
         public static ulong GetFirstFreeID { get {
                 return nextID++;
@@ -26,12 +26,12 @@ namespace Game_Java_Port
 
         public static CustomCursor Cursor;
 
-        private static System.Threading.Timer tickTimer = new System.Threading.Timer(tick);
+        //private static System.Threading.Timer tickTimer = new System.Threading.Timer(tick);
 
         /// <summary>
         /// Pair of a CharacterBase and an uint. CharacterBase is a GameSubject with HP at 0. uint is the amount of ticks that have passed since it's death.
         /// </summary>
-        public static Dictionary<CharacterBase, uint> Corpses { get; } = new Dictionary<CharacterBase, uint>();
+        public static Dictionary<CharacterBase, float> Corpses { get; } = new Dictionary<CharacterBase, float>();
         public static List<CharacterBase> GameSubjects { get; } = new List<CharacterBase>();
         public static List<IInteractable> GameObjects { get; } = new List<IInteractable>();
         private static List<ITickable> Tickables { get; } = new List<ITickable>();
@@ -39,7 +39,14 @@ namespace Game_Java_Port
 
         public static Random RNG { get; set; } = new Random();
 
-        public static DateTime TIME { get; } = DateTime.Now;
+        /// <summary>
+        /// Tells how many seconds have passed since the last tick.
+        /// <para>
+        /// To scale values over time, simply multiply.
+        /// </para><para>
+        /// To scale rates - values per second - divide it with this value
+        /// </para></summary>
+        public static float TimeMultiplier { get { return (float)(CurrentTick - LastTick) / 1000; } }
 
         public static Controls justPressed = Controls.none;
 
@@ -193,6 +200,8 @@ namespace Game_Java_Port
                 if(!args2.Consumed)
                     _kbstate.Remove(args.KeyCode);
             }
+            if(args.Alt)
+                args.Handled = true;
         }
 
         /// <summary>
@@ -228,13 +237,12 @@ namespace Game_Java_Port
 
             Vector2 pos = new Vector2(args.X, args.Y) * transform.TranslationVector;
             
+                if(Down && !_mbstate.Contains(args.Button))
+                    _mbstate.Add(args.Button);
+                else if(!Down && _mbstate.Contains(args.Button))
+                    _mbstate.Remove(args.Button);
 
-            if(Down && !_mbstate.Contains(args.Button))
-                _mbstate.Add(args.Button);
-            else if(!Down && _mbstate.Contains(args.Button))
-                _mbstate.Remove(args.Button);
-
-            onClickEvent?.Invoke(null, new onClickArgs(args.Button, MousePos, Down));
+                onClickEvent?.Invoke(null, new onClickArgs(args.Button, MousePos, Down));
             //Console.WriteLine("Button " + args.Button.ToString() + " is now " + (Down ? "Down" : "Up"));
         }
 
@@ -353,12 +361,15 @@ namespace Game_Java_Port
 
         private static bool _Running;
         public static bool Running { get { return _Running; } set {
-                if (value == true && _Running == false) {
+                if(value == true && _Running == false) {
                     _Running = value;
-                    tickTimer.Change(0, (int)(1000 / GameVars.defaultGTPS));
+                    /*
+                    tickThread = new Thread(tickloop);
+                    tickThread.Priority = ThreadPriority.BelowNormal;
+                    tickThread.Start();
+                    */
                 } else {
                     _Running = value;
-                    tickTimer.Change(Timeout.Infinite, Timeout.Infinite);
                 }
             }
         }
@@ -421,59 +432,64 @@ namespace Game_Java_Port
             lock(Renderables)
                 Renderables.Clear();
         }
-        
-        public static void tick(object fu) {
 
-            lock(Program.Pause) {
+        public static void tick(bool init) {
+            justPressed = pendingPresses;
+            pendingPresses = Controls.none;
 
-                justPressed = pendingPresses;
-                pendingPresses = Controls.none;
+            Cursor.CursorType = CursorTypes.Normal;
+            Cursor.Tick();
+            
+            lock(_RegisteredMenus)
+                _RegisteredMenus.ForEach((menu) =>
+                {
+                    if(menu.isOpen)
+                        menu.Tick();
+                });
+            
 
-                Cursor.CursorType = CursorTypes.Normal;
-                Cursor.Tick();
+            Cursor.Tick();
+            
 
-                MatrixExtensions.Tick();
-                lock(_RegisteredMenus)
-                    _RegisteredMenus.ForEach((menu) =>
-                    {
-                        if(menu.isOpen)
-                            menu.Tick();
-                    });
-
-
-                Cursor.Tick();
-
-                if(!Paused || fu == null) {
-                    ITickable[] Tickables_Copy;
-                    lock(Tickables) {
-                        Tickables_Copy = Tickables.ToArray();
-                    }
-                    foreach(ITickable tickable in Tickables_Copy) {
-                        // each tick locks itself when ticking so the next tick has to wait for the previous to complete.
-                        if(tickable != null)
-                            lock(tickable)
-                                tickable.Tick();
-                    }
-
-                    // remove all corpses after one minute
-                    lock(Corpses) {
-                        CharacterBase[] keys = Corpses.Keys.ToArray();
-
-                        foreach(CharacterBase key in keys)
-                            Corpses[key]++;
-                    }
-
-                    lock(Corpses) {
-                        List<KeyValuePair<CharacterBase, uint>> Corpses_Copy = Corpses.ToList();
-                        Corpses_Copy.FindAll((pair) => pair.Value > GameVars.defaultGTPS * 60).ForEach((pair) => Corpses.Remove(pair.Key));
-                    }
+            if(!Paused || init) {
+                ITickable[] Tickables_Copy;
+                lock(Tickables) {
+                    Tickables_Copy = Tickables.ToArray();
                 }
 
-                Cursor.Tick();
+                foreach(ITickable tickable in Tickables_Copy) {
+                    // each tick locks itself when ticking so the next tick has to wait for the previous to complete.
+                    if(tickable != null)
+                        tickable.Tick();
+                }
+                // remove all corpses after one minute
+                lock(Corpses) {
+                    CharacterBase[] keys = Corpses.Keys.ToArray();
 
-                Cursor.Apply();
+                    foreach(CharacterBase key in keys)
+                        Corpses[key] += TimeMultiplier;
+                }
 
-                justPressed = Controls.none;
+                lock(Corpses) {
+                    List<KeyValuePair<CharacterBase, float>> Corpses_Copy = Corpses.ToList();
+                    Corpses_Copy.FindAll((pair) => pair.Value > 60).ForEach((pair) => Corpses.Remove(pair.Key));
+                }
+                MatrixExtensions.Tick();
+            }
+            
+
+            Cursor.Tick();
+
+            Cursor.Apply();
+
+            justPressed = Controls.none;
+        }
+
+        private static async Task delay(int maxPass = 10) {
+            if (MsPassed < maxPass) {
+                await Task.Delay(maxPass - (int)MsPassed);
+                CurrentTick = Program.stopwatch.Elapsed.TotalMilliseconds;
+                MsPassed = CurrentTick - LastTick;
             }
         }
 
@@ -531,16 +547,18 @@ namespace Game_Java_Port
             );
 
             lock(GameSubjects)
-                GameSubjects.Clear();
+                lock(GameObjects) {
+                    GameSubjects.Clear();
 
-            lock(GameObjects)
-                GameObjects.Clear();
-            
-            clearRenderables();
 
-            clearTickables();
+                    GameObjects.Clear();
 
-            Game.instance._player = null;
+                    clearRenderables();
+
+                    clearTickables();
+
+                    Game.instance._player = null;
+                }
 
             init();
         }
@@ -556,7 +574,7 @@ namespace Game_Java_Port
 
             GameMenu.MainMenu.open();
 
-            tick(null);
+            tick(true);
         }
 
         /// <summary>
@@ -566,6 +584,7 @@ namespace Game_Java_Port
         /// for it to respond accordingly to the player. to bitch about it.
         /// </summary>
         public static void exit() {
+            Running = false;
             lock(MenuBorderPen)
                 MenuBorderPen.Dispose();
             lock(MenuFont)
@@ -582,6 +601,7 @@ namespace Game_Java_Port
         }
 
         public static void finalize() {
+            Running = false;
             reset();
         }
     }

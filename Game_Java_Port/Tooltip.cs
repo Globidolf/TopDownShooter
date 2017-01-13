@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SharpDX;
 using SharpDX.DirectWrite;
+using Game_Java_Port.Logics;
 
 namespace Game_Java_Port {
     public class Tooltip : IRenderable, ITickable {
@@ -35,18 +36,21 @@ namespace Game_Java_Port {
             if(Validation != null)
                 doDraw = Validation;
 
-            Size2F size;
+            Size2 size;
 
+            size = SpriteFont.DEFAULT.MeasureString(text);
+
+            /*
             using(TextLayout tl = new TextLayout(Program.DW_Factory, text, GameStatus.MenuFont, 500, 500))
                 size = new Size2F(tl.Metrics.Width, tl.Metrics.Height);
-
+    */
             Area = new RectangleF(0, 0, size.Width + Padding * 2, size.Height + Padding * 2);
 
             _LabelArea = Area;
 
             _LabelArea.Location += Padding;
 
-            _LabelArea.Size = size;
+            _LabelArea.Size = new Size2F(size.Width, size.Height);
 
             Text = text;
 
