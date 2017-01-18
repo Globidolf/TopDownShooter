@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SharpDX;
 using SharpDX.Direct2D1;
+using Game_Java_Port.Logics;
 
 namespace Game_Java_Port {
     class WeaponTooltip : Tooltip {
@@ -42,6 +43,9 @@ namespace Game_Java_Port {
                 case ItemType.Rare:
                     frame = Menu_BG_Tiled.Rare;
                     break;
+                case ItemType.Common:
+                    frame = Menu_BG_Tiled.Common;
+                    break;
                 default:
                     frame = Menu_BG_Tiled.Default;
                     break;
@@ -50,29 +54,33 @@ namespace Game_Java_Port {
 
         public override void draw(RenderTarget rt) {
             frame.draw(rt);
-            RectangleF temp = relLabel;
+            RectangleF temp = relLabel.Floor();
             rt.DrawBitmap(Item.image, new RectangleF(temp.X, temp.Y, 16, 16), 1, BitmapInterpolationMode.Linear);
+            rt.DrawBitmap(dataLoader.get("icon_bg"), new RectangleF(temp.X, temp.Y + temp.Height - 20, 16, 16), 1, BitmapInterpolationMode.Linear);
             rt.DrawBitmap(dataLoader.get("Coin"), new RectangleF(temp.X, temp.Y + temp.Height - 20, 16,16), 1, BitmapInterpolationMode.Linear);
             temp.Offset(0, 20);
+            rt.DrawBitmap(dataLoader.get("icon_bg"), new RectangleF(temp.X, temp.Y, 16, 16), 1, BitmapInterpolationMode.Linear);
             rt.DrawBitmap(dataLoader.get("Attack"), new RectangleF(temp.X, temp.Y, 16, 16), 1, BitmapInterpolationMode.Linear);
             temp.Offset(0, 20);
+            rt.DrawBitmap(dataLoader.get("icon_bg"), new RectangleF(temp.X, temp.Y, 16, 16), 1, BitmapInterpolationMode.Linear);
             rt.DrawBitmap(dataLoader.get("Precision"), new RectangleF(temp.X, temp.Y, 16, 16), 1, BitmapInterpolationMode.Linear);
             temp.Offset(0, 20);
+            rt.DrawBitmap(dataLoader.get("icon_bg"), new RectangleF(temp.X, temp.Y, 16, 16), 1, BitmapInterpolationMode.Linear);
             rt.DrawBitmap(dataLoader.get("Firerate"), new RectangleF(temp.X, temp.Y, 16, 16), 1, BitmapInterpolationMode.Linear);
             temp.Offset(0, 20);
             temp = relLabel;
             temp.Offset(20, 0);
-            rt.DrawText(Item.Name,GameStatus.MenuFont, temp, GameStatus.MenuTextBrush);
+            SpriteFont.DEFAULT.directDrawText(Item.Name, temp, rt);
             temp.Offset(0, 20);
-            rt.DrawText(Item.Damage.ToString("0.##"), GameStatus.MenuFont, temp, GameStatus.MenuTextBrush);
+            SpriteFont.DEFAULT.directDrawText(Item.Damage.ToString("0.##"), temp, rt);
             temp.Offset(0, 20);
-            rt.DrawText(Item.Precision.ToString("0.##%"), GameStatus.MenuFont, temp, GameStatus.MenuTextBrush);
+            SpriteFont.DEFAULT.directDrawText(Item.Precision.ToString("0.##%"), temp, rt);
             temp.Offset(0, 20);
-            rt.DrawText(Item.AttackSpeed.ToString("0.## / s"), GameStatus.MenuFont, temp, GameStatus.MenuTextBrush);
+            SpriteFont.DEFAULT.directDrawText(Item.AttackSpeed.ToString("0.## / s"), temp, rt);
             temp.Offset(0, 20);
 
             temp = new RectangleF(relLabel.X + 20, relLabel.Y + relLabel.Height - 20, relLabel.Width, 20);
-            rt.DrawText(Item.SellPrice.ToString("#,##0"), GameStatus.MenuFont, temp, GameStatus.MenuTextBrush);
+            SpriteFont.DEFAULT.directDrawText(Item.SellPrice.ToString("### ### ##0"), temp, rt);
         }
 
     }

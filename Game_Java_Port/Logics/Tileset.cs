@@ -69,21 +69,24 @@ namespace Game_Java_Port {
         public static Tileset Frame_Dev { get { return getTileset("tiled_menu_dev_32_96", 32); } }
         */
         //implemented
-        public static Tileset Frame_Pearl { get { return getTileset("tiled_menu_pearl_32_96", 32); } }
+        public static Tileset Frame_Pearl { get { return getTileset("tiled_menu_pearl2_32_96", 32); } }
         public static Tileset Frame_Legend { get { return getTileset("tiled_menu_legend_32_96", 32); } }
         public static Tileset Frame_Epic { get { return getTileset("tiled_menu_epic_32_96", 32); } }
         public static Tileset Frame_Rare { get { return getTileset("tiled_menu_rare_32_96", 32); } }
+        public static Tileset Frame_Common { get { return getTileset("tiled_menu_common_32_96", 32); } }
         /*
         public static Tileset Frame_Uncommon { get { return getTileset("tiled_menu_unc_32_96", 32); } }
-        public static Tileset Frame_Common { get { return getTileset("tiled_menu_common_32_96", 32); } }
         public static Tileset Frame_Garbage { get { return getTileset("tiled_menu_garb_32_96", 32); } }
         */
 
         public static Tileset Frame_Default { get { return getTileset("tiled_menu_default_32_96", 32); } }
         
-        public static Tileset Font_Default { get { return getTileset("font_default2_6_8", 6,8); } }
+        public static Tileset Font_Default { get { return getTileset("font_default_6_8", 6,8); } }
 
-        public static Tileset Anim_Bullet_Acid { get { return getTileset("bullet_acid_16_32", 16,16); } }
+        public static Tileset Anim_Bullet_Acid { get { return getTileset("bullet_acid_16_32", 16, 16); } }
+
+        public static Tileset Anim_Bullet_Rock { get { return getTileset("bullet_rock_16_32", 16, 16); } }
+
 
         private static Tileset getTileset(string name, int resX, int resY) {
             if(!Tilesets.ContainsKey(name))

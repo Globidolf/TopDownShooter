@@ -16,7 +16,7 @@ namespace Game_Java_Port {
         public const bool debugMode = true;
 
         public const uint scrollOffset = 50;
-        public const int messageLifeTime = 3000;
+        public const float messageLifeTime = 3;
 
         public const float pickupRange = 200;
         public const float pickupMouseRange = 50;

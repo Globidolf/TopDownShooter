@@ -570,7 +570,7 @@ namespace Game_Java_Port
             addRenderable(Cursor);
             addTickable(Cursor);
 
-            Background_Tiled back = new Background_Tiled(Tileset.BG_Dark_Grass, Area: Game.instance.Area, settings: Background.Settings.Parallax | Background.Settings.Fill_Area);
+            Background_Tiled back = new Background_Tiled(Tileset.BG_Rock, Area: Game.instance.Area, settings: Background.Settings.Parallax | Background.Settings.Fill_Area);
 
             GameMenu.MainMenu.open();
 

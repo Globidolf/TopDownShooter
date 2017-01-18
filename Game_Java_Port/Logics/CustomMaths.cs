@@ -56,7 +56,7 @@ namespace Game_Java_Port {
 
         public static Vector2 collisionPoint(this CharacterBase inst, Vector2 p1, Vector2 p2) {
             p2 = p2.move(p1.angleTo(p2), inst.Size * Vector2.Distance(inst.Location, p1));
-            float sqlen = p1.squareDist(p2);
+            float sqlen = Vector2.DistanceSquared(p1, p2);
             Vector2 p0 = inst.Location;
             float tan = ((p0.X - p1.X) * (p2.X - p1.X) + (p0.Y - p1.Y) * (p2.Y - p1.Y)) / sqlen;
             Vector2 closestPoint = new Vector2(
@@ -65,23 +65,18 @@ namespace Game_Java_Port {
             return closestPoint.move(closestPoint.angleTo(p1), (float)Math.Cos(Vector2.Distance(closestPoint, inst.Location)  / 2 / inst.Size * Math.PI ) * inst.Size / 2);
         }
 
-        public static float squareDist(this Vector2 p1, Vector2 p2) {
-            return (p1.X - p2.X) * (p1.X - p2.X) + (p1.Y - p2.Y) * (p1.Y - p2.Y);
-        }
-
         public static float sqDistanceToLine(this Vector2 p0, Vector2 p1, Vector2 p2) {
-            float sqlen = p1.squareDist(p2);
+            float sqlen = Vector2.DistanceSquared(p1, p2);
             float tan;
 
             if(sqlen == 0)
-                return p0.squareDist(p1);
+                return Vector2.DistanceSquared(p0, p1);
             tan = ((p0.X - p1.X) * (p2.X - p1.X) + (p0.Y - p1.Y) * (p2.Y - p1.Y)) / sqlen;
             if(tan < 0)
-                return p0.squareDist(p1);
+                return Vector2.DistanceSquared(p0, p1);
             if(tan > 1)
-                return p0.squareDist(p2);
-
-            return p0.squareDist(
+                return Vector2.DistanceSquared(p0, p2);
+            return Vector2.DistanceSquared(p0,
                 new Vector2(
                     p1.X + tan * (p2.X - p1.X),
                     p1.Y + tan * (p2.Y - p1.Y)));
@@ -107,7 +102,7 @@ namespace Game_Java_Port {
 
         public static AngleSingle difference(this AngleSingle angle, AngleSingle to, bool abs = false) {
 
-            AngleSingle result = new AngleSingle((float)Math.Atan2(Math.Sin((angle - to).Radians), Math.Cos((angle - to).Radians)), AngleType.Radian);
+            AngleSingle result = angle - to;
             if(abs)
                 result.WrapPositive();
             else
@@ -115,7 +110,11 @@ namespace Game_Java_Port {
             return result;
         }
 
-        public static AngleSingle angleTo(this Vector2 p, Vector2 p2) { return new AngleSingle((float)Math.Atan2(p.Y - p2.Y, p.X - p2.X),AngleType.Radian); }
+        public static AngleSingle angleTo(this Vector2 p, Vector2 p2) {
+            return new AngleSingle(
+                (float)Math.Atan2(p.Y - p2.Y, p.X - p2.X),
+                AngleType.Radian);
+        }
 
         public static Vector2 toVector(this AngleSingle angle) {
             return -new Vector2((float)Math.Cos(angle.Radians), (float)Math.Sin(angle.Radians));
@@ -393,6 +392,7 @@ namespace Game_Java_Port {
         }
 
         public static bool isInBetween( this AngleSingle a0, AngleSingle a1, AngleSingle a2) {
+
             //normalize all values
             a0.Wrap();
             a1.Wrap();
@@ -403,41 +403,62 @@ namespace Game_Java_Port {
                 return (a1 <= a0 || a0 <= a2);
         }
 
-        public static AngleSingle track(this AngleSingle a0, AngleSingle target, AngleSingle strength) {
-            a0.Wrap();
-            target.Wrap();
+        /// <summary>
+        /// Calculates an angle by moving the angle a0(this) closer to the target angle by the amount of the strength angle.
+        /// <para>
+        /// if the 'perfect' parameter is set to true, this will not step over the target angle, making the tracking 'perfect'.
+        /// </para>
+        /// <para>
+        /// Example:
+        /// </para>
+        /// <para>
+        /// track(45°, 50°, 10°, false) returns 55°.
+        /// </para>
+        /// <para>
+        /// track(45°, 50°, 10°, true) returns 50°.
+        /// </para>
+        /// </summary>
+        /// <param name="a0">The base angle.</param>
+        /// <param name="target">The target angle.</param>
+        /// <param name="strength">The tracking strength.</param>
+        /// <param name="perfect">Disallows stepping over the target.</param>
+        /// <returns> an Angle </returns>
+        public static AngleSingle track(this AngleSingle a0, AngleSingle target, AngleSingle strength, bool perfect = false) {
+
+            //wrap everything to positive values
+            a0.WrapPositive();
+            target.WrapPositive();
+            strength.WrapPositive();
+            AngleSingle offset = target - a0;
+            offset.WrapPositive();
+            
+
+            if (!offset.IsReflex) { // handle positive values(0 to 180)
+                if(perfect && strength >= offset)
+                    strength = offset;
+            } else { // handle negative values (-0 to -180 A.K.A 180 to 360)
+                strength = -strength;
+                if(perfect && strength <= -offset)
+                    strength = -offset;
+            }
+            // wrap for addition
             strength.Wrap();
 
-            AngleSingle offset = target - a0;
-
-            if((strength <= AngleSingle.ZeroAngle && strength < offset) ||
-                 strength >= AngleSingle.ZeroAngle && strength > offset)
-                strength = offset;
-
+            // calculate
             return a0 + strength;
 
         }
+        
+        public static AngleSingle track(this AngleSingle a0, AngleSingle target, float strength = 0.1f, AngleType type = AngleType.Revolution, bool perfect = true) {
+            //call overload
+            return track(a0, target, new AngleSingle(strength, type), perfect);
+        }
 
-        public static AngleSingle track(this AngleSingle a0, AngleSingle target, float strength = 0.1f, AngleType type = AngleType.Radian) {
-
-            return track(a0, target, new AngleSingle(strength, type));
-
-            /*
-            strength = strength < 0 ? strength * -1 : strength;
-            if(strength > Math.PI)
-                strength = (float)Math.PI;
-            AngleSingle _offset = a0.offset(target);
-            if(_offset.IsReflex)
-                _offset -= AngleSingle.StraightAngle;
-            AngleSingle _str = new AngleSingle(strength, type);
-            if(_offset < _str) {
-                return target;
-            } else if(_offset.Radians > 0) {
-                a0 -= _str;
-            } else {
-                a0 += new AngleSingle(strength, type);
-            }
-            return a0;*/
+        public static RectangleF Floor(this RectangleF rect) {
+            return new RectangleF((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height);
+        }
+        public static RectangleF Ceil(this RectangleF rect) {
+            return new RectangleF((int)(rect.X + 1 - float.Epsilon), (int)(rect.Y + 1 - float.Epsilon), (int)(rect.Width + 1 - float.Epsilon), (int)(rect.Height + 1 - float.Epsilon));
         }
 
     }

@@ -143,6 +143,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AI Library.cs" />
+    <Compile Include="Beam.cs" />
     <Compile Include="Logics\Animated_Tileset.cs" />
     <Compile Include="Logics\Background_Tiled.cs" />
     <Compile Include="CharacterBase.cs" />

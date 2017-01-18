@@ -15,9 +15,9 @@ namespace Game_Java_Port {
         public TcpListener ClientListener { get; }
         public List<TcpClient> ClientList { get; }
         public Dictionary<TcpClient, ulong> ClientPlayer { get; }
-        public Timer ListenerThread { get; }
+        public readonly Timer ListenerThread;
         public Thread CommunicatorThread { get; }
-        public Timer RefresherThread { get; }
+        public readonly Timer RefresherThread;
         public static object ComLock = new object();
         
         public static Func<Host, TimerCallback> RefreshAction = (host) =>
@@ -213,10 +213,8 @@ namespace Game_Java_Port {
         protected virtual void Dispose(bool disposing) {
             if(!disposed) {
                 if(disposing) {
-                    lock(ListenerThread)
-                        ListenerThread.Dispose();
-                    lock(RefresherThread)
-                        RefresherThread.Dispose();
+                    ListenerThread.Dispose();
+                    RefresherThread.Dispose();
                     foreach(TcpClient client in ClientList) lock(client)
                         client.Close();
                     lock(ClientListener)

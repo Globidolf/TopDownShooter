@@ -214,8 +214,13 @@ namespace Game_Java_Port {
                                 Program.DebugLog.Add("Adding Subject " + player.ID + ". MainMenu -> New Game -> CharCreatorMenu.onContinue().");
                                 player.addToGame();
                                 // test data
+                                /*
                                 foreach(ItemType rarity in Enum.GetValues(typeof(ItemType))) {
-                                    new Weapon(100, wt: WeapPreset.Pistol, rarity: rarity).PickUp(player);
+                                    new Weapon(100, wt: WeapPreset.Boomerang, rarity: rarity).PickUp(player);
+                                }
+                                */
+                                for(int i = 0; i < 100; i++) {
+                                    new Weapon((uint)i+1, rarity: ItemType.Pearlescent).PickUp(player);
                                 }
                             };
                             CharCreatorMenu.open();

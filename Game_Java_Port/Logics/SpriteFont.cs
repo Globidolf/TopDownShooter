@@ -183,9 +183,17 @@ namespace Game_Java_Port.Logics {
             string[] s = prepare(text, new Size2((int)Area.Width, (int)Area.Height), out size);
             directDrawText(s, Area, rt);
         }
+        public void directDrawText(string text, RectangleF Area, RenderTarget rt, Color filter) {
+            Size2 size;
+            string[] s = prepare(text, new Size2((int)Area.Width, (int)Area.Height), out size);
+            
+            directDrawText(s, Area, rt);
+        }
 
         private void directDrawText(string[] s, RectangleF Area, RenderTarget rt) {
 
+            SharpDX.Direct2D1.Effect effect = new SharpDX.Direct2D1.Effect(Program._RenderTarget, SharpDX.Direct2D1.Effect.ColorMatrix);
+            
             int y = LineSpacing;
 
             int x = 1;
@@ -193,7 +201,14 @@ namespace Game_Java_Port.Logics {
 
                 foreach(char c in substring) {
 
-                    rt.DrawBitmap(translate(c), new RectangleF(Area.X + x, Area.Y + y, _Font.TileSize.Width, _Font.TileSize.Height), 1, BitmapInterpolationMode.NearestNeighbor);
+                    effect.SetInput(0, translate(c), true);
+
+
+                    Program._RenderTarget.Clear(Color4.Black);
+
+                    Program._RenderTarget.DrawImage(effect.Output, new Vector2(Area.X + x, Area.Y + y));
+
+                    //rt.DrawBitmap(effect.Output, new RectangleF(Area.X + x, Area.Y + y, _Font.TileSize.Width, _Font.TileSize.Height), 1, BitmapInterpolationMode.NearestNeighbor);
                     
                     x += _Font.TileSize.Width;
 

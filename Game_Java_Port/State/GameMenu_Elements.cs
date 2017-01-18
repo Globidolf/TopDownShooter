@@ -309,7 +309,7 @@ namespace Game_Java_Port {
 
         }
         
-        private class RegulatorButtons<T> : MenuElementListBase where T : struct, IComparable, IConvertible {
+        private sealed class RegulatorButtons<T> : MenuElementListBase where T : struct, IComparable, IConvertible {
             
             public RegulatorButtons(Regulator<T> regulator, T? stepsize = null) {
                 if(stepsize == null)
@@ -359,7 +359,7 @@ namespace Game_Java_Port {
             }
         }
         
-        private class InputField : MenuElementBase {
+        private sealed class InputField : MenuElementBase {
 
             private Bitmap _textBMP;
             private Bitmap _textBMP_;
@@ -509,7 +509,7 @@ namespace Game_Java_Port {
         /// Has various events available for additinal functionality.
         /// </summary>
         /// <typeparam name="T">The type of the value. not required, automatically determined.</typeparam>
-        private class Regulator<T> : MenuElementBase where T : struct, IComparable, IConvertible {
+        private sealed class Regulator<T> : MenuElementBase where T : struct, IComparable, IConvertible {
 
             #region Layout Data
 
@@ -793,14 +793,16 @@ namespace Game_Java_Port {
                     RegulatorArea.Bottom - MenuPadding / 2);
                     */
                 rt.FillEllipse(_Cursor, MenuPen);
-
+                SpriteFont.DEFAULT.directDrawText(float.Parse(Value.ToString()).ToString(".##"), _ValueArea, rt);
+                SpriteFont.DEFAULT.directDrawText(float.Parse(MinValue.ToString()).ToString(".##"), _MinValueArea, rt);
+                SpriteFont.DEFAULT.directDrawText(float.Parse(MaxValue.ToString()).ToString(".##"), _MaxValueArea, rt);
+                /*
                 rt.DrawText(float.Parse(Value.ToString()).ToString(".##"), MenuFont, _ValueArea, MenuTextBrush);
-
                 rt.DrawText(float.Parse(MinValue.ToString()).ToString(".##"), MenuFont, _MinValueArea, MenuTextBrush);
-
+                rt.DrawText(float.Parse(MaxValue.ToString()).ToString(".##"), MenuFont, _MaxValueArea, MenuTextBrush);
+                */
                 rt.DrawLine(_SepTop, _SepBot, MenuBorderPen);
 
-                rt.DrawText(float.Parse(MaxValue.ToString()).ToString(".##"), MenuFont, _MaxValueArea, MenuTextBrush);
             }
 
             public override void update() {
@@ -839,7 +841,7 @@ namespace Game_Java_Port {
         }
 
 
-        private class TextElement : MenuElementBase {
+        private sealed class TextElement : MenuElementBase {
 
             private bool _DownScale = false;
 
@@ -942,7 +944,7 @@ namespace Game_Java_Port {
         /// The user can click on this Element, which will in turn raise an event.
         /// Hover effects included.
         /// </summary>
-        private class Button : MenuElementBase, IDisposable {
+        private sealed class Button : MenuElementBase, IDisposable {
 
             /// <summary>
             /// Will run all registered actions when the button is clicked.

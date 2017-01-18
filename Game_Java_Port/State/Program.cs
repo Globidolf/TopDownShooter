@@ -10,9 +10,14 @@ using SharpDX.Direct3D11;
 using SharpDX.DXGI;
 using SharpDX.Windows;
 
-using AlphaMode = SharpDX.Direct2D1.AlphaMode;
-using Device = SharpDX.Direct3D11.Device;
-using Factory2 = SharpDX.DXGI.Factory2;
+
+using D3DTexture = SharpDX.Direct3D11.Texture2D;
+using D2DEffect = SharpDX.Direct2D1.Effect;
+using D2DDeviceContext = SharpDX.Direct2D1.DeviceContext;
+using D2DDevice = SharpDX.Direct2D1.Device;
+using D2DAlphaMode = SharpDX.Direct2D1.AlphaMode;
+using D3DDevice = SharpDX.Direct3D11.Device;
+using DXGIFactory2 = SharpDX.DXGI.Factory2;
 using Game_Java_Port.Interface;
 using System.Collections.Generic;
 
@@ -23,12 +28,12 @@ namespace Game_Java_Port
         public static List<string> DebugLog = new List<string>();
 
         public static SharpDX.DirectWrite.Factory DW_Factory;
-        public static RenderTarget _RenderTarget = null;
 
         public static RenderForm form;
-        public static Device device;
+        public static D3DDevice device;
+        public static D2DDeviceContext _RenderTarget;
         static SwapChain swapChain;
-        static Factory2 factory;
+        static DXGIFactory2 factory;
         static SharpDX.Direct2D1.Factory d2dFactory;
         static Texture2D backBuffer;
         static SharpDX.DirectWrite.TextFormat Font;
@@ -105,7 +110,7 @@ namespace Game_Java_Port
             GameStatus.init();
 
             GameStatus.Running = true;
-            
+
 
             RenderLoop.Run(form, () =>
                 {
@@ -117,6 +122,7 @@ namespace Game_Java_Port
                         GameStatus.tick(false);
 
                     _RenderTarget.BeginDraw();
+                    _RenderTarget.BeginDraw();
 
                     IRenderable[] renderables;
 
@@ -127,10 +133,9 @@ namespace Game_Java_Port
                         nonbg.draw(_RenderTarget);
                     }
                     
-
-                //_RenderTarget.DrawText(test3, Font, new RectangleF(0, 0, width, height), brush);
-                _RenderTarget.DrawText(
-                    fps.ToString(), Font, new RectangleF(0, 0, width, height), brush);
+                    //_RenderTarget.DrawText(test3, Font, new RectangleF(0, 0, width, height), brush);
+                    _RenderTarget.DrawText(
+                        fps.ToString(), Font, new RectangleF(0, 0, width, height), brush);
                     i++;
 
 
@@ -139,6 +144,8 @@ namespace Game_Java_Port
                         i = 0;
                         i2 = stopwatch.ElapsedMilliseconds;
                     }
+                    
+                    //_RenderTarget.EndDraw();
                     _RenderTarget.EndDraw();
 
                     swapChain.Present(0, PresentFlags.None);
@@ -165,7 +172,7 @@ namespace Game_Java_Port
                 backBuffer = Texture2D.FromSwapChain<Texture2D>(swapChain, 0);
                 renderView = new RenderTargetView(device, backBuffer);
                 surface = backBuffer.QueryInterface<Surface>();
-                _RenderTarget = new RenderTarget(d2dFactory, surface, new RenderTargetProperties(new PixelFormat(Format.R8G8B8A8_UNorm, AlphaMode.Premultiplied)));
+                //_RenderTarget = new RenderTarget(d2dFactory, surface, new RenderTargetProperties(new PixelFormat(Format.R8G8B8A8_UNorm, D2DAlphaMode.Premultiplied)));
         }
 
         static void init() {
@@ -192,18 +199,34 @@ namespace Game_Java_Port
                 Usage = Usage.RenderTargetOutput,
                 Flags = SwapChainFlags.None
             };
+
+
+
+            
             
 
             // Create Device and SwapChain
-            Device.CreateWithSwapChain(DriverType.Hardware, DeviceCreationFlags.BgraSupport, new SharpDX.Direct3D.FeatureLevel[] { Device.GetSupportedFeatureLevel() }, desc, out device, out swapChain);
+            D3DDevice.CreateWithSwapChain(DriverType.Hardware, DeviceCreationFlags.BgraSupport, new SharpDX.Direct3D.FeatureLevel[] { D3DDevice.GetSupportedFeatureLevel() }, desc, out device, out swapChain);
 
+
+
+            //D2DDevice test = new D2DDevice(device.QueryInterface<SharpDX.DXGI.Device>());
+
+
+            //new SharpDX.Direct2D1.DeviceContext(Surface.)
+
+            //new SharpDX.Direct2D1.Device1(test2, testfactory.Adapters[0].Outputs[0].)
+
+
+            _RenderTarget = new D2DDeviceContext(new D2DDevice(device.QueryInterface<SharpDX.DXGI.Device>()), DeviceContextOptions.None);
+            
             d2dFactory = new SharpDX.Direct2D1.Factory(FactoryType.MultiThreaded);
 
             width = form.ClientSize.Width;
             height = form.ClientSize.Height;
 
             // Ignore all windows events
-            factory = swapChain.GetParent<Factory2>();
+            factory = swapChain.GetParent<DXGIFactory2>();
             factory.MakeWindowAssociation(form.Handle, WindowAssociationFlags.None);
             DW_Factory = new SharpDX.DirectWrite.Factory(SharpDX.DirectWrite.FactoryType.Shared);
 
@@ -212,7 +235,7 @@ namespace Game_Java_Port
             Font = new SharpDX.DirectWrite.TextFormat(DW_Factory, "arial", 12);
             
             // New RenderTargetView from the backbuffer
-            backBuffer = Texture2D.FromSwapChain<Texture2D>(swapChain, 0);
+            backBuffer = D3DTexture.FromSwapChain<D3DTexture>(swapChain, 0);
             renderView = new RenderTargetView(device, backBuffer);
             
             surface = backBuffer.QueryInterface<Surface>();
@@ -221,7 +244,7 @@ namespace Game_Java_Port
 
 
             _RenderTarget = new RenderTarget(d2dFactory, surface,
-                                                            new RenderTargetProperties(new PixelFormat(Format.R8G8B8A8_UNorm, AlphaMode.Premultiplied)));
+                                                            new RenderTargetProperties(new PixelFormat(Format.R8G8B8A8_UNorm, D2DAlphaMode.Premultiplied)));
 
             
             

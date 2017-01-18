@@ -61,7 +61,8 @@ namespace Game_Java_Port {
         }
 
         protected void drawText(RenderTarget rt) {
-            rt.DrawText(Text, GameStatus.MenuFont, relLabel, GameStatus.MenuTextBrush);
+            SpriteFont.DEFAULT.directDrawText(Text, relLabel, rt);
+            //rt.DrawText(Text, GameStatus.MenuFont, relLabel, GameStatus.MenuTextBrush);
         }
 
         public virtual void draw(RenderTarget rt) {
@@ -80,6 +81,7 @@ namespace Game_Java_Port {
         public virtual void Tick() {
 
             if (doDraw?.Invoke() == true != show) {
+                
                 if(show)
                     GameStatus.removeRenderable(this);
                 else

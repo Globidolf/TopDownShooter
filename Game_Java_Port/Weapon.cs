@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 using Game_Java_Port.Interface;
 using SharpDX.Direct2D1;
 using SharpDX;
+using Game_Java_Port.Logics;
 
 namespace Game_Java_Port {
-    public partial class Weapon : ItemBase, IEquipable, ISerializable<Weapon> {
+    public sealed partial class Weapon : ItemBase, IEquipable, ISerializable<Weapon> {
 
         public SolidColorBrush weaponPen;
 
@@ -641,7 +642,8 @@ namespace Game_Java_Port {
                 weaponPen.Color = Color.Black;
                 rt.DrawRectangle(pos, weaponPen);
                 pos.Location += 2;
-                rt.DrawText("Reloading...", GameStatus.MenuFont, pos, weaponPen);
+                SpriteFont.DEFAULT.directDrawText("Reloading...", pos, rt);
+                //rt.DrawText("Reloading...", GameStatus.MenuFont, pos, weaponPen);
             }
         }
         

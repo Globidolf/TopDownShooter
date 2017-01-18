@@ -1,4 +1,5 @@
 ﻿using Game_Java_Port.Interface;
+using Game_Java_Port.Logics;
 using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
@@ -47,15 +48,26 @@ namespace Game_Java_Port {
         public Faction Team = FactionNames.Environment;
 
         public abstract DrawType drawType { get; set; }
-        public SolidColorBrush Pencil { get; set; } = new SolidColorBrush(Program._RenderTarget, Color.FromRgba(0xFF00FFFF));
+        public SolidColorBrush Pencil = new SolidColorBrush(Program._RenderTarget, Color.FromRgba(0xFF00FFFF));
         public bool IsMoving { get; set; }
-        public virtual RectangleF Area { get; set; }
-        public Vector2 Location {
-            get { return Area.Center; }
+        private RectangleF _Area;
+        public RectangleF Area {
+            get {
+                return _Area;
+            }
             set {
-                RectangleF rect = Area;
-                rect.Location = value - new Vector2(Area.Width / 2, Area.Height / 2);
-                Area = rect;
+                _Area = value;
+                _Location = _Area.Center;
+            }
+        }
+        private Vector2 _Location;
+        public Vector2 Location {
+            get {
+                return _Location;
+            }
+            set {
+                _Area.Location = value - _Location;
+                _Location = value;
             }
         }
 
@@ -114,8 +126,6 @@ namespace Game_Java_Port {
                         }
                         _Size = _complexSize;
                             break;
-                    default:
-                            throw new NotImplementedException("Unknown Draw-Type!");
                 }
                 return _Size;
             }
@@ -527,8 +537,9 @@ namespace Game_Java_Port {
                     GameStatus.Corpses.Add(this, 0);
 
             if(!isdead) { 
-                    new Background(dataLoader.get("corpse.bmp"), Area.Center, 30, Background.Settings.Parallax);
+                    new Background(dataLoader.get("corpse.bmp"), Location, 30, Background.Settings.Parallax);
                     switch(Game.state) {
+                        case Game.GameState.Menu:
                         case Game.GameState.Normal:
                             Game.instance.addMessage(Name + " was killed by " + by.Name + ".");
                             foreach(ItemBase item in Inventory.ToArray()) {
@@ -580,6 +591,10 @@ namespace Game_Java_Port {
         }
 
         public virtual void Attack(CharacterBase target, float damage, bool reflection = false) {
+            // Ignore overkill
+            if(target.Health <= 0)
+                return;
+
             float totalDamage = damage;
 
             float threshold = 0;
@@ -1022,7 +1037,9 @@ namespace Game_Java_Port {
             float barwidth = 200;
             float barheight = 20;
 
-            rt.DrawText(Name, GameStatus.MenuFont, new RectangleF(padding, pos, Game.instance.Area.Width - padding * 2, Game.instance.Area.Height - pos), Pencil);
+            SpriteFont.DEFAULT.directDrawText(Name, new RectangleF(padding, pos, Game.instance.Area.Width - padding * 2, Game.instance.Area.Height - pos), rt);
+
+            //rt.DrawText(Name, GameStatus.MenuFont, new RectangleF(padding, pos, Game.instance.Area.Width - padding * 2, Game.instance.Area.Height - pos), Pencil);
 
             pos += 12 + 2 * padding;
 
@@ -1030,7 +1047,7 @@ namespace Game_Java_Port {
             RectangleF barSubRegion = new RectangleF(padding, pos, barwidth * Health / MaxHealth, barheight);
 
             pos += barheight + 2 * padding;
-
+             
             Color4 temp = Pencil.Color;
 
             Pencil.Color = Color.DarkRed;
@@ -1047,7 +1064,8 @@ namespace Game_Java_Port {
 
             Pencil.Color = Color.White;
 
-            rt.DrawText(Health.ToString("0.##") + " / " + MaxHealth.ToString("0.##"), GameStatus.MenuFont, barRegion, Pencil);
+            SpriteFont.DEFAULT.directDrawText(Health.ToString("0.##") + " / " + MaxHealth.ToString("0.##"), barRegion, rt);
+            //rt.DrawText(Health.ToString("0.##") + " / " + MaxHealth.ToString("0.##"), GameStatus.MenuFont, barRegion, Pencil);
 
             barRegion = new RectangleF(padding, pos, barwidth, barheight);
             barSubRegion = new RectangleF(padding, pos, barwidth * Exp / ExpToLvlUp, barheight);
@@ -1068,7 +1086,8 @@ namespace Game_Java_Port {
 
             Pencil.Color = Color.White;
 
-            rt.DrawText(Exp.ToString("0.##") + " / " + ExpToLvlUp.ToString("0.##"), GameStatus.MenuFont, barRegion, Pencil);
+            SpriteFont.DEFAULT.directDrawText(Exp.ToString("0.##") + " / " + ExpToLvlUp.ToString("0.##"), barRegion, rt);
+            //rt.DrawText(Exp.ToString("0.##") + " / " + ExpToLvlUp.ToString("0.##"), GameStatus.MenuFont, barRegion, Pencil);
 
             if(EquippedWeaponL != null && EquippedWeaponL.ClipSize > 0) {
                 barRegion = new RectangleF(padding, pos, barwidth, barheight);
@@ -1089,8 +1108,8 @@ namespace Game_Java_Port {
                 rt.DrawRectangle(barRegion, Pencil);
 
                 Pencil.Color = Color.Black;
-
-                rt.DrawText(EquippedWeaponL.Ammo.ToString("0.##") + " / " + EquippedWeaponL.ClipSize.ToString("0.##") + " (" + AmmoStorage[EquippedWeaponL.WType] + ")", GameStatus.MenuFont, barRegion, Pencil);
+                SpriteFont.DEFAULT.directDrawText(EquippedWeaponL.Ammo.ToString("0.##") + " / " + EquippedWeaponL.ClipSize.ToString("0.##") + " (" + AmmoStorage[EquippedWeaponL.WType] + ")", barRegion, rt);
+                //rt.DrawText(EquippedWeaponL.Ammo.ToString("0.##") + " / " + EquippedWeaponL.ClipSize.ToString("0.##") + " (" + AmmoStorage[EquippedWeaponL.WType] + ")", GameStatus.MenuFont, barRegion, Pencil);
             }
 
             if(EquippedWeaponL != EquippedWeaponR && EquippedWeaponR != null && EquippedWeaponR.ClipSize > 0) {
@@ -1113,8 +1132,9 @@ namespace Game_Java_Port {
                 rt.DrawRectangle(barRegion, Pencil);
 
                 Pencil.Color = Color.Black;
-
-                rt.DrawText(EquippedWeaponR.Ammo.ToString("0.##") + " / " + EquippedWeaponR.ClipSize.ToString("0.##") + " (" + AmmoStorage[EquippedWeaponR.WType] + ")", GameStatus.MenuFont, barRegion, Pencil);
+                
+                SpriteFont.DEFAULT.directDrawText(EquippedWeaponR.Ammo.ToString("0.##") + " / " + EquippedWeaponR.ClipSize.ToString("0.##") + " (" + AmmoStorage[EquippedWeaponR.WType] + ")", barRegion, rt);
+                //rt.DrawText(EquippedWeaponR.Ammo.ToString("0.##") + " / " + EquippedWeaponR.ClipSize.ToString("0.##") + " (" + AmmoStorage[EquippedWeaponR.WType] + ")", GameStatus.MenuFont, barRegion, Pencil);
             }
 
             Pencil.Color = temp;

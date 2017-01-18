@@ -91,15 +91,17 @@ namespace Game_Java_Port {
 
 
         public virtual void draw(RenderTarget rt) {
-                if(!disposed) {
-                    if(settings.HasFlag(Settings.Fill_Area)) {
-                        if(_tb != null) {
-                            rt.FillRectangle(Game.instance.Area, tb);
-                        }
-                    } else {
+            if(!disposed) {
+                if(settings.HasFlag(Settings.Fill_Area)) {
+                    if(_tb != null) {
+                        rt.FillRectangle(Game.instance.Area, tb);
+                    }
+                } else {
+                    if(!this.isOutOfRange()) {
                         rt.DrawBitmap(img, offset, 1, BitmapInterpolationMode.Linear, new RectangleF(0, 0, img.Size.Width, img.Size.Height));
                     }
                 }
+            }
         }
 
         public virtual void Tick() {
@@ -110,11 +112,8 @@ namespace Game_Java_Port {
                     tb.Transform = transform;
                 }
 
-            RectangleF temp = Area;
+            RectangleF temp = Area.Floor();
             temp.Offset(MatrixExtensions.PVTranslation);
-
-            temp.X = (float)Math.Floor(temp.X);
-            temp.Y = (float)Math.Floor(temp.Y);
 
             offset = temp;
 

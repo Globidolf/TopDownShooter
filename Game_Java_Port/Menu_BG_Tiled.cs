@@ -15,6 +15,7 @@ namespace Game_Java_Port {
         public static Menu_BG_Tiled Legendary { get { return new Menu_BG_Tiled(Tileset.Frame_Legend); } }
         public static Menu_BG_Tiled Epic { get { return new Menu_BG_Tiled(Tileset.Frame_Epic); } }
         public static Menu_BG_Tiled Rare { get { return new Menu_BG_Tiled(Tileset.Frame_Rare); } }
+        public static Menu_BG_Tiled Common { get { return new Menu_BG_Tiled(Tileset.Frame_Common); } }
 
 
         public bool scaleUp = false;
@@ -195,19 +196,19 @@ namespace Game_Java_Port {
             br.X = tr.X = tempright.X;
             br.Y = bl.Y = tempbottom.Y;
 
-            BGArea = temp;
-            TopArea = temptop;
-            LeftArea = templeft;
-            BottomArea = tempbottom;
-            RightArea = tempright;
+            BGArea = temp.Floor();
+            TopArea = temptop.Floor();
+            LeftArea = templeft.Floor();
+            BottomArea = tempbottom.Floor();
+            RightArea = tempright.Floor();
 
-            TL = tl;
-            TR = tr;
-            BL = bl;
-            BR = br;
+            TL = tl.Floor();
+            TR = tr.Floor();
+            BL = bl.Floor();
+            BR = br.Floor();
 
             Matrix3x2 transform = Matrix3x2.Identity;
-            transform.TranslationVector = Area.TopLeft;
+            transform.TranslationVector = Area.Floor().TopLeft;
 
             FlatBrush.Transform = BottomBrush.Transform = LeftBrush.Transform = RightBrush.Transform = TopBrush.Transform = BGBrush.Transform = transform;
             if(BGArea.Height <= 0)

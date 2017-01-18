@@ -44,7 +44,7 @@ namespace Game_Java_Port {
                 temp.WType = WeaponType.Throwable;
                 temp._Slot = Interface.EquipSlot.Weapon1H;
 
-                temp.Precision = 0.7f;
+                temp.Precision = 0.9f;
                 temp.Damage = 7;
                 temp.Range = 1200;
                 temp.AttackSpeed = 1;
@@ -124,7 +124,7 @@ namespace Game_Java_Port {
                 temp.WType = WeaponType.SubMachineGun;
                 temp._Slot = Interface.EquipSlot.Weapon1H;
 
-                temp.Precision = 0.8f;
+                temp.Precision = 0.92f;
                 temp.Damage = 2;
                 temp.Range = 350;
                 temp.AttackSpeed = 8;
@@ -150,8 +150,8 @@ namespace Game_Java_Port {
                 temp.WType = WeaponType.SniperRifle;
                 temp._Slot = Interface.EquipSlot.Weapon2H;
 
-                temp.Precision = 1.05f;
-                temp.Damage = 17f;
+                temp.Precision = 1.2f;
+                temp.Damage = 30;
                 temp.Range = 1800;
                 temp.AttackSpeed = 0.2f;
 
@@ -176,8 +176,8 @@ namespace Game_Java_Port {
                 temp.WType = WeaponType.RocketLauncher;
                 temp._Slot = Interface.EquipSlot.Weapon2H;
 
-                temp.Precision = 0.96f;
-                temp.Damage = 30f;
+                temp.Precision = 1f;
+                temp.Damage = 50;
                 temp.Range = 1000;
                 temp.AttackSpeed = 0.8f;
 
@@ -206,7 +206,7 @@ namespace Game_Java_Port {
 
                 temp.Precision = 0.75f;
                 temp.Damage = 26;
-                temp.Range = temp.MeleeRangeExtension = 130;
+                temp.Range = temp.MeleeRangeExtension = 30;
                 temp.AttackSpeed = 0.5f;
 
                 temp.BulletHitCount = 1;
@@ -228,7 +228,7 @@ namespace Game_Java_Port {
 
                 temp.Precision = 0.94f;
                 temp.Damage = 17;
-                temp.Range = temp.MeleeRangeExtension = 250;
+                temp.Range = temp.MeleeRangeExtension = 80;
                 temp.AttackSpeed = 0.4f;
 
                 temp.BulletHitCount = 7;
@@ -250,7 +250,7 @@ namespace Game_Java_Port {
 
                 temp.Precision = 0.6f;
                 temp.Damage = 20;
-                temp.Range = temp.MeleeRangeExtension = 170;
+                temp.Range = temp.MeleeRangeExtension = 60;
                 temp.AttackSpeed = 0.3f;
 
                 temp.BulletHitCount = 7;
@@ -272,7 +272,7 @@ namespace Game_Java_Port {
 
                 temp.Precision = 0.6f;
                 temp.Damage = 12;
-                temp.Range = temp.MeleeRangeExtension = 100;
+                temp.Range = temp.MeleeRangeExtension = 50;
                 temp.AttackSpeed = 0.7f;
 
                 temp.BulletHitCount = 3;
@@ -320,10 +320,10 @@ namespace Game_Java_Port {
                 temp.WType = WeaponType.AssaultRifle;
                 temp._Slot = Interface.EquipSlot.Weapon1H;
 
-                temp.Precision = 0.9f;
-                temp.Damage = 6;
+                temp.Precision = 0.96f;
+                temp.Damage = 5;
                 temp.Range = 800;
-                temp.AttackSpeed = 4;
+                temp.AttackSpeed = 5;
 
                 temp.BulletsPerShot = 1;
                 temp.BulletHitCount = 2;
@@ -372,7 +372,7 @@ namespace Game_Java_Port {
                 temp.WType = WeaponType.Shotgun;
                 temp._Slot = Interface.EquipSlot.Weapon2H;
 
-                temp.Precision = 0.75f;
+                temp.Precision = 0.9f;
                 temp.Damage = 3f;
                 temp.Range = 300;
                 temp.AttackSpeed = 0.75f;
@@ -398,7 +398,7 @@ namespace Game_Java_Port {
                 temp.WType = WeaponType.Revolver;
                 temp._Slot = Interface.EquipSlot.Weapon1H;
 
-                temp.Precision = 0.86f;
+                temp.Precision = 0.97f;
                 temp.Damage = 16f;
                 temp.Range = 800;
                 temp.AttackSpeed = 12; //approx what humans manage to click/s over longer durations. prevent total op by autoclicker
@@ -424,7 +424,7 @@ namespace Game_Java_Port {
                 temp.WType = WeaponType.Pistol;
                 temp._Slot = Interface.EquipSlot.Weapon1H;
 
-                temp.Precision = 0.9f;
+                temp.Precision = 0.99f;
                 temp.Damage = 6;
                 temp.Range = 500;
                 temp.AttackSpeed = 1;

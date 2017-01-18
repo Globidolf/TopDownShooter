@@ -12,7 +12,7 @@ using static Game_Java_Port.GameStatus;
 using static System.BitConverter;
 
 namespace Game_Java_Port {
-    public class NPC : CharacterBase, IInteractable, ISerializable<NPC> {
+    public sealed class NPC : CharacterBase, IInteractable, ISerializable<NPC> {
 
         public Controls _lastState = Controls.none;
 
@@ -220,15 +220,7 @@ namespace Game_Java_Port {
 
             if(!isdead) {
                 Vector2 relativePos = Location + MatrixExtensions.PVTranslation;
-                float distanceToPlayers = float.PositiveInfinity;
                 
-                    if(GameSubjects.Any((subj) => subj.Team == FactionNames.Players)) 
-                        GameSubjects.FindAll((subj) => subj.Team == FactionNames.Players).ForEach((subj) =>
-                        {
-                            float temp;
-                            if((temp = Vector2.DistanceSquared(Location, subj.Location)) < distanceToPlayers)
-                                distanceToPlayers = temp;
-                        });
                 displaystring = Name + " (Level " + Level + " " + Rank.ToString() + ") [" + Team.ToString() + "]";
 
                 Size2 measuredSize = SpriteFont.DEFAULT.MeasureString(displaystring);
@@ -241,7 +233,7 @@ namespace Game_Java_Port {
 
                 hpLeftRect = new RectangleF(hpRect.X, hpRect.Y, hpRect.Width / MaxHealth * Health, hpRect.Height);
 
-                if(distanceToPlayers < (ScreenHeight * ScreenHeight + ScreenWidth * ScreenWidth)) {
+                if(!this.isOutOfRange()) {
                     removeCounter = 5;
                     AI?.Invoke(this);
                     base.Tick();

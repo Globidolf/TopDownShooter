@@ -31,8 +31,7 @@ namespace Game_Java_Port {
 
         #endregion
         #region properties
-
-        public static System.Drawing.Font _menufont = new System.Drawing.Font(System.Drawing.FontFamily.Families[0], 12);
+        
         public string Name { get; private set; } = "Unnamed Menu";
 
         List<MenuElementBase> Elements { get; } = new List<MenuElementBase>();

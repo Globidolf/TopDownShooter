@@ -1,4 +1,5 @@
 ﻿using Game_Java_Port.Interface;
+using Game_Java_Port.Logics;
 using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
@@ -48,7 +49,7 @@ namespace Game_Java_Port {
 
         public bool statechanged = false;
 
-        public List<string> _messages = new List<string>();
+        public Dictionary<string, float> _messages = new Dictionary<string, float>();
 
         public GameClient _client;
         public NPC _player;
@@ -75,14 +76,15 @@ namespace Game_Java_Port {
         public DrawType drawType { get; set; } = DrawType.Rectangle;
 
         public void addMessage(string msg) {
-                _messages.Add(msg);
-            Timer timer = null;
-            timer = new Timer((obj) =>
-            {
-                    _messages.Remove(msg);
-                    timer.Dispose();
-            });
-            timer.Change(GameVars.messageLifeTime,Timeout.Infinite);
+            if(msg == null)
+                throw new ArgumentException("Message must not be null!", "msg");
+            if(_messages.ContainsKey(msg)) {
+                int i = 2;
+                while(_messages.ContainsKey(msg + "(" + i + ")"))
+                    i++;
+                _messages.Add(msg + "(" + i + ")", GameVars.messageLifeTime);
+            } else
+                _messages.Add(msg, GameVars.messageLifeTime);
         }
         public void Host(int port) {
             GameHost = new Host(port);
@@ -95,15 +97,21 @@ namespace Game_Java_Port {
         public void Connect(string IP, int port) {
             _client = new GameClient(IP, port);
         }
-        
+
 
 
         public void Tick() {
-            
-                if(!disposed)
-            switch(state) {
-                case GameState.Normal:
-                    int count;
+
+            if(!disposed) {
+                for(int i = 0; i < _messages.Count; i++) {
+                    _messages[_messages.Keys.ElementAt(i)] -= TimeMultiplier;
+                    if (_messages[_messages.Keys.ElementAt(i)] <= 0) {
+                        _messages.Remove(_messages.Keys.ElementAt(i));
+                    }
+                }
+                switch(state) {
+                    case GameState.Normal:
+                        int count;
                         count = GameSubjects.Count;
 
                         if(RNG.NextFloat(0, 0.3f / TimeMultiplier) <= 1) {
@@ -114,25 +122,26 @@ namespace Game_Java_Port {
                             rndSpwn.Location = new Vector2(
                                 (RNG.Next(2) == 0 ? -1 : 1) * (ScreenWidth / 2 + range) + _player.Location.X,
                                 (RNG.Next(2) == 0 ? -1 : 1) * (ScreenHeight / 2 + range) + _player.Location.Y);
-                        Program.DebugLog.Add("Adding Subject " + rndSpwn.ID + ". Game.Tick().");
-                        rndSpwn.addToGame();
+                            Program.DebugLog.Add("Adding Subject " + rndSpwn.ID + ". Game.Tick().");
+                            rndSpwn.addToGame();
                         }
-                    break;
-                case GameState.Host | GameState.Multiplayer:
-                    List<CharacterBase> players;
+                        break;
+                    case GameState.Host | GameState.Multiplayer:
+                        List<CharacterBase> players;
                         players = GameSubjects.FindAll((subj) => subj.Team == FactionNames.Players);
-                    players.ForEach((subj) =>
-                    {
-                        if(GameHost._HostGenRNG.NextFloat(0, 3 / TimeMultiplier) <= 1) {
-                            NPC rndSpwn = new NPC(subj.Level, add: false);
-                            float range = rndSpwn.EquippedWeaponR != null ? rndSpwn.WeaponRangeR : rndSpwn.MeleeRangeR;
-                            rndSpwn.Location = new Vector2(
-                                (GameHost._HostGenRNG.Next(2) == 0 ? -1 : 1) * (ScreenWidth / 2 + range) + subj.Location.X,
-                                (GameHost._HostGenRNG.Next(2) == 0 ? -1 : 1) * (ScreenHeight / 2 + range) + subj.Location.Y);
-                            _client.send(GameClient.CommandType.add, Serializers.NPCSerializer.Serial(rndSpwn));
-                        }
-                    });
-                    break;
+                        players.ForEach((subj) =>
+                        {
+                            if(GameHost._HostGenRNG.NextFloat(0, 3 / TimeMultiplier) <= 1) {
+                                NPC rndSpwn = new NPC(subj.Level, add: false);
+                                float range = rndSpwn.EquippedWeaponR != null ? rndSpwn.WeaponRangeR : rndSpwn.MeleeRangeR;
+                                rndSpwn.Location = new Vector2(
+                                    (GameHost._HostGenRNG.Next(2) == 0 ? -1 : 1) * (ScreenWidth / 2 + range) + subj.Location.X,
+                                    (GameHost._HostGenRNG.Next(2) == 0 ? -1 : 1) * (ScreenHeight / 2 + range) + subj.Location.Y);
+                                _client.send(GameClient.CommandType.add, Serializers.NPCSerializer.Serial(rndSpwn));
+                            }
+                        });
+                        break;
+                }
             }
         }
 
@@ -175,7 +184,7 @@ namespace Game_Java_Port {
 
             List<string> temp = new List<string>();
              if (!disposed) {
-                temp.AddRange(_messages);
+                temp.AddRange(_messages.Keys);
             }
             temp.Reverse();
             
@@ -198,8 +207,9 @@ namespace Game_Java_Port {
             MenuTextBrush.Opacity = 1;
 
             foreach(string msg in temp) {
-                if(i * 20 < 400)
-                    rt.DrawText(msg, MenuFont, new RectangleF(20, ScreenHeight - ++i * 20, ScreenWidth/2 - 20, 400 - (i-1) * 20),MenuTextBrush);
+                if(i * 20 < 400 && msg != null)
+                    SpriteFont.DEFAULT.directDrawText(msg, new RectangleF(20, ScreenHeight - ++i * 20, ScreenWidth / 2 - 20, 400 - (i - 1) * 20), rt);
+                //rt.DrawText(msg, MenuFont, new RectangleF(20, ScreenHeight - ++i * 20, ScreenWidth/2 - 20, 400 - (i-1) * 20),MenuTextBrush);
             }
         }
 

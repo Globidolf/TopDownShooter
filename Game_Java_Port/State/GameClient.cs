@@ -12,7 +12,7 @@ namespace Game_Java_Port {
 
     class GameClient : IDisposable {
         private bool _initiated = false;
-        public TcpClient Client { get; }
+        public readonly TcpClient Client;
         public Thread ClientThread { get; }
         public bool Listen { get; set; }
         public List<string> commandStack;
