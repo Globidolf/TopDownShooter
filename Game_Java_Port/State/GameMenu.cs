@@ -48,15 +48,15 @@ namespace Game_Java_Port {
             }
         }
 
-        private float _ScrollOffset = 0;
-        private float _trueHeight = 0;
-        private float _height = 0;
-        private float _Y = MenuPadding;
-        private float _X = MenuPadding;
+        private int _ScrollOffset = 0;
+        private int _trueHeight = 0;
+        private int _height = 0;
+        private int _Y = MenuPadding;
+        private int _X = MenuPadding;
 
         public float ScrollOffset { get { return _ScrollOffset; } }
 
-        float Height {
+        int Height {
             get {
                 return _height;
             }
@@ -302,7 +302,7 @@ namespace Game_Java_Port {
                 Elements.Add(temp);
         }
         
-        public void draw(RenderTarget rt) {
+        public void draw(DeviceContext rt) {
             //draws the border of the menu and each element afterwards
 
             if (MenuFrame != null) {
@@ -330,7 +330,7 @@ namespace Game_Java_Port {
             _height = ElementMargin;
                 Elements.FindAll((ele) => ele.Container == null).ForEach((ele) =>
                 {
-                    _height += ElementMargin + ele.Height;
+                    _height += ElementMargin + (int)ele.Height;
                 });
             _trueHeight = _height;
             _height = Math.Min(

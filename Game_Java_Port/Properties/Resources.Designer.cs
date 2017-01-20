@@ -59,5 +59,16 @@ namespace Game_Java_Port.Properties {
                 resourceCulture = value;
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Resolution_Windowed = 800x600
+        ///Resolution_Fullscreen = 1920x1080
+        ///StartInFullscreen = False.
+        /// </summary>
+        internal static string usersettings {
+            get {
+                return ResourceManager.GetString("usersettings", resourceCulture);
+            }
+        }
     }
 }

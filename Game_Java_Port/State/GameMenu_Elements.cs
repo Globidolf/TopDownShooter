@@ -28,7 +28,7 @@ namespace Game_Java_Port {
             }
 
 
-            public override void draw(RenderTarget rt) {
+            public override void draw(DeviceContext rt) {
                 drawBorder(rt);
                 drawLabel(rt);
             }
@@ -40,13 +40,13 @@ namespace Game_Java_Port {
                 
                     Children.ForEach(ch => temp.Height = Math.Max(temp.Height, ch.Height + ElementMargin * 2));
                 
-                return temp;
+                return temp.Floor();
             }
 
             internal override RectangleF calcLabelArea() {
                 RectangleF temp = base.calcLabelArea();
                 temp.Y += (_Area.Height - ElementHeight) / 2;
-                return temp;
+                return temp.Floor();
             }
 
             public override void update() {
@@ -157,14 +157,14 @@ namespace Game_Java_Port {
                             Y - Parent.ScrollOffset,
                             Math.Max(_width + 2 * ElementMargin,
                                      Parent._Width - 2 * ElementMargin),
-                            ElementHeight);
+                            ElementHeight).Floor();
 
                 } else {
                     return new RectangleF(
                         _x,
                         Container._Area.Y + ElementMargin,
                         _width,
-                        ElementHeight);
+                        ElementHeight).Floor();
                 }
             }
 
@@ -174,7 +174,7 @@ namespace Game_Java_Port {
                 temp.Width -= TextXOffset;
                 temp.Y += TextYOffset;
                 temp.Height -= TextYOffset;
-                return temp;
+                return temp.Floor();
             }
 
             virtual public void update() {
@@ -230,7 +230,7 @@ namespace Game_Java_Port {
                     return _Area;
                 }
                 set {
-                        _CustomArea = value;
+                        _CustomArea = value.Floor();
                 }
             }
 
@@ -244,7 +244,7 @@ namespace Game_Java_Port {
             /// Do not call this method manually. It is handled by the renderer.
             /// overrideable.
             /// </summary>
-            public virtual void draw(RenderTarget rt) {
+            public virtual void draw(DeviceContext rt) {
                 drawHoverHighlight(rt);
                 drawBorder(rt);
                 drawLabel(rt);
@@ -449,7 +449,7 @@ namespace Game_Java_Port {
             }
 
 
-            public override void draw(RenderTarget rt) {
+            public override void draw(DeviceContext rt) {
                 drawBorder(rt);
                 drawLabel(rt);
 
@@ -773,7 +773,7 @@ namespace Game_Java_Port {
             /// Override of the default draw method.
             /// A lot of changes because of a really complex behaviour.
             /// </summary>
-            public override void draw(RenderTarget rt) {
+            public override void draw(DeviceContext rt) {
 
                 base.draw(rt);
 
@@ -899,7 +899,7 @@ namespace Game_Java_Port {
                 this.Text = Text;
             }
 
-            public override void draw(RenderTarget rt) {
+            public override void draw(DeviceContext rt) {
                 drawBorder(rt);
                 RectangleF dest = _LabelArea;
                 dest.Size = Size;
@@ -922,7 +922,7 @@ namespace Game_Java_Port {
                     Math.Max(Size.Width + 2 * TextXOffset, temp.Width)),
                     Size.Height + ElementMargin);
 
-                return temp;
+                return temp.Floor();
             }
 
             internal override RectangleF calcLabelArea() {
@@ -933,7 +933,7 @@ namespace Game_Java_Port {
                     Math.Max(Size.Width, temp.Width)),
                     Size.Height);
 
-                return temp;
+                return temp.Floor();
             }
 
         }
@@ -1062,7 +1062,7 @@ namespace Game_Java_Port {
 
 
 
-            public override void draw(RenderTarget rt) {
+            public override void draw(DeviceContext rt) {
                 Color4 temp = MenuTextBrush.Color;
                 MenuTextBrush.Color = Color.Black;
                 rt.DrawBitmap(iconBG, Area, 1, BitmapInterpolationMode.NearestNeighbor);
@@ -1092,7 +1092,7 @@ namespace Game_Java_Port {
                 temp.X += x * (size + ElementMargin) + (Container.Area.Width % Container._width) / 2;
                 temp.Y += y * (size + ElementMargin);
                 
-                return temp;
+                return temp.Floor();
             }
 
             public override void update() {
@@ -1167,7 +1167,7 @@ namespace Game_Java_Port {
                 return temp;
             }
 
-            public override void draw(RenderTarget rt) {
+            public override void draw(DeviceContext rt) {
                 drawBorder(rt);
             }
 

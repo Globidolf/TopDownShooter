@@ -12,7 +12,7 @@ namespace Game_Java_Port {
         private float lifetime = 0;
 
         public event EventHandler TickAction;
-
+        
         public RectangleF Area { get; set; }
 
         [Flags]
@@ -90,7 +90,7 @@ namespace Game_Java_Port {
 
 
 
-        public virtual void draw(RenderTarget rt) {
+        public virtual void draw(DeviceContext rt) {
             if(!disposed) {
                 if(settings.HasFlag(Settings.Fill_Area)) {
                     if(_tb != null) {

@@ -43,7 +43,7 @@ namespace Game_Java_Port {
             /*
             using(TextLayout tl = new TextLayout(Program.DW_Factory, text, GameStatus.MenuFont, 500, 500))
                 size = new Size2F(tl.Metrics.Width, tl.Metrics.Height);
-    */
+            */
             Area = new RectangleF(0, 0, size.Width + Padding * 2, size.Height + Padding * 2);
 
             _LabelArea = Area;
@@ -60,12 +60,12 @@ namespace Game_Java_Port {
                 GameStatus.addTickable(this);
         }
 
-        protected void drawText(RenderTarget rt) {
+        protected void drawText(DeviceContext rt) {
             SpriteFont.DEFAULT.directDrawText(Text, relLabel, rt);
             //rt.DrawText(Text, GameStatus.MenuFont, relLabel, GameStatus.MenuTextBrush);
         }
 
-        public virtual void draw(RenderTarget rt) {
+        public virtual void draw(DeviceContext rt) {
             frame.draw(rt);
             drawText(rt);
         }

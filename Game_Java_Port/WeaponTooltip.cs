@@ -52,7 +52,7 @@ namespace Game_Java_Port {
             }
         }
 
-        public override void draw(RenderTarget rt) {
+        public override void draw(DeviceContext rt) {
             frame.draw(rt);
             RectangleF temp = relLabel.Floor();
             rt.DrawBitmap(Item.image, new RectangleF(temp.X, temp.Y, 16, 16), 1, BitmapInterpolationMode.Linear);

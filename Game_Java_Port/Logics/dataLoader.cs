@@ -34,6 +34,13 @@ namespace Game_Java_Port {
             }
         }
 
+        public static void unLoadAll() {
+            foreach(Bitmap bmp in images.Values) {
+                bmp.Dispose();
+            }
+            images.Clear();
+        }
+
         /// <summary>
         /// Loads a Direct2D Bitmap from a file using System.Drawing.Image.FromFile(...)
         /// </summary>

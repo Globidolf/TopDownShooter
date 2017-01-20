@@ -10,11 +10,15 @@ using System.Threading.Tasks;
 namespace Game_Java_Port {
     class Background_Tiled : Background {
 
+        private int seed;
+
         private bool disposed = false;
 
         public Tileset Tiles;
 
         private List<TileArea> buffer = new List<TileArea>();
+
+        private static List<Background_Tiled> backgrounds = new List<Background_Tiled>();
 
         private class TileArea {
             public int X;
@@ -30,6 +34,14 @@ namespace Game_Java_Port {
 
         }
 
+        private void populate() {
+            buffer.Clear();
+            Random RNG = new Random(seed);
+            for(int y = 0; (y - 1) * Tiles.TileSize.Height < Area.Height; y++)
+                for(int x = 0; (x - 1) * Tiles.TileSize.Width < Area.Width; x++)
+                    buffer.Add(new TileArea(new Point(x, y), Tiles.getRandomTile(RNG)));
+        }
+
         public Background_Tiled(
             Tileset Tiles,
             int? Seed = null,
@@ -40,13 +52,19 @@ namespace Game_Java_Port {
             :base(Tiles.Source, Area.HasValue ? Area.Value.TopLeft : Vector2.Zero, lifetime, settings, add) {
             this.Area = Area.HasValue ? Area.Value : this.Area;
             this.Tiles = Tiles;
-            Random RNG = Seed.HasValue ? new Random(Seed.Value) : new Random();
-                for(int y = 0; (y - 1) * Tiles.TileSize.Height < this.Area.Height; y++) 
-                    for(int x = 0; (x - 1) * Tiles.TileSize.Width < this.Area.Width; x++) 
-                        buffer.Add(new TileArea(new Point(x, y), Tiles.getRandomTile(RNG)));
+            seed = Seed.HasValue ? Seed.Value : new Random().Next();
+            populate();
+            backgrounds.Add(this);
+        }
+        
+        public static void Regenerate() {
+            foreach(Background_Tiled bg in backgrounds) {
+                bg.Area = Game.instance.Area;
+                bg.populate();
+            }
         }
 
-        public override void draw(RenderTarget rt) {
+        public override void draw(DeviceContext rt) {
             foreach(TileArea tile in buffer) {
                 
                 rt.DrawBitmap(tile.Tile, tile.Area, 1, BitmapInterpolationMode.Linear);
@@ -81,8 +99,11 @@ namespace Game_Java_Port {
         }
 
         protected override void Dispose(bool disposing) {
-            if(disposed)
+            if(disposed) {
+                backgrounds.Remove(this);
                 return;
+            }
+            
             if(disposing)
                 buffer.Clear();
             disposed = true;

@@ -62,7 +62,7 @@ namespace Game_Java_Port {
                 if (_Area == RectangleF.Empty ||_Area.Height != ScreenHeight || _Area.Width != ScreenWidth)
                     _Area = new RectangleF(0, 0, ScreenWidth, ScreenHeight);
                 return _Area;
-            } set { _Area = value; } }
+            } set { _Area = value.Floor(); } }
 
         public Vector2 Location {
             get {
@@ -180,7 +180,7 @@ namespace Game_Java_Port {
             return cmd.ToArray();
         }
 
-        public void draw(RenderTarget rt) {
+        public void draw(DeviceContext rt) {
 
             List<string> temp = new List<string>();
              if (!disposed) {
@@ -200,7 +200,7 @@ namespace Game_Java_Port {
 
             MenuTextBrush.Opacity = 0.8f;
 
-            rt.FillRectangle(new RectangleF(20, ScreenHeight - Math.Min(temp.Count * 20,400), ScreenWidth / 2 - 20, Math.Min(temp.Count * 20, 400)), MenuTextBrush);
+            //rt.FillRectangle(new RectangleF(20, ScreenHeight - Math.Min(temp.Count * 20,400), ScreenWidth / 2 - 20, Math.Min(temp.Count * 20, 400)), MenuTextBrush);
 
 
             MenuTextBrush.Color = menucolor;

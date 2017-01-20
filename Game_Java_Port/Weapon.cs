@@ -626,7 +626,7 @@ namespace Game_Java_Port {
             get { return Serializers.WeaponSerializer.Instance; }
         }
 
-        public override void draw(RenderTarget rt) {
+        public override void draw(DeviceContext rt) {
             base.draw(rt);
 
             if (!Game.state.HasFlag(Game.GameState.Menu) && Owner == Game.instance._player && _Reload > 0) {

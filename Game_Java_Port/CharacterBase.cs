@@ -680,7 +680,7 @@ namespace Game_Java_Port {
         }
 
 
-        public virtual void draw(RenderTarget rt) {
+        public virtual void draw(DeviceContext rt) {
             if(!Game.state.HasFlag(Game.GameState.Menu)) {
 
 
@@ -1028,7 +1028,7 @@ namespace Game_Java_Port {
             return data.ToArray();
         }
 
-        public void drawUI(RenderTarget rt) {
+        public void drawUI(DeviceContext rt) {
 
             float padding = 5;
 

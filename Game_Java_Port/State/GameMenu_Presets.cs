@@ -40,7 +40,7 @@ namespace Game_Java_Port {
                                 }
                             }
 
-                            Program.formResized();
+                            //Program.formResized();
                             toggleScreen.Label = Program.form.IsFullscreen ? "Go Windowed" : "Go Fullscreen";
                         }
                     });

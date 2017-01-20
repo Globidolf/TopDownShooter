@@ -193,7 +193,7 @@ namespace Game_Java_Port {
                 return _ActionTooltip;
             } }
 
-        public virtual void draw(RenderTarget rt) {
+        public virtual void draw(DeviceContext rt) {
             if(Owner == null) {
                 
                     if(!Pencil.IsDisposed) {

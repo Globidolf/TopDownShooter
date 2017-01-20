@@ -263,7 +263,7 @@ namespace Game_Java_Port {
 
         private string displaystring = "";
 
-        public override void draw(RenderTarget rt) {
+        public override void draw(DeviceContext rt) {
                 if (!disposed && removeCounter == 5){
 
                     base.draw(rt);

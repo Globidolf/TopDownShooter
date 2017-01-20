@@ -18,7 +18,7 @@ namespace Game_Java_Port.Interface {
 
         RectangleF Area { get; set; }
 
-        void draw(RenderTarget rt);
+        void draw(DeviceContext rt);
 
         int Z { get; set; }
     }

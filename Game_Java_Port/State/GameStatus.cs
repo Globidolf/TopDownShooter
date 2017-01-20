@@ -200,8 +200,18 @@ namespace Game_Java_Port
                 if(!args2.Consumed)
                     _kbstate.Remove(args.KeyCode);
             }
-            if(args.Alt)
+
+            //prevents defocus
+            if(args.Alt) {
                 args.Handled = true;
+                args.SuppressKeyPress = true;
+            }
+            if(Down) {
+                //Manual fullscreen
+                if(args.Modifiers == Keys.Alt && args.KeyCode == Keys.Enter) {
+                    Program.PrepareToggleFullscreen();
+                }
+            }
         }
 
         /// <summary>
@@ -279,6 +289,18 @@ namespace Game_Java_Port
 
         #region Menus
 
+        public static void Regenerate() {
+            _BGBrush?.Dispose();
+            _BGBrush = null;
+            _MenuPen?.Dispose();
+            _MenuPen = null;
+            _MenuHoverBrush?.Dispose();
+            _MenuHoverBrush = null;
+            _MenuTextBrush?.Dispose();
+            _MenuTextBrush = null;
+            tick(true);
+        }
+
         // menu settings
 
         private static SolidColorBrush _BGBrush;
@@ -330,19 +352,7 @@ namespace Game_Java_Port
                 return _MenuTextBrush;
             }
         }
-
-        private static TextFormat _MenuFont;
-
-        /// <summary>
-        /// Font for the menu
-        /// </summary>
-        public static TextFormat MenuFont {
-            get {
-                if(_MenuFont == null)
-                    _MenuFont = new TextFormat(Program.DW_Factory, System.Drawing.FontFamily.Families[0].Name, 12);
-                return _MenuFont;
-            }
-        }
+        
         /// <summary>
         /// Padding for the menu
         /// </summary>
@@ -587,8 +597,6 @@ namespace Game_Java_Port
             Running = false;
             lock(MenuBorderPen)
                 MenuBorderPen.Dispose();
-            lock(MenuFont)
-                MenuFont.Dispose();
             lock(MenuHoverBrush)
                 MenuHoverBrush.Dispose();
             lock(MenuPen)

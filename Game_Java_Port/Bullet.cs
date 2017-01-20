@@ -73,7 +73,7 @@ namespace Game_Java_Port {
             } }
 
 
-        public void draw(RenderTarget rt) {
+        public void draw(DeviceContext rt) {
             if(_initiated) {
                 if(!disposed) {
                     

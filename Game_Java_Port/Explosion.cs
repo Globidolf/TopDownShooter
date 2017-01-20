@@ -33,7 +33,7 @@ namespace Game_Java_Port {
             GameStatus.addTickable(this);
         }
 
-        public void draw(RenderTarget rt) {
+        public void draw(DeviceContext rt) {
                 if(!disposed)
                     rt.FillEllipse(ellipse, brush);
         }

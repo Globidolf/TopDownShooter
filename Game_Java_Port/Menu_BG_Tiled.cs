@@ -17,6 +17,8 @@ namespace Game_Java_Port {
         public static Menu_BG_Tiled Rare { get { return new Menu_BG_Tiled(Tileset.Frame_Rare); } }
         public static Menu_BG_Tiled Common { get { return new Menu_BG_Tiled(Tileset.Frame_Common); } }
 
+        private static List<Menu_BG_Tiled> menubgs = new List<Menu_BG_Tiled>();
+
 
         public bool scaleUp = false;
         
@@ -133,9 +135,36 @@ namespace Game_Java_Port {
             BottomBrush = new BitmapBrush(Program._RenderTarget, Bottom, bbp);
             RightBrush = new BitmapBrush(Program._RenderTarget, Right, bbp);
             FlatBrush = new BitmapBrush(Program._RenderTarget, FlatBG, bbp);
+            menubgs.Add(this);
         }
 
-        public void draw(RenderTarget rt) {
+        public static void Regenerate() {
+
+            BitmapBrushProperties bbp = new BitmapBrushProperties() {
+                ExtendModeX = ExtendMode.Wrap,
+                ExtendModeY = ExtendMode.Wrap,
+                InterpolationMode = BitmapInterpolationMode.Linear
+            };
+            foreach(Menu_BG_Tiled menubg in menubgs) {
+                menubg.BGBrush    .Dispose();
+                menubg.TopBrush   .Dispose();
+                menubg.LeftBrush  .Dispose();
+                menubg.BottomBrush.Dispose();
+                menubg.RightBrush .Dispose();
+                menubg.FlatBrush.Dispose();
+
+
+                menubg.BGBrush      = new BitmapBrush(Program._RenderTarget,     menubg.BG,      bbp);
+                menubg.TopBrush     = new BitmapBrush(Program._RenderTarget,    menubg.Top,     bbp);
+                menubg.LeftBrush    = new BitmapBrush(Program._RenderTarget,   menubg.Left,    bbp);
+                menubg.BottomBrush  = new BitmapBrush(Program._RenderTarget, menubg.Bottom,  bbp);
+                menubg.RightBrush   = new BitmapBrush(Program._RenderTarget,  menubg.Right,   bbp);
+                menubg.FlatBrush    = new BitmapBrush(Program._RenderTarget,   menubg.FlatBG,  bbp);
+            }
+        }
+
+
+        public void draw(DeviceContext rt) {
                 if(!disposed) {
                     if(!flat) {
                         rt.FillRectangle(BGArea, BGBrush);
@@ -228,6 +257,8 @@ namespace Game_Java_Port {
                     BottomBrush.Dispose();
                     FlatBrush.Dispose();
                 }
+
+                menubgs.Remove(this);
 
                 disposed = true;
             }

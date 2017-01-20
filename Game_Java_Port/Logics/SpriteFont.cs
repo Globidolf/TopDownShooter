@@ -168,7 +168,7 @@ namespace Game_Java_Port.Logics {
             unsafe {
                 fixed (byte* pointer = buffer) {
                     IntPtr ptr = new IntPtr(pointer);
-                    result = new Bitmap(Program._RenderTarget, Size, new DataPointer(pointer, buffer.Length), 4 * Size.Width, new BitmapProperties(Program._RenderTarget.PixelFormat));
+                    result = new Bitmap(Program._RenderTarget, Size, new DataPointer(pointer, buffer.Length), 4 * Size.Width, new BitmapProperties(Program.PForm));
                 }
             }
             
@@ -178,21 +178,59 @@ namespace Game_Java_Port.Logics {
             return result;
         }
 
-        public void directDrawText(string text, RectangleF Area, RenderTarget rt) {
+        public void directDrawText(string text, RectangleF Area, DeviceContext rt) {
             Size2 size;
             string[] s = prepare(text, new Size2((int)Area.Width, (int)Area.Height), out size);
             directDrawText(s, Area, rt);
         }
-        public void directDrawText(string text, RectangleF Area, RenderTarget rt, Color filter) {
+        public void directDrawText(string text, RectangleF Area, DeviceContext rt, Color filter) {
             Size2 size;
             string[] s = prepare(text, new Size2((int)Area.Width, (int)Area.Height), out size);
             
-            directDrawText(s, Area, rt);
+            directDrawColoredText(s, Area, rt, filter);
         }
 
-        private void directDrawText(string[] s, RectangleF Area, RenderTarget rt) {
+        /* matrix preset
+         new SharpDX.Mathematics.Interop.RawMatrix5x4() 
+            {
+                M11 = 0, M12 = 0, M13 = 0, M14 = 0,
+                M21 = 0, M22 = 0, M23 = 0, M24 = 0,
+                M31 = 0, M32 = 0, M33 = 0, M34 = 0,
+                M41 = 0, M42 = 0, M43 = 0, M44 = 0,
+                M51 = 0, M52 = 0, M53 = 0, M54 = 0
+            };
+         */
+        private void directDrawText(string[] s, RectangleF Area, DeviceContext rt) {
+            
+            int y = LineSpacing;
 
-            SharpDX.Direct2D1.Effect effect = new SharpDX.Direct2D1.Effect(Program._RenderTarget, SharpDX.Direct2D1.Effect.ColorMatrix);
+            int x = 1;
+            foreach(string substring in s) {
+
+                foreach(char c in substring) {
+                    
+
+                    rt.DrawBitmap(translate(c), new RectangleF(Area.X + x, Area.Y + y, _Font.TileSize.Width, _Font.TileSize.Height), 1, BitmapInterpolationMode.NearestNeighbor);
+                    
+
+                    x += _Font.TileSize.Width;
+
+                    if(x > Area.Width) { // line break
+                        y += _Font.TileSize.Height + LineSpacing;
+                        x = 0;
+                    }
+                }
+
+                y += _Font.TileSize.Height + ParagraphSpacing;// new line
+                x = 0;
+            }
+        }
+
+        private void directDrawColoredText(string[] s, RectangleF Area, DeviceContext rt, Color filter) {
+
+            SharpDX.Direct2D1.Effects.ColorMatrix effect = new SharpDX.Direct2D1.Effects.ColorMatrix(rt);
+
+            effect.Matrix = filter.toColorMatrix();
             
             int y = LineSpacing;
 
@@ -203,12 +241,13 @@ namespace Game_Java_Port.Logics {
 
                     effect.SetInput(0, translate(c), true);
 
+                    
 
-                    Program._RenderTarget.Clear(Color4.Black);
+                    Image temp = effect.Output;
 
-                    Program._RenderTarget.DrawImage(effect.Output, new Vector2(Area.X + x, Area.Y + y));
+                    rt.DrawImage(temp, new Vector2(Area.X + x, Area.Y + y));
 
-                    //rt.DrawBitmap(effect.Output, new RectangleF(Area.X + x, Area.Y + y, _Font.TileSize.Width, _Font.TileSize.Height), 1, BitmapInterpolationMode.NearestNeighbor);
+                    temp.Dispose();
                     
                     x += _Font.TileSize.Width;
 
@@ -221,6 +260,10 @@ namespace Game_Java_Port.Logics {
                 y += _Font.TileSize.Height + ParagraphSpacing;// new line
                 x = 0;
             }
+
+            //effect.Output.Dispose();
+
+            effect.Dispose();
         }
 
         /// <summary>

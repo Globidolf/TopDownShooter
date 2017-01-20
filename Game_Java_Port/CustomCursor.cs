@@ -48,7 +48,18 @@ namespace Game_Java_Port {
             CursorType = cursor;
         }
 
-        public void draw(RenderTarget rt) {
+        public static void Regenerate() {
+            Cursors = new Dictionary<CursorTypes, Bitmap>()
+        {   { CursorTypes.Normal,           dataLoader.get("cursor")      },
+            { CursorTypes.Inventory_Equip,  dataLoader.get("cursor_invE") },
+            { CursorTypes.Inventory_Add,    dataLoader.get("cursor_invA") },
+            { CursorTypes.Inventory_Remove, dataLoader.get("cursor_invR") },
+            { CursorTypes.Inventory_Use,    dataLoader.get("cursor_invU") },
+            { CursorTypes.Interact,         dataLoader.get("cursor_U")    }
+        };
+        }
+
+        public void draw(DeviceContext rt) {
             rt.DrawBitmap(Cursors[CurrentCursorType], Area, 1, BitmapInterpolationMode.Linear);
         }
 

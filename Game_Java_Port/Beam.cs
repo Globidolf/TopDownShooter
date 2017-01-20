@@ -77,7 +77,7 @@ namespace Game_Java_Port {
             GameStatus.addTickable(this);
         }
 
-        public void draw(RenderTarget rt) {
+        public void draw(DeviceContext rt) {
             Statics.Aggregate((pointA, pointB) =>
             {
                 rt.DrawLine(pointA, pointB, Brush, StrokeWidth);
