@@ -129,12 +129,12 @@ namespace Game_Java_Port {
                 InterpolationMode = BitmapInterpolationMode.Linear
             };
 
-            BGBrush = new BitmapBrush(Program._RenderTarget, BG, bbp);
-            TopBrush = new BitmapBrush(Program._RenderTarget, Top, bbp);
-            LeftBrush = new BitmapBrush(Program._RenderTarget, Left, bbp);
-            BottomBrush = new BitmapBrush(Program._RenderTarget, Bottom, bbp);
-            RightBrush = new BitmapBrush(Program._RenderTarget, Right, bbp);
-            FlatBrush = new BitmapBrush(Program._RenderTarget, FlatBG, bbp);
+            BGBrush = new BitmapBrush(Program.D2DContext, BG, bbp);
+            TopBrush = new BitmapBrush(Program.D2DContext, Top, bbp);
+            LeftBrush = new BitmapBrush(Program.D2DContext, Left, bbp);
+            BottomBrush = new BitmapBrush(Program.D2DContext, Bottom, bbp);
+            RightBrush = new BitmapBrush(Program.D2DContext, Right, bbp);
+            FlatBrush = new BitmapBrush(Program.D2DContext, FlatBG, bbp);
             menubgs.Add(this);
         }
 
@@ -154,12 +154,12 @@ namespace Game_Java_Port {
                 menubg.FlatBrush.Dispose();
 
 
-                menubg.BGBrush      = new BitmapBrush(Program._RenderTarget,     menubg.BG,      bbp);
-                menubg.TopBrush     = new BitmapBrush(Program._RenderTarget,    menubg.Top,     bbp);
-                menubg.LeftBrush    = new BitmapBrush(Program._RenderTarget,   menubg.Left,    bbp);
-                menubg.BottomBrush  = new BitmapBrush(Program._RenderTarget, menubg.Bottom,  bbp);
-                menubg.RightBrush   = new BitmapBrush(Program._RenderTarget,  menubg.Right,   bbp);
-                menubg.FlatBrush    = new BitmapBrush(Program._RenderTarget,   menubg.FlatBG,  bbp);
+                menubg.BGBrush      = new BitmapBrush(Program.D2DContext,     menubg.BG,      bbp);
+                menubg.TopBrush     = new BitmapBrush(Program.D2DContext,    menubg.Top,     bbp);
+                menubg.LeftBrush    = new BitmapBrush(Program.D2DContext,   menubg.Left,    bbp);
+                menubg.BottomBrush  = new BitmapBrush(Program.D2DContext, menubg.Bottom,  bbp);
+                menubg.RightBrush   = new BitmapBrush(Program.D2DContext,  menubg.Right,   bbp);
+                menubg.FlatBrush    = new BitmapBrush(Program.D2DContext,   menubg.FlatBG,  bbp);
             }
         }
 

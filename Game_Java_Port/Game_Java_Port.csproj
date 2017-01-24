@@ -47,6 +47,10 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>Game_Java_Port.State.Program2</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="SharpDX, Version=3.1.0.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
@@ -170,6 +174,8 @@
     <Compile Include="Serializers\CharacterSerializer.cs" />
     <Compile Include="Serializers\ItemSerializer.cs" />
     <Compile Include="Logics\Tileset.cs" />
+    <Compile Include="State\Program2.cs" />
+    <Compile Include="test\CubeApp.cs" />
     <Compile Include="Tooltip.cs" />
     <Compile Include="Weapon.cs" />
     <Compile Include="WeaponTooltip.cs" />
@@ -199,6 +205,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="data\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="test\shaders.hlsl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Include="Resources\usersettings.txt" />

@@ -87,7 +87,7 @@ namespace Game_Java_Port {
         private Weapon() { }
         
         public Weapon(uint level, int? seed = null, WeapPreset? wt = null, ItemType? rarity = null, bool add = true) {
-            weaponPen = new SolidColorBrush(Program._RenderTarget, Color.White);
+            weaponPen = new SolidColorBrush(Program.D2DContext, Color.White);
             Level = level;
 
             if(seed == null) {

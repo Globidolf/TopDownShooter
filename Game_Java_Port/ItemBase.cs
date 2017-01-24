@@ -31,7 +31,7 @@ namespace Game_Java_Port {
         public float UnOwnedTime { get; private set; }
 
         public abstract ItemType Rarity { get; }
-        private SolidColorBrush Pencil = new SolidColorBrush(Program._RenderTarget, Color.Transparent);
+        private SolidColorBrush Pencil = new SolidColorBrush(Program.D2DContext, Color.Transparent);
         internal Bitmap image;
         public string Name { get; set; } = "Unknown Item";
 

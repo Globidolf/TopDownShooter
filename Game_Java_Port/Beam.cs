@@ -43,7 +43,7 @@ namespace Game_Java_Port {
             Line[1] = PointB;
             //new Ellipse(Area.Center + MatrixExtensions.PVTranslation, Area.Width / 2, Area.Height / 2);
             initialDuration = Duration = duration;
-            InitialBrush = Brush = new SolidColorBrush(Program._RenderTarget, beamColor);
+            InitialBrush = Brush = new SolidColorBrush(Program.D2DContext, beamColor);
             InitialStatics = new List<Vector2>();
             Statics = new List<Vector2>();
 

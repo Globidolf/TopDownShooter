@@ -11,9 +11,48 @@ using SharpDX;
 using Game_Java_Port.Logics;
 using System.Threading;
 using System.Diagnostics;
+using SharpDX.Direct2D1.Effects;
 
 namespace Game_Java_Port {
     class Bullet : IRenderable, ITickable, IDisposable {
+
+        public static ColorMatrix _EnemyTint;
+        public static ColorMatrix EnemyTint {
+            get {
+                if(_EnemyTint == null) {
+                    _EnemyTint = new ColorMatrix(Program.D2DContext);
+                    _EnemyTint.Matrix = Color.Red.toColorMatrix();
+                    _EnemyTint.Cached = true;
+                    _EnemyTint.AlphaMode = AlphaMode.Premultiplied;
+                }
+                return _EnemyTint;
+            }
+        }
+        
+        public static ColorMatrix _AllyTint;
+        public static ColorMatrix AllyTint {
+            get {
+                if(_AllyTint == null) {
+                    _AllyTint = new ColorMatrix(Program.D2DContext);
+                    _AllyTint.Matrix = Color.Green.toColorMatrix();
+                    _AllyTint.Cached = true;
+                    _AllyTint.AlphaMode = AlphaMode.Premultiplied;
+                }
+                return _AllyTint;
+            }
+        }
+        public static ColorMatrix _PlayerTint;
+        public static ColorMatrix PlayerTint {
+            get {
+                if(_PlayerTint == null) {
+                    _PlayerTint = new ColorMatrix(Program.D2DContext);
+                    _PlayerTint.Matrix = Color.Blue.toColorMatrix();
+                    _PlayerTint.Cached = true;
+                    _PlayerTint.AlphaMode = AlphaMode.Premultiplied;
+                }
+                return _PlayerTint;
+            }
+        }
 
         float creationtime;
 
@@ -47,89 +86,29 @@ namespace Game_Java_Port {
 
         float _hitrange = 10;
 
+        float pseudorandom;
 
-        SolidColorBrush _pencil;
-        SolidColorBrush pencil { get {
-                if(_pencil == null) {
-                    _pencil = new SolidColorBrush(Program._RenderTarget, Color.Red);
-                    if(
-                        (_sourceOwner.Team.Dispositions.ContainsKey(Game.instance._player.Team) &&
-                         _sourceOwner.Team.Dispositions[Game.instance._player.Team] != Faction.Disposition.Enemy) ||
+        Bitmap bullettexture;
+        Animated_Tileset animation;
 
-                       (!_sourceOwner.Team.Dispositions.ContainsKey(Game.instance._player.Team) &&
-                         _sourceOwner.Team.DefaultDisposition != Faction.Disposition.Enemy)) {
+        RawMatrix InitialPerspective;
 
-                        _pencil = new SolidColorBrush(Program._RenderTarget, new Color4(Color3.White, 0.1f));
-                        if (_source.Behaviour.HasFlag(BulletBehaviour.Beam) &&
-                            _source.WType == WeaponType.Acid)
-                            _pencil.Color = new Color4(Color.Cyan.ToColor3(), 0.5f);
-                        else if(_source.Behaviour.HasFlag(BulletBehaviour.Beam))
-                            _pencil.Color = new Color4(Color.DarkBlue.ToColor3(), 0.8f);
-                        else if (_source.WType == WeaponType.Acid)
-                            _pencil.Color = new Color4(Color.Green.ToColor3(), 0.1f);
-                    }
-                }
-                return _pencil;
-            } }
+        Vector2 relativePos;
+        Color _filter;
+        ColorMatrix ColorFilter;
+        Transform3D Transform;
+        Image Effect;
+        
 
-
-        public void draw(DeviceContext rt) {
+        public void draw(DeviceContext dc) {
             if(_initiated) {
                 if(!disposed) {
                     
                     if (!_source.Behaviour.HasFlag(BulletBehaviour.Beam)) {
 
-                        Vector2 relativePos = pos + MatrixExtensions.PVTranslation;
-                        Matrix3x2 temp = rt.Transform, temp2;
-
-                        float pseudorandom = (((creationtime * Stopwatch.Frequency) % 10000) / 1000);
-
-                        switch(_source.WType) {
-                            // rotate
-                            case WeaponType.Throwable:
-                            case WeaponType.Acid:
-                                temp2 = Matrix3x2.Rotation((pseudorandom % 1f + (float)Program.stopwatch.Elapsed.TotalSeconds % 1f) * (float)Math.PI * 2,
-                                    relativePos);
-                                break;
-                            // apply direction
-                            default:
-                                temp2 = Matrix3x2.Rotation(_direction.Radians, relativePos);
-                                break;
-                        }
-                        rt.Transform = temp2;
-                        Bitmap bullettexture;
-                        switch(_source.WType) {
-                            case WeaponType.Throwable:
-                                if(_source.Name.Contains("Throwing Knives"))
-                                    bullettexture = dataLoader.get("bullet_knife");
-                                else if(_source.Name.Contains("Boomerang"))
-                                    bullettexture = dataLoader.get("bullet_boomerang");
-                                else if(_source.Name.Contains("Rock"))
-                                    bullettexture = Animated_Tileset.Bullet_Rock.Off_Set_Frame(pseudorandom % 1f);
-                                else
-                                    bullettexture = dataLoader.get("bullet_normal");
-                                break;
-                            case WeaponType.Acid:
-                                bullettexture = Animated_Tileset.Bullet_Acid.Off_Set_Frame(pseudorandom % 1f);
-                                break;
-
-                            default:
-                                bullettexture = dataLoader.get("bullet_normal");
-                                break;
-                        }
-
-                        rt.DrawBitmap(  bullettexture,
-                                        new RectangleF( relativePos.X - _hitrange,
-                                                        relativePos.Y - _hitrange,
-                                                        2 * _hitrange,
-                                                        2 * _hitrange),
-                                        1, BitmapInterpolationMode.NearestNeighbor);
-
-                        rt.Transform = temp;
                         
-                        // color indicates if player gets damaged by bullet
-                        rt.FillEllipse(new Ellipse(relativePos, _hitrange / 4, _hitrange / 4), pencil);
 
+                        dc.DrawImage(Effect);
                     }
 
                 }
@@ -140,9 +119,7 @@ namespace Game_Java_Port {
         public CharacterBase getCurrentTarget() {
             return _currentTarget;
         }
-
-
-
+        
         private List<CharacterBase> TargetList {
             get {
                 List<CharacterBase> temp = new List<CharacterBase>();
@@ -181,7 +158,7 @@ namespace Game_Java_Port {
         public Bullet(Weapon source, int? seed = null, List<CharacterBase> reserved = null) {
 
             creationtime = (float)Program.stopwatch.Elapsed.TotalSeconds;
-
+            pseudorandom = (((creationtime * Stopwatch.Frequency) % 10000) / 1000);
             //initialize RNG
             if(seed == null)
                 _RNG = new Random();
@@ -192,7 +169,57 @@ namespace Game_Java_Port {
             _source = source;
             _sourceOwner = _source.Owner;
 
+            switch(_source.WType) {
+                case WeaponType.Throwable:
+                    if(_source.Name.Contains("Throwing Knives"))
+                        bullettexture = dataLoader.get("bullet_knife");
+                    else if(_source.Name.Contains("Boomerang"))
+                        bullettexture = dataLoader.get("bullet_boomerang");
+                    else if(_source.Name.Contains("Rock")) {
+                        animation = Animated_Tileset.Bullet_Rock;
+                        bullettexture = animation.Off_Set_Frame(pseudorandom % 1f);
+                    } else
+                        bullettexture = dataLoader.get("bullet_normal");
+                    break;
+                case WeaponType.Acid:
+                    animation = Animated_Tileset.Bullet_Acid;
+                    bullettexture = animation.Off_Set_Frame(pseudorandom % 1f);
+                    break;
+
+                default:
+                    bullettexture = dataLoader.get("bullet_normal");
+                    break;
+            }
+
+
+            if(_sourceOwner == Game.instance?._player) {
+                ColorFilter = PlayerTint;
+                _filter = Color.Blue;
+            } else if(
+                  (_sourceOwner.Team.Dispositions.ContainsKey(Game.instance._player.Team) &&
+                   _sourceOwner.Team.Dispositions[Game.instance._player.Team] == Faction.Disposition.Allied) ||
+
+                 (!_sourceOwner.Team.Dispositions.ContainsKey(Game.instance._player.Team) &&
+                   _sourceOwner.Team.DefaultDisposition == Faction.Disposition.Allied)) {
+                ColorFilter = AllyTint;
+                _filter = Color.Green;
+            } else {
+                ColorFilter = EnemyTint;
+                _filter = Color.Red;
+            }
+            
             _damage = _source.Damage * _sourceOwner.RangedMult;
+
+
+            //TODO: Bullet Size
+
+            Transform = new Transform3D(Program.D2DContext);
+
+            Transform.InterpolationMode = SharpDX.Direct2D1.InterpolationMode.NearestNeighbor;
+            
+            Transform.SetInputEffect(0, ColorFilter);
+
+            InitialPerspective = MatrixExtensions.CreateScaleMatrix(new Vector2(_hitrange / bullettexture.PixelSize.Width)).Translate(new Vector2(-_hitrange / 2));
 
             lastPos = _sourceOwner.Area.Center;
             pos = lastPos;
@@ -237,6 +264,10 @@ namespace Game_Java_Port {
         //TODO: Add bullet sizes
 
         public void Tick() {
+            if(animation != null) {
+                bullettexture = animation.Off_Set_Frame(pseudorandom % 1f);
+            }
+
             if(!_initiated)
                 init();
             //bullet is still alive
@@ -283,9 +314,30 @@ namespace Game_Java_Port {
 
                 Hitscan();
 
+                relativePos = pos + MatrixExtensions.PVTranslation;
+
+                switch(_source.WType) {
+                    // rotate
+                    case WeaponType.Throwable:
+                    case WeaponType.Acid:
+                        Transform.TransformMatrix = InitialPerspective.Rotate2D(new AngleSingle(pseudorandom % 1f + (float)Program.stopwatch.Elapsed.TotalSeconds % 1f, AngleType.Revolution)).Translate(relativePos);
+                        break;
+                    // apply direction
+                    default:
+                        Transform.TransformMatrix = InitialPerspective.Rotate2D(_direction).Translate(relativePos);
+                        break;
+                }
+
+                if(Effect != null)
+                    Effect.Dispose();
+
+                ColorFilter.SetInput(0, bullettexture, false);
+
+                Effect = Transform.Output;
+
                 // add beam effect
                 if (_source.Behaviour.HasFlag(BulletBehaviour.Beam))
-                    new Beam(lastPos, pos, 3, 2, true, 12, _RNG.Next(), (Color)(Color4)pencil.Color); //double cast... :_(
+                    new Beam(lastPos, pos, 3, 2, true, 12, _RNG.Next(), _filter); //double cast... :_(
 
                 //basic removal check. TODO add all disposals here and remove them elsewhere
                 if(_distance >= (_source.Range * _source.Range) - 1 || _hitsRemain == 0) {
@@ -339,8 +391,6 @@ namespace Game_Java_Port {
                     //make the target move depending on relative damage, size and direction
                     if(_source.Behaviour.HasFlag(BulletBehaviour.Knockback)) {
                         targ.MovementVector += _direction.toVector() * _damage;
-                        //targ.MovementVector.X += -(float)Math.Cos(_direction.Radians) * Math.Min(80000 / GameVars.TicksPerSecond, ((_damage / targ.MaxHealth)) * 10000 / GameVars.TicksPerSecond);
-                        //targ.MovementVector.Y += -(float)Math.Sin(_direction.Radians) * Math.Min(80000 / GameVars.TicksPerSecond, ((_damage / targ.MaxHealth)) * 10000 / GameVars.TicksPerSecond);
                     }
 
                     // change target if not multihit and target matches
@@ -366,6 +416,9 @@ namespace Game_Java_Port {
                     if(_source.Behaviour.HasFlag(BulletBehaviour.Bounce)) {
                         bounceOff(targ);
                     }
+
+                    //new SharpDX.Direct2D1.SpriteBatch(Program._RenderTarget.QueryInterface<DeviceContext3>())
+                    
                 }
 
                 // all hits used up, break out of the loop and make the hit appear clean
@@ -447,10 +500,7 @@ namespace Game_Java_Port {
             if(disposing) {
                 GameStatus.removeRenderable(this);
                 GameStatus.removeTickable(this);
-                
-                if (_pencil != null)
-                    _pencil.Dispose();
-                
+                Transform.Dispose();
             }
 
             disposed = true;
@@ -467,6 +517,7 @@ namespace Game_Java_Port {
 
             lastPos = _sourceOwner.Area.Center;
             pos = lastPos;
+            relativePos = pos + MatrixExtensions.PVTranslation;
 
             //non bounce or piercing bullets only hit once.
             if(!_source.Behaviour.HasFlag(BulletBehaviour.Bounce) && !_source.Behaviour.HasFlag(BulletBehaviour.Piercing))

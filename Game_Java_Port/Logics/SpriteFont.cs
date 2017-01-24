@@ -168,7 +168,7 @@ namespace Game_Java_Port.Logics {
             unsafe {
                 fixed (byte* pointer = buffer) {
                     IntPtr ptr = new IntPtr(pointer);
-                    result = new Bitmap(Program._RenderTarget, Size, new DataPointer(pointer, buffer.Length), 4 * Size.Width, new BitmapProperties(Program.PForm));
+                    result = new Bitmap(Program.D2DContext, Size, new DataPointer(pointer, buffer.Length), 4 * Size.Width, new BitmapProperties(Program.PForm));
                 }
             }
             

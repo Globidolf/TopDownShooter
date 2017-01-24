@@ -201,7 +201,6 @@ namespace Game_Java_Port {
                             LrgstRegNumSz = curMaxSizes;
                     }
                 }
-            lock(Elements)
                 foreach(MenuElementBase ele in Elements)
                     ele.invalidateWidths();
         }

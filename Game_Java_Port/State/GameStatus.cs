@@ -220,7 +220,6 @@ namespace Game_Java_Port
         /// <param name="Name">the name of the menu to look for</param>
         /// <returns>the menu looked for or null if it wasn't found</returns>
         public static GameMenu getMenu(string Name) {
-            lock(_RegisteredMenus)
                 return _RegisteredMenus.Find((Menu) => { return Menu.Name == Name; });
         }
 
@@ -229,7 +228,6 @@ namespace Game_Java_Port
         /// </summary>
         /// <param name="menu">the menu to register</param>
         public static void addMenu(GameMenu menu) {
-            lock(_RegisteredMenus)
                 if(!_RegisteredMenus.Contains(menu))
                     _RegisteredMenus.Add(menu);
                 else
@@ -243,7 +241,7 @@ namespace Game_Java_Port
         /// </summary>
         public static void SetMouseState(MouseEventArgs args, bool Down = true) {
 
-            Matrix3x2 transform = Program._RenderTarget.Transform;
+            Matrix3x2 transform = Program.D2DContext.Transform;
 
             Vector2 pos = new Vector2(args.X, args.Y) * transform.TranslationVector;
             
@@ -261,13 +259,13 @@ namespace Game_Java_Port
         /// </summary>
         /// <param name="request">The menu object to look for</param>
         /// <returns>True if the menu was found, false otherwise</returns>
-        public static bool hasMenu(GameMenu request) { lock(_RegisteredMenus) return _RegisteredMenus.Contains(request); }
+        public static bool hasMenu(GameMenu request) { return _RegisteredMenus.Contains(request); }
         /// <summary>
         /// Checks if there is a menu with the given name registered
         /// </summary>
         /// <param name="Name">The name to look for</param>
         /// <returns>True if a menu with the name was found, false otherwise</returns>
-        public static bool hasMenu(string Name) { lock(_RegisteredMenus) return _RegisteredMenus.Exists((Menu) => Menu.Name == Name); }
+        public static bool hasMenu(string Name) { return _RegisteredMenus.Exists((Menu) => Menu.Name == Name); }
 
         #endregion
 
@@ -309,7 +307,7 @@ namespace Game_Java_Port
             get {
                 if(_BGBrush == null) {
                     _BGBrush =
-                        new SolidColorBrush(Program._RenderTarget,
+                        new SolidColorBrush(Program.D2DContext,
                         Color.Black);
                 }
                 return _BGBrush;
@@ -323,7 +321,7 @@ namespace Game_Java_Port
         /// </summary>
         public static SolidColorBrush MenuPen { get {
                 if (_MenuPen == null)
-                    _MenuPen = new SolidColorBrush(Program._RenderTarget, Color.Lerp(Color.Crimson, Color.Black, 0.4f));
+                    _MenuPen = new SolidColorBrush(Program.D2DContext, Color.Lerp(Color.Crimson, Color.Black, 0.4f));
                 return _MenuPen;
             } }
         /// <summary>
@@ -336,7 +334,7 @@ namespace Game_Java_Port
         /// </summary>
         public static SolidColorBrush MenuHoverBrush { get {
                 if (_MenuHoverBrush == null) {
-                    _MenuHoverBrush = new SolidColorBrush(Program._RenderTarget, Color.Lerp(Color.Crimson, Color.Black, 0.75f)); //CustomMaths.fromArgb(0xff, 0x17, 0x4e, 0x30)
+                    _MenuHoverBrush = new SolidColorBrush(Program.D2DContext, Color.Lerp(Color.Crimson, Color.Black, 0.75f)); //CustomMaths.fromArgb(0xff, 0x17, 0x4e, 0x30)
                 }
                 return _MenuHoverBrush;
             }
@@ -347,7 +345,7 @@ namespace Game_Java_Port
         /// </summary>
         public static SolidColorBrush MenuTextBrush { get {
                 if(_MenuTextBrush == null) {
-                    _MenuTextBrush = new SolidColorBrush(Program._RenderTarget, CustomMaths.fromArgb(255, 0xff, 0xff, 0xff));//new Pen(Color.FromArgb(0x27, 0xae, 0x60)).Brush;
+                    _MenuTextBrush = new SolidColorBrush(Program.D2DContext, CustomMaths.fromArgb(255, 0xff, 0xff, 0xff));//new Pen(Color.FromArgb(0x27, 0xae, 0x60)).Brush;
                 }
                 return _MenuTextBrush;
             }
@@ -363,7 +361,7 @@ namespace Game_Java_Port
         /// <summary>
         /// If there is any menu that is open this will return true. otherwise false.
         /// </summary>
-        public static bool isMenuOpen { get { lock(_RegisteredMenus) return _RegisteredMenus.Exists((menu) => { return menu.isOpen; }); } }
+        public static bool isMenuOpen { get { return _RegisteredMenus.Exists((menu) => { return menu.isOpen; }); } }
 
         #endregion
 
@@ -396,50 +394,37 @@ namespace Game_Java_Port
 
         public static void removeTickable(ITickable obj) {
             if(Tickables.Contains(obj))
-                lock(Tickables) {
                     Tickables.Remove(obj);
-                }
         }
 
         public static void addTickable(ITickable obj) {
-            lock(Tickables) {
                 Tickables.Add(obj);
-            }
         }
 
         public static void clearTickables() {
-            lock(Tickables) {
                 Tickables.Clear();
-            }
         }
 
         public static void removeRenderable(IRenderable obj) {
             if(Renderables.Contains(obj))
-                lock(Renderables) {
                     Renderables.Remove(obj);
-                }
         }
 
         public static void addRenderable(IRenderable obj) {
-            lock(Renderables) {
                 Renderables.Add(obj);
                 Renderables.Sort(new Comparison<IRenderable>((left, right) => left.Z.CompareTo(right.Z) ));
-            }
         }
 
         public static void clearRenderables() {
             IRenderable[] temp;
-            lock(Renderables) {
                 temp = Renderables.ToArray();
-            }
 
             Array.ForEach(temp, (rend) =>
             {
-                if(rend is Background) lock(rend)
+                if(rend is Background)
                     ((Background)rend).Dispose();
             });
-
-            lock(Renderables)
+            
                 Renderables.Clear();
         }
 
@@ -450,7 +435,6 @@ namespace Game_Java_Port
             Cursor.CursorType = CursorTypes.Normal;
             Cursor.Tick();
             
-            lock(_RegisteredMenus)
                 _RegisteredMenus.ForEach((menu) =>
                 {
                     if(menu.isOpen)
@@ -463,9 +447,7 @@ namespace Game_Java_Port
 
             if(!Paused || init) {
                 ITickable[] Tickables_Copy;
-                lock(Tickables) {
                     Tickables_Copy = Tickables.ToArray();
-                }
 
                 foreach(ITickable tickable in Tickables_Copy) {
                     // each tick locks itself when ticking so the next tick has to wait for the previous to complete.
@@ -473,17 +455,13 @@ namespace Game_Java_Port
                         tickable.Tick();
                 }
                 // remove all corpses after one minute
-                lock(Corpses) {
                     CharacterBase[] keys = Corpses.Keys.ToArray();
 
                     foreach(CharacterBase key in keys)
                         Corpses[key] += TimeMultiplier;
-                }
-
-                lock(Corpses) {
+                
                     List<KeyValuePair<CharacterBase, float>> Corpses_Copy = Corpses.ToList();
                     Corpses_Copy.FindAll((pair) => pair.Value > 60).ForEach((pair) => Corpses.Remove(pair.Key));
-                }
                 MatrixExtensions.Tick();
             }
             
@@ -509,8 +487,7 @@ namespace Game_Java_Port
 
             data.AddRange(RNG.saveRNG());
             data.AddRange(NameGen.NameRandomizer.saveRNG());
-
-            lock(GameSubjects) {
+            
 
                 data.AddRange(BitConverter.GetBytes(GameSubjects.Count));
 
@@ -518,7 +495,6 @@ namespace Game_Java_Port
                 {
                     subj.Serializer.Serialize(subj);
                 });
-            }
 
             return data.ToArray();
         }
@@ -527,9 +503,7 @@ namespace Game_Java_Port
             List<byte> data = new List<byte>();
 
             data.AddRange(BitConverter.GetBytes(GameSubjects.Count));
-            lock(GameSubjects) {
                 GameSubjects.ForEach((obj) => data.AddRange(obj.serializeState()));
-            }
             return data.ToArray();
         }
 
@@ -547,17 +521,12 @@ namespace Game_Java_Port
             }
 
             CharacterBase[] copy;
-            lock(GameSubjects) {
                 copy = GameSubjects.ToArray();
-            }
             Array.ForEach(copy,(subj) => {
                 Program.DebugLog.Add("Removing Subject " + subj.ID + ". GameStatus.reset().");
                 subj.removeFromGame();
                 }
             );
-
-            lock(GameSubjects)
-                lock(GameObjects) {
                     GameSubjects.Clear();
 
 
@@ -568,7 +537,6 @@ namespace Game_Java_Port
                     clearTickables();
 
                     Game.instance._player = null;
-                }
 
             init();
         }
@@ -595,15 +563,10 @@ namespace Game_Java_Port
         /// </summary>
         public static void exit() {
             Running = false;
-            lock(MenuBorderPen)
                 MenuBorderPen.Dispose();
-            lock(MenuHoverBrush)
                 MenuHoverBrush.Dispose();
-            lock(MenuPen)
                 MenuPen.Dispose();
-            lock(MenuTextBrush)
                 MenuTextBrush.Dispose();
-            lock(BGBrush)
                 BGBrush.Dispose();
             Program.form.Close();
         }

@@ -48,7 +48,7 @@ namespace Game_Java_Port {
         public Faction Team = FactionNames.Environment;
 
         public abstract DrawType drawType { get; set; }
-        public SolidColorBrush Pencil = new SolidColorBrush(Program._RenderTarget, Color.FromRgba(0xFF00FFFF));
+        public SolidColorBrush Pencil = new SolidColorBrush(Program.D2DContext, Color.FromRgba(0xFF00FFFF));
         public bool IsMoving { get; set; }
         private RectangleF _Area;
         public RectangleF Area {

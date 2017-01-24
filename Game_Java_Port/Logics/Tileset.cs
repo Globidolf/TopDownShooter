@@ -48,7 +48,7 @@ namespace Game_Java_Port {
             _Tiles = new Bitmap[cols * rows];
             for(int y = 0; y < rows; y++) {
                 for(int x = 0; x < cols; x++) {
-                    _Tiles[x + y * cols] = new Bitmap(Program._RenderTarget, TileSize, new BitmapProperties(new PixelFormat(SharpDX.DXGI.Format.R8G8B8A8_UNorm, AlphaMode.Premultiplied)));
+                    _Tiles[x + y * cols] = new Bitmap(Program.D2DContext, TileSize, new BitmapProperties(new PixelFormat(SharpDX.DXGI.Format.R8G8B8A8_UNorm, AlphaMode.Premultiplied)));
                     _Tiles[x + y * cols].CopyFromBitmap(Source, Point.Zero, new Rectangle(x * TileSize.Width, y * TileSize.Height, TileSize.Width, TileSize.Height));
                 }
             }
@@ -121,7 +121,7 @@ namespace Game_Java_Port {
                 set._Tiles = new Bitmap[cols * rows];
                 for(int y = 0; y < rows; y++) {
                     for(int x = 0; x < cols; x++) {
-                        set._Tiles[x + y * cols] = new Bitmap(Program._RenderTarget, set.TileSize, new BitmapProperties(new PixelFormat(SharpDX.DXGI.Format.R8G8B8A8_UNorm, AlphaMode.Premultiplied)));
+                        set._Tiles[x + y * cols] = new Bitmap(Program.D2DContext, set.TileSize, new BitmapProperties(new PixelFormat(SharpDX.DXGI.Format.R8G8B8A8_UNorm, AlphaMode.Premultiplied)));
                         set._Tiles[x + y * cols].CopyFromBitmap(set.Source, Point.Zero, new Rectangle(x * set.TileSize.Width, y * set.TileSize.Height, set.TileSize.Width, set.TileSize.Height));
                     }
                 }
@@ -134,7 +134,7 @@ namespace Game_Java_Port {
                     set._Flat._Tiles = new Bitmap[fl_cols * fl_rows];
                     for(int y = 0; y < fl_rows; y++) {
                         for(int x = 0; x < cols; x++) {
-                            set._Flat._Tiles[x + y * fl_cols] = new Bitmap(Program._RenderTarget, set._Flat.TileSize, new BitmapProperties(new PixelFormat(SharpDX.DXGI.Format.R8G8B8A8_UNorm, AlphaMode.Premultiplied)));
+                            set._Flat._Tiles[x + y * fl_cols] = new Bitmap(Program.D2DContext, set._Flat.TileSize, new BitmapProperties(new PixelFormat(SharpDX.DXGI.Format.R8G8B8A8_UNorm, AlphaMode.Premultiplied)));
                             set._Flat._Tiles[x + y * fl_cols].CopyFromBitmap(set._Flat.Source, Point.Zero, new Rectangle(x * set._Flat.TileSize.Width, y * set._Flat.TileSize.Height, set._Flat.TileSize.Width, set._Flat.TileSize.Height));
                         }
                     }

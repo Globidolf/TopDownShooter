@@ -28,7 +28,7 @@ namespace Game_Java_Port {
             initialDuration = Duration = duration;
             Color temp = Color.Firebrick;
             temp.A = 0x88;
-            brush = new SolidColorBrush(Program._RenderTarget, temp);
+            brush = new SolidColorBrush(Program.D2DContext, temp);
             GameStatus.addRenderable(this);
             GameStatus.addTickable(this);
         }

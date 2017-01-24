@@ -51,7 +51,7 @@ namespace Game_Java_Port {
         BitmapBrush tb {
             get {
                 if(_tb == null) {
-                        _tb = new BitmapBrush(Program._RenderTarget, img);
+                        _tb = new BitmapBrush(Program.D2DContext, img);
                 }
                 return _tb;
             }
