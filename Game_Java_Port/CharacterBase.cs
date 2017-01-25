@@ -537,7 +537,7 @@ namespace Game_Java_Port {
                     GameStatus.Corpses.Add(this, 0);
 
             if(!isdead) { 
-                    new Background(dataLoader.get("corpse.bmp"), Location, 30, Background.Settings.Parallax);
+                    new Background(dataLoader.get2D("corpse.bmp"), Location, 30, Background.Settings.Parallax);
                     switch(Game.state) {
                         case Game.GameState.Menu:
                         case Game.GameState.Normal:

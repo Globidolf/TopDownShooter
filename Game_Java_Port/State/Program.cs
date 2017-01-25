@@ -11,10 +11,9 @@ using SharpDX.DXGI;
 using SharpDX.Windows;
 
 using D2DDeviceContext = SharpDX.Direct2D1.DeviceContext;
-using D3DDevice = SharpDX.Direct3D11.Device;
+using D3DDevice = SharpDX.Direct3D11.Device1;
 using D3DDeviceContext1 = SharpDX.Direct3D11.DeviceContext1;
 using DXGIFactory2 = SharpDX.DXGI.Factory2;
-using D2DFactory = SharpDX.Direct2D1.Factory;
 using Game_Java_Port.Interface;
 using System.Collections.Generic;
 using Game_Java_Port.Logics;
@@ -31,6 +30,7 @@ namespace Game_Java_Port
         public static D3DDevice device;
         public static D2DDeviceContext D2DContext;
         public static D3DDeviceContext1 D3DContext;
+        private static RenderTargetView _RenderTargetView;
 #if DEBUG
         private static DeviceDebug debugger;
 #endif
@@ -142,8 +142,8 @@ namespace Game_Java_Port
                         nonbg.draw(D2DContext);
                     }
 
-                //_RenderTarget.DrawText(test3, Font, new RectangleF(0, 0, width, height), brush);
-                SpriteFont.DEFAULT.directDrawText(fps.ToString() + "\n" + renderables.Count() + "\n" + GameStatus.GameObjects.Count, new RectangleF(0, 0, width, height), D2DContext, Color.Black);
+                    //_RenderTarget.DrawText(test3, Font, new RectangleF(0, 0, width, height), brush);
+                    SpriteFont.DEFAULT.directDrawText(fps.ToString() + "\n" + renderables.Count() + "\n" + GameStatus.GameObjects.Count, new RectangleF(0, 0, width, height), D2DContext, Color.Black);
 
                     i++;
 
@@ -152,8 +152,9 @@ namespace Game_Java_Port
                         i = 0;
                         i2 = stopwatch.ElapsedMilliseconds;
                     }
+                    D3DContext.ClearRenderTargetView(_RenderTargetView, Color.Red);
                     D2DContext.EndDraw();
-                    swapChain.Present(0, PresentFlags.DoNotWait, new PresentParameters() { });
+                    swapChain.Present(1, PresentFlags.DoNotWait, new PresentParameters() { });
                 });
 
 
@@ -162,7 +163,7 @@ namespace Game_Java_Port
         }
 
         static void loadImages() {
-            dataLoader.LoadAll(D2DContext);
+            dataLoader.LoadAll();
         }
 
         public static void PrepareToggleFullscreen() {
@@ -219,7 +220,7 @@ namespace Game_Java_Port
             D2DContext.StrokeWidth = 2;
 
 
-            dataLoader.LoadAll(D2DContext);
+            dataLoader.LoadAll();
             Tileset.Regenerate();
             Background_Tiled.Regenerate();
             Menu_BG_Tiled.Regenerate();
@@ -234,14 +235,14 @@ namespace Game_Java_Port
             form.ClientSize = new System.Drawing.Size(width, height);
             form.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable;
             form.AllowDrop = false;
-            
-            device = new D3DDevice(DriverType.Hardware,
+
+            device = new SharpDX.Direct3D11.Device(DriverType.Hardware,
                 DeviceCreationFlags.BgraSupport |
                 DeviceCreationFlags.SingleThreaded
 #if !DEBUG
-                );
+                ).QueryInterface<D3DDevice>();
 #else
-                | DeviceCreationFlags.Debug);
+                | DeviceCreationFlags.Debug).QueryInterface<D3DDevice>();
 #endif
 #if DEBUG
             debugger = new DeviceDebug(device);
@@ -256,9 +257,15 @@ namespace Game_Java_Port
             //RenderTarget RenderTar
 
             //D3DContext.OutputMerger.SetRenderTargets()
-            
-            using(Surface surface = swapChain.GetBackBuffer<Surface>(0))
+
+
+
+            using(Surface surface = swapChain.GetBackBuffer<Surface>(0)) 
                 D2DContext = new D2DDeviceContext(surface, new CreationProperties());
+
+
+            _RenderTargetView = new RenderTargetView(device, SharpDX.Direct3D11.Resource.FromSwapChain<Texture2D>(swapChain, 0));
+            D3DContext.OutputMerger.SetRenderTargets(_RenderTargetView);
 
             D2DContext.UnitMode = UnitMode.Pixels;
             stopwatch = new Stopwatch();

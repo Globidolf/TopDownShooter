@@ -1,6 +1,7 @@
 ﻿using Game_Java_Port.Interface;
 using SharpDX;
 using SharpDX.Direct2D1;
+using SharpDX.Mathematics.Interop;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,15 +36,16 @@ namespace Game_Java_Port {
             //optional values:
             float duration = 0.3f, float strokewidth = 2f,
             bool electric = false, int lightningcount = 4,
-            int seed = 0, Color beamColor = new Color() { A = 0x88, B = 255 })
+            int seed = 0, Color? beamColor = null)
         {
+            beamColor = beamColor.HasValue ? beamColor.Value : new Color() { A = 0x88, B = 255 };
             InitialStrokeWidth = StrokeWidth = strokewidth;
             Line = new Vector2[4];
             Line[0] = PointA;
             Line[1] = PointB;
             //new Ellipse(Area.Center + MatrixExtensions.PVTranslation, Area.Width / 2, Area.Height / 2);
             initialDuration = Duration = duration;
-            InitialBrush = Brush = new SolidColorBrush(Program.D2DContext, beamColor);
+            InitialBrush = Brush = new SolidColorBrush(Program.D2DContext, beamColor.Value);
             InitialStatics = new List<Vector2>();
             Statics = new List<Vector2>();
 

@@ -8,34 +8,51 @@ cbuffer PerObject: register(b0)
 
 struct VertexShaderInput
 {
-    float4 Position : SV_Position;
+    float4 Pos : SV_Position;
     float4 Color : COLOR;
-    float2 TextureUV : TEXCOORD0;
+    float2 Tex : TEXCOORD0;
 };
 
 struct VertexShaderOutput
 {
-    float4 Position : SV_Position;
+    float4 Pos : SV_Position;
     float4 Color : COLOR;
-    float2 TextureUV : TEXCOORD0;
+    float2 Tex : TEXCOORD0;
 };
 
-VertexShaderOutput VSMain(VertexShaderInput input)
+
+VertexShaderOutput VSMain2D(VertexShaderInput input) {
+	VertexShaderOutput output = (VertexShaderOutput)0;
+
+	output.Pos = input.Pos;
+	output.Tex = input.Tex;
+
+	return input;
+}
+
+VertexShaderOutput VSMain3D(VertexShaderInput input)
 {
     VertexShaderOutput output = (VertexShaderOutput)0;
 
-    output.Position = mul(input.Position, WorldViewProj);
-    output.TextureUV = input.TextureUV;
+    output.Pos = mul(input.Pos, WorldViewProj);
+    output.Tex = input.Tex;
 
     return output;
 }
 
+VertexShaderOutput VSSecondary(VertexShaderInput input)
+{
+	return input;
+}
+
+
 float4 PSMain(VertexShaderOutput input) : SV_Target
 {
-    return ShaderTexture.Sample(Sampler, input.TextureUV);
+    return ShaderTexture.Sample(Sampler, input.Tex);
 }
 
 float4 PSAlpha(VertexShaderOutput input) : SV_Target
 {
-	return float4(ShaderTexture.Sample(Sampler, input.TextureUV).a, 0, 0, 1);
+	float4 sampled = ShaderTexture.Sample(Sampler, input.Tex);
+	return float4(sampled.r, input.Tex.y % 1, input.Tex.x % 1, max(sampled.a, 0.5));
 }

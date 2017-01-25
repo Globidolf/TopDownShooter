@@ -22,17 +22,17 @@ namespace Game_Java_Port {
 
         private static Dictionary<string, Tileset> Tilesets = new Dictionary<string, Tileset>();
 
-        private Tileset(int TileSize, string SourceName) : this(TileSize, TileSize, dataLoader.get(SourceName)) {
-            Bitmap flat = dataLoader.get(SourceName + "_flat");
+        private Tileset(int TileSize, string SourceName) : this(TileSize, TileSize, dataLoader.get2D(SourceName)) {
+            Bitmap flat = dataLoader.get2D(SourceName + "_flat");
 
             if(flat != null) {
                 _Flat = new Tileset(TileSize, TileSize, flat);
             }
         }
 
-        private Tileset(int TileWidth, int TileHeight, string SourceName) : this(TileWidth, TileHeight, dataLoader.get(SourceName)) {
+        private Tileset(int TileWidth, int TileHeight, string SourceName) : this(TileWidth, TileHeight, dataLoader.get2D(SourceName)) {
 
-            Bitmap flat = dataLoader.get(SourceName + "_flat");
+            Bitmap flat = dataLoader.get2D(SourceName + "_flat");
 
             if(flat != null) {
                 _Flat = new Tileset(TileWidth, TileHeight, flat);
@@ -115,7 +115,7 @@ namespace Game_Java_Port {
         public static void Regenerate() {
             foreach(KeyValuePair<string, Tileset> pair in Tilesets) {
                 Tileset set = pair.Value;
-                set.Source = dataLoader.get(pair.Key);
+                set.Source = dataLoader.get2D(pair.Key);
                 int cols = set.Source.PixelSize.Width / set.TileSize.Width;
                 int rows = set.Source.PixelSize.Height / set.TileSize.Height;
                 set._Tiles = new Bitmap[cols * rows];
@@ -127,7 +127,7 @@ namespace Game_Java_Port {
                 }
                 if(set.IsFlatAvailable && set._Flat != null) {
 
-                    set._Flat.Source = dataLoader.get(pair.Key + "_flat");
+                    set._Flat.Source = dataLoader.get2D(pair.Key + "_flat");
 
                     int fl_cols = set._Flat.Source.PixelSize.Width / set._Flat.TileSize.Width;
                     int fl_rows = set._Flat.Source.PixelSize.Height / set._Flat.TileSize.Height;

@@ -87,7 +87,7 @@ namespace Game_Java_Port {
             Attributes[Attribute.Wisdom] = Wis;
             Attributes[Attribute.Luck] = Luc;
 
-            Image = dataLoader.get("player");
+            Image = dataLoader.get2D("player");
 
             drawType = DrawType.Image;
             

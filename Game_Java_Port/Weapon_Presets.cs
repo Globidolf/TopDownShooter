@@ -37,7 +37,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Boomerang";
-                temp.image = dataLoader.get(temp.Name);
+                temp.image = dataLoader.get2D(temp.Name);
                 temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Returning;
@@ -63,7 +63,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Throwing Knives";
-                temp.image = dataLoader.get(temp.Name);
+                temp.image = dataLoader.get2D(temp.Name);
                 temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Piercing;
@@ -89,7 +89,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Rock";
-                temp.image = dataLoader.get(temp.Name);
+                temp.image = dataLoader.get2D(temp.Name);
                 temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Bounce;
@@ -117,7 +117,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "SMG";
-                temp.image = dataLoader.get(temp.Name);
+                temp.image = dataLoader.get2D(temp.Name);
                 temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Normal;
@@ -143,7 +143,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Sniper Rifle";
-                temp.image = dataLoader.get(temp.Name);
+                temp.image = dataLoader.get2D(temp.Name);
                 temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Piercing;
@@ -169,7 +169,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Rocket Launcher";
-                temp.image = dataLoader.get(temp.Name);
+                temp.image = dataLoader.get2D(temp.Name);
                 temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Explosive | BulletBehaviour.Knockback;
@@ -197,7 +197,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Mace";
-                temp.image = dataLoader.get(temp.Name);
+                temp.image = dataLoader.get2D(temp.Name);
                 temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Knockback;
@@ -219,7 +219,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Spear";
-                temp.image = dataLoader.get(temp.Name);
+                temp.image = dataLoader.get2D(temp.Name);
                 temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Knockback;
@@ -241,7 +241,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Greatsword";
-                temp.image = dataLoader.get(temp.Name);
+                temp.image = dataLoader.get2D(temp.Name);
                 temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Knockback;
@@ -263,7 +263,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Sword";
-                temp.image = dataLoader.get(temp.Name);
+                temp.image = dataLoader.get2D(temp.Name);
                 temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Knockback;
@@ -287,7 +287,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "ElectroSphere";
-                temp.image = dataLoader.get(temp.Name);
+                temp.image = dataLoader.get2D(temp.Name);
                 temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Beam | BulletBehaviour.Tracking | BulletBehaviour.Piercing;
@@ -313,7 +313,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Assault Rifle";
-                temp.image = dataLoader.get(temp.Name);
+                temp.image = dataLoader.get2D(temp.Name);
                 temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Knockback;
@@ -339,7 +339,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Acid Sprayer";
-                temp.image = dataLoader.get(temp.Name);
+                temp.image = dataLoader.get2D(temp.Name);
                 temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Piercing | BulletBehaviour.MultiHit;
@@ -365,7 +365,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Shotgun";
-                temp.image = dataLoader.get(temp.Name);
+                temp.image = dataLoader.get2D(temp.Name);
                 temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Knockback;
@@ -391,7 +391,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Revolver";
-                temp.image = dataLoader.get(temp.Name);
+                temp.image = dataLoader.get2D(temp.Name);
                 temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Normal;
@@ -417,7 +417,7 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Pistol";
-                temp.image = dataLoader.get(temp.Name);
+                temp.image = dataLoader.get2D(temp.Name);
                 temp.drawType = Interface.DrawType.Image;
 
                 temp.Behaviour = BulletBehaviour.Normal;

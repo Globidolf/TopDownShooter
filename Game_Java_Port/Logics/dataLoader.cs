@@ -9,38 +9,58 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 
+using Resource = SharpDX.Direct3D11.Resource;
+using Device = SharpDX.Direct3D11.Device;
+
 namespace Game_Java_Port {
     public static class dataLoader {
 
         public const string imgdir = "./data/img/";
 
-        private static Dictionary<string, Bitmap> images = new Dictionary<string, Bitmap>();
+        private static Dictionary<string, Bitmap> D2Dimages = new Dictionary<string, Bitmap>();
+        private static Dictionary<string, Resource> D3D11images = new Dictionary<string, Resource>();
 
-        public static Bitmap get(string name) {
+        public static Resource get3D11(string name) {
             if(!name.EndsWith(".bmp"))
                 name += ".bmp";
-            if(!images.ContainsKey(name))
+            if(!D3D11images.ContainsKey(name))
+                Load((Device)null, name);
+            if(D3D11images.ContainsKey(name))
+                return D3D11images[name];
+            else
+                return null;
+        }
+
+        public static Bitmap get2D(string name) {
+            if(!name.EndsWith(".bmp"))
+                name += ".bmp";
+            if(!D2Dimages.ContainsKey(name))
                 Load((RenderTarget)null, name);
-            if(images.ContainsKey(name))
-                return images[name];
+            if(D2Dimages.ContainsKey(name))
+                return D2Dimages[name];
             else
                 return null;
         }
 
 
-        public static void LoadAll(RenderTarget renderTarget) {
+        public static void LoadAll() {
             IEnumerable<string> files = Directory.EnumerateFiles(imgdir);
 
             foreach(string file in files) {
-                Load(renderTarget, file.Remove(0, imgdir.Length));
+                Load(Program.D2DContext, file.Remove(0, imgdir.Length));
+                Load(Program.device, file.Remove(0, imgdir.Length));
             }
         }
 
         public static void unLoadAll() {
-            foreach(Bitmap bmp in images.Values) {
+            foreach(Bitmap bmp in D2Dimages.Values) {
                 bmp.Dispose();
             }
-            images.Clear();
+            foreach(Resource res in D3D11images.Values) {
+                res.Dispose();
+            }
+            D2Dimages.Clear();
+            D3D11images.Clear();
         }
 
         /// <summary>
@@ -52,10 +72,7 @@ namespace Game_Java_Port {
         private static void Load(RenderTarget renderTarget, string file) {
             // Loads from file using System.Drawing.Image
 
-            if(File.Exists(imgdir + file)) {
-
-                //check if image has been loaded already
-                if(!images.ContainsKey(file)) {
+            if(File.Exists(imgdir + file) && !D2Dimages.ContainsKey(file)) {
                     //snippet taken from a random forum without any description
                     //will read a bitmap from specified file INCLUDING those darn alpha values
 
@@ -72,7 +89,7 @@ namespace Game_Java_Port {
 
 
                     //to prevent some mysterious errors caused by the above bitmap instance, we copy the data to a safely instantiated one and use that one instead.
-
+                
                     System.Drawing.Rectangle sourceArea = new System.Drawing.Rectangle(0, 0, bitmap.Width, bitmap.Height);
                     BitmapProperties bitmapProperties = new BitmapProperties(new PixelFormat(SharpDX.DXGI.Format.R8G8B8A8_UNorm, SharpDX.Direct2D1.AlphaMode.Premultiplied));
 
@@ -117,10 +134,10 @@ namespace Game_Java_Port {
                         bmp.UnlockBits(bitmapData);
                         tempStream.Position = 0;
 
-                        images.Add(file, new Bitmap(renderTarget, size, tempStream, stride, bitmapProperties));
+                        D2Dimages.Add(file, new Bitmap(renderTarget, size, tempStream, stride, bitmapProperties));
                     }
                 }
-            }
+            
         }
 
 
@@ -131,11 +148,10 @@ namespace Game_Java_Port {
         /// <param name="device">Direct3D 11 Device to load the bitmap into</param>
         /// <param name="file">Name of the file</param>
         /// <returns>a 2D Bitmap resource to be used by shaders and similiar creatures</returns>
-        public static Texture2D Load(SharpDX.Direct3D11.Device device, string file) {
-            string imgdir = "";
+        public static void Load(Device device, string file) {
             // Loads from file using System.Drawing.Image
 
-            if(File.Exists(imgdir + file)) {
+            if(File.Exists(imgdir + file) && !D3D11images.ContainsKey(file)) {
                 //snippet taken from a random forum without any description
                 //will read a bitmap from specified file INCLUDING those darn alpha values
 
@@ -196,7 +212,7 @@ namespace Game_Java_Port {
                     bmp.UnlockBits(bitmapData);
                     tempStream.Position = 0;
 
-                    return new Texture2D(device, new Texture2DDescription() {
+                    D3D11images.Add(file ,new Texture2D(device, new Texture2DDescription() {
                         Width = bmp.Size.Width,
                         Height = bmp.Size.Height,
                         ArraySize = 1,
@@ -207,10 +223,9 @@ namespace Game_Java_Port {
                         MipLevels = 1,
                         OptionFlags = ResourceOptionFlags.None,
                         SampleDescription = new SampleDescription(1, 0),
-                    }, new DataRectangle(tempStream.DataPointer, stride));
+                    }, new DataRectangle(tempStream.DataPointer, stride)));
                 }
             }
-            return null;
         }
     }
 }

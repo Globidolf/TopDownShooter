@@ -1054,7 +1054,7 @@ namespace Game_Java_Port {
                     tooltip = new WeaponTooltip((Weapon)item, Location: () => Area.Center, Validation: () => _Hovering);
                 else
                     tooltip = new Tooltip(item.ItemInfoText, Location: () => Area.Center, Validation: () => _Hovering);
-                iconBG = dataLoader.get("border_" + item.Rarity.ToString());
+                iconBG = dataLoader.get2D("border_" + item.Rarity.ToString());
                 
                 lock(Parent.Elements)
                     Parent.Elements.Add(this);

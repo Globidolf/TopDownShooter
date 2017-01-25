@@ -172,14 +172,14 @@ namespace Game_Java_Port {
             switch(_source.WType) {
                 case WeaponType.Throwable:
                     if(_source.Name.Contains("Throwing Knives"))
-                        bullettexture = dataLoader.get("bullet_knife");
+                        bullettexture = dataLoader.get2D("bullet_knife");
                     else if(_source.Name.Contains("Boomerang"))
-                        bullettexture = dataLoader.get("bullet_boomerang");
+                        bullettexture = dataLoader.get2D("bullet_boomerang");
                     else if(_source.Name.Contains("Rock")) {
                         animation = Animated_Tileset.Bullet_Rock;
                         bullettexture = animation.Off_Set_Frame(pseudorandom % 1f);
                     } else
-                        bullettexture = dataLoader.get("bullet_normal");
+                        bullettexture = dataLoader.get2D("bullet_normal");
                     break;
                 case WeaponType.Acid:
                     animation = Animated_Tileset.Bullet_Acid;
@@ -187,7 +187,7 @@ namespace Game_Java_Port {
                     break;
 
                 default:
-                    bullettexture = dataLoader.get("bullet_normal");
+                    bullettexture = dataLoader.get2D("bullet_normal");
                     break;
             }
 
