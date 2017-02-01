@@ -13,6 +13,8 @@ using System.Threading.Tasks;
 namespace Game_Java_Port {
     public abstract class CharacterBase : IRenderable, ITickable, ISerializable<CharacterBase>, IIndexable, ICollidible, IDisposable {
 
+        public RenderData RenderData { get; set; } = new RenderData();
+
         #region base values
 
         public const float BaseHealth = 60;
@@ -47,7 +49,7 @@ namespace Game_Java_Port {
 
         public Faction Team = FactionNames.Environment;
 
-        public abstract DrawType drawType { get; set; }
+        //public abstract DrawType drawType { get; set; }
         public SolidColorBrush Pencil = new SolidColorBrush(Program.D2DContext, Color.FromRgba(0xFF00FFFF));
         public bool IsMoving { get; set; }
         private RectangleF _Area;
@@ -98,8 +100,9 @@ namespace Game_Java_Port {
         private float _Size;
 
         public float Size {
-            get {
+            get {/*
                 if(_Size == 0)
+                    
                     switch(drawType) {
                     case DrawType.Circle:
                     case DrawType.None:
@@ -127,11 +130,13 @@ namespace Game_Java_Port {
                         _Size = _complexSize;
                             break;
                 }
+                */
                 return _Size;
             }
             set {
                 // reset size
                 _Size = 0;
+                /*
                 RectangleF rect = Area;
                 switch(drawType) {
                     case DrawType.Circle:
@@ -163,6 +168,7 @@ namespace Game_Java_Port {
 
                         break;
                 }
+                */
             }
         }
 
@@ -536,8 +542,9 @@ namespace Game_Java_Port {
                 if(!(isdead = GameStatus.Corpses.ContainsKey(this))) 
                     GameStatus.Corpses.Add(this, 0);
 
-            if(!isdead) { 
-                    new Background(dataLoader.get2D("corpse.bmp"), Location, 30, Background.Settings.Parallax);
+            if(!isdead) {
+                new Background(dataLoader.getResID("corpse"), Location, 30, Background.Settings.Parallax);
+                    //new Background(dataLoader.get2D("corpse.bmp"), Location, 30, Background.Settings.Parallax);
                     switch(Game.state) {
                         case Game.GameState.Menu:
                         case Game.GameState.Normal:
@@ -688,7 +695,7 @@ namespace Game_Java_Port {
 
                     Color4 tempColor = Pencil.Color;
 
-
+                    /*
                     switch(drawType) {
                         case DrawType.Rectangle:
                             rt.FillRectangle(relativeArea, Pencil);
@@ -803,7 +810,9 @@ namespace Game_Java_Port {
                                 }
                             }
                         }
+                        
                     }
+                    */
                 }
             }
         }

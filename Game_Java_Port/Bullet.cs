@@ -16,6 +16,8 @@ using SharpDX.Direct2D1.Effects;
 namespace Game_Java_Port {
     class Bullet : IRenderable, ITickable, IDisposable {
 
+        public RenderData RenderData { get; set; }
+
         public static ColorMatrix _EnemyTint;
         public static ColorMatrix EnemyTint {
             get {
@@ -153,7 +155,7 @@ namespace Game_Java_Port {
 
         public int Z { get; set; } = 9;
 
-        public DrawType drawType { get; set; } = DrawType.Polygon;
+        //public DrawType drawType { get; set; } = DrawType.Polygon;
 
         public Bullet(Weapon source, int? seed = null, List<CharacterBase> reserved = null) {
 
@@ -172,9 +174,11 @@ namespace Game_Java_Port {
             switch(_source.WType) {
                 case WeaponType.Throwable:
                     if(_source.Name.Contains("Throwing Knives"))
-                        bullettexture = dataLoader.get2D("bullet_knife");
+
+                        RenderData.ResID = dataLoader.getResID("bullet_knife");//bullettexture = dataLoader.get2D("bullet_knife");
+
                     else if(_source.Name.Contains("Boomerang"))
-                        bullettexture = dataLoader.get2D("bullet_boomerang");
+                        RenderData.ResID = dataLoader.getResID("bullet_boomerang");//bullettexture = dataLoader.get2D("bullet_boomerang");
                     else if(_source.Name.Contains("Rock")) {
                         animation = Animated_Tileset.Bullet_Rock;
                         bullettexture = animation.Off_Set_Frame(pseudorandom % 1f);

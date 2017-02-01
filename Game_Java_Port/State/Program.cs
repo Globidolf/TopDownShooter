@@ -163,7 +163,7 @@ namespace Game_Java_Port
         }
 
         static void loadImages() {
-            dataLoader.LoadAll();
+            dataLoader.LoadAll(device);
         }
 
         public static void PrepareToggleFullscreen() {
@@ -220,7 +220,7 @@ namespace Game_Java_Port
             D2DContext.StrokeWidth = 2;
 
 
-            dataLoader.LoadAll();
+            dataLoader.LoadAll(device);
             Tileset.Regenerate();
             Background_Tiled.Regenerate();
             Menu_BG_Tiled.Regenerate();

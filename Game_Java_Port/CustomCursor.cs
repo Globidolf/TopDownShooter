@@ -27,36 +27,27 @@ namespace Game_Java_Port {
 
         private CursorTypes CurrentCursorType = CursorTypes.Normal;
 
-        public DrawType drawType { get; set; } = DrawType.Image;
+        //public DrawType drawType { get; set; } = DrawType.Image;
 
-        public int Z { get; set; } = 100000;
+        //public int Z { get; set; } = 100000;
 
         public CursorTypes CursorType { get; set; } = CursorTypes.Normal;
 
-        static Dictionary<CursorTypes, Bitmap> Cursors = new Dictionary<CursorTypes, Bitmap>()
-        {   { CursorTypes.Normal,           dataLoader.get2D("cursor")      },
-            { CursorTypes.Inventory_Equip,  dataLoader.get2D("cursor_invE") },
-            { CursorTypes.Inventory_Add,    dataLoader.get2D("cursor_invA") },
-            { CursorTypes.Inventory_Remove, dataLoader.get2D("cursor_invR") },
-            { CursorTypes.Inventory_Use,    dataLoader.get2D("cursor_invU") },
-            { CursorTypes.Interact,         dataLoader.get2D("cursor_U")    }
+        public RenderData RenderData { get; set; } = new RenderData();
+
+        static Dictionary<CursorTypes, int> Cursors = new Dictionary<CursorTypes, int>()
+        {   { CursorTypes.Normal,           dataLoader.getResID("cursor")      },
+            { CursorTypes.Inventory_Equip,  dataLoader.getResID("cursor_invE") },
+            { CursorTypes.Inventory_Add,    dataLoader.getResID("cursor_invA") },
+            { CursorTypes.Inventory_Remove, dataLoader.getResID("cursor_invR") },
+            { CursorTypes.Inventory_Use,    dataLoader.getResID("cursor_invU") },
+            { CursorTypes.Interact,         dataLoader.getResID("cursor_U")    }
         };
 
         public CustomCursor(CursorTypes cursor, float Size = 8) {
             this.Size = Size;
             Area = new RectangleF(MousePos.X, MousePos.Y, Size, Size);
             CursorType = cursor;
-        }
-
-        public static void Regenerate() {
-            Cursors = new Dictionary<CursorTypes, Bitmap>()
-        {   { CursorTypes.Normal,           dataLoader.get2D("cursor")      },
-            { CursorTypes.Inventory_Equip,  dataLoader.get2D("cursor_invE") },
-            { CursorTypes.Inventory_Add,    dataLoader.get2D("cursor_invA") },
-            { CursorTypes.Inventory_Remove, dataLoader.get2D("cursor_invR") },
-            { CursorTypes.Inventory_Use,    dataLoader.get2D("cursor_invU") },
-            { CursorTypes.Interact,         dataLoader.get2D("cursor_U")    }
-        };
         }
 
         public void draw(DeviceContext rt) {

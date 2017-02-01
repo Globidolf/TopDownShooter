@@ -12,7 +12,7 @@ using SharpDX.Windows;
 using System.Diagnostics;
 using System.IO;
 
-namespace Game_Java_Port {
+namespace Game_Java_Port.PINGU {
     public static class CubeApp {
 
         public static void Run() {
@@ -60,7 +60,7 @@ namespace Game_Java_Port {
                 // Set up the graphics devices
                 using(ImagingFactory2 imgfactory = new ImagingFactory2())
                 using(var device0 = new SharpDX.Direct3D11.Device(DriverType.Hardware, creationFlags, featureLevels)) {
-                    dataLoader.Load(device0, "Pistol.bmp");
+                    dataLoader.LoadAll(device0);
                     using(var device1 = device0.QueryInterface<SharpDX.Direct3D11.Device1>())
                     using(var context = device0.ImmediateContext.QueryInterface<DeviceContext1>())
 
@@ -77,13 +77,7 @@ namespace Game_Java_Port {
                     new InputElement("TEXCOORD", 0, Format.R32G32_Float, 32, 0),
                 }))
                     using(var worldViewProjectionBuffer = new SharpDX.Direct3D11.Buffer(device1, Utilities.SizeOf<Matrix>(), ResourceUsage.Default, BindFlags.ConstantBuffer, CpuAccessFlags.None, ResourceOptionFlags.None, 0))
-                    using(var tex2d = dataLoader.get3D11("Pistol.bmp"))
-                    using(var textureView = new ShaderResourceView(device0, tex2d,
-                        new ShaderResourceViewDescription() {
-                            Format = Format.R8G8B8A8_UNorm,
-                            Dimension = ShaderResourceViewDimension.Texture2D,
-                            Texture2D = new ShaderResourceViewDescription.Texture2DResource() { MipLevels = 1, MostDetailedMip = 0 }
-                        }))
+                    using(var textureView = dataLoader.ShaderData[0])
                     using(var samplerState = new SamplerState(device1, samplerStateDescription))
                     // Prepare rendering targets and related resources
                     using(var dxgiDevice2 = device1.QueryInterface<SharpDX.DXGI.Device2>())

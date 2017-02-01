@@ -5,6 +5,7 @@ using System.IO;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
 using SharpDX;
+using SharpDX.Direct3D11;
 
 namespace Game_Java_Port {
     public class Background : IRenderable, ITickable, IDisposable {
@@ -13,7 +14,7 @@ namespace Game_Java_Port {
 
         public event EventHandler TickAction;
         
-        public RectangleF Area { get; set; }
+        //public RectangleF Area { get; set; }
 
         [Flags]
         public enum Settings : byte {
@@ -39,6 +40,7 @@ namespace Game_Java_Port {
 
         public Settings settings = Settings.Default;
 
+        /*
 
         public ExtendMode ExtendX { get { return tb.ExtendModeX; } set { tb.ExtendModeX = value; } }
         public ExtendMode ExtendY { get { return tb.ExtendModeY; } set { tb.ExtendModeY = value; } }
@@ -68,31 +70,40 @@ namespace Game_Java_Port {
                 _Z = value;
             }
         }
+        */
 
-        public DrawType drawType { get; set; } = DrawType.Image;
+        //public DrawType drawType { get; set; } = DrawType.Image;
 
-        public Background(Bitmap bmp, RawVector2? location = null, float lifetime = 0, Settings settings = Settings.Default, bool add = true) {
-            img = bmp;
+            public RenderData RenderData { get; set; }
+
+        public Background(int resID, RawVector2? location = null, float lifetime = 0, Settings settings = Settings.Default, bool add = true) {
+            RenderData = new RenderData();
+            RenderData.ResID = resID;
+            Texture2D tx = dataLoader.D3DResources[resID];
+            RenderData.mdl = new Model { VertexBuffer = Vertex.FromRectangle(
+                new RectangleF(location.Value.X - tx.Description.Width / 2, location.Value.Y - tx.Description.Height / 2, tx.Description.Width, tx.Description.Height)) };
+            
             Factory test = new Factory();
             if(location == null)
                 location = new RawVector2();
 
-            Area = new RectangleF(location.Value.X - bmp.Size.Width / 2, location.Value.Y - bmp.Size.Height / 2, bmp.Size.Width, bmp.Size.Height);
+            //Area = ;
             this.settings = settings;
             if(lifetime > 0) {
                 this.lifetime = lifetime;
                 this.settings |= Settings.Decay;
             }
-            Z = -5;
+            //Z = -5;
             if(add)
                 addToGame();
         }
 
 
 
-        public virtual void draw(DeviceContext rt) {
+        public virtual void draw(SharpDX.Direct2D1.DeviceContext rt) {
             if(!disposed) {
                 if(settings.HasFlag(Settings.Fill_Area)) {
+                    /*
                     if(_tb != null) {
                         rt.FillRectangle(Game.instance.Area, tb);
                     }
@@ -100,12 +111,14 @@ namespace Game_Java_Port {
                     if(!this.isOutOfRange()) {
                         rt.DrawBitmap(img, offset, 1, BitmapInterpolationMode.Linear, new RectangleF(0, 0, img.Size.Width, img.Size.Height));
                     }
+                    */
                 }
             }
         }
 
         public virtual void Tick() {
             TickAction?.Invoke(this, EventArgs.Empty);
+            /*
              if(_tb != null && !disposed) {
                     transform = Matrix3x2.Identity;
                     transform.TranslationVector += MatrixExtensions.PVTranslation;
@@ -117,6 +130,7 @@ namespace Game_Java_Port {
 
             offset = temp;
 
+            */
             if(settings.HasFlag(Settings.Decay)) {
                 lifetime -= GameStatus.TimeMultiplier;
                 if(lifetime <= 0)
@@ -137,10 +151,12 @@ namespace Game_Java_Port {
                 if(disposing) {
                     GameStatus.removeTickable(this);
                     GameStatus.removeRenderable(this);
+                    /*
                     if(_tb != null)
                          _tb.Dispose();
                     //DONT dispose the bitmap, set it to null instead. it is a shared resource and img is merely the reference
                     img = null;
+                    */
                     TickAction = null;
                 }
                 disposed = true;

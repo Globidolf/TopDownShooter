@@ -8,6 +8,8 @@ using Game_Java_Port.Serializers;
 namespace Game_Java_Port {
     public abstract class ItemBase : IRenderable, ITickable, IDisposable, IInteractable, ISerializable<ItemBase>, IIndexable {
 
+        public RenderData RenderData { get; set; }
+
         private bool disposed = false;
 
         public Random _RNG;
@@ -32,7 +34,8 @@ namespace Game_Java_Port {
 
         public abstract ItemType Rarity { get; }
         private SolidColorBrush Pencil = new SolidColorBrush(Program.D2DContext, Color.Transparent);
-        internal Bitmap image;
+        //internal Bitmap image;
+        
         public string Name { get; set; } = "Unknown Item";
 
         public virtual float Size { get { return BaseSize; } set { } }
@@ -100,7 +103,7 @@ namespace Game_Java_Port {
 
         public int Z { get; set; } = 1;
 
-        public DrawType drawType { get; set; } = DrawType.Circle;
+        //public DrawType drawType { get; set; } = DrawType.Circle;
 
         public void PickUp(CharacterBase by) {
             UnOwnedTime = 0;
@@ -197,15 +200,16 @@ namespace Game_Java_Port {
             if(Owner == null) {
                 
                     if(!Pencil.IsDisposed) {
-
+                    /*
                         switch(drawType) {
                             case DrawType.Circle:
                                 rt.FillEllipse(_D_Ellipse, Pencil);
                                 break;
                             case DrawType.Image:
-                                rt.DrawBitmap(image, _D_ImgRect, 1, BitmapInterpolationMode.NearestNeighbor);
+                                //rt.DrawBitmap(image, _D_ImgRect, 1, BitmapInterpolationMode.NearestNeighbor);
                                 break;
                         }
+                        */
                 }
             }
         }
@@ -228,10 +232,11 @@ namespace Game_Java_Port {
 
 
                 _D_RelativePos = Location + MatrixExtensions.PVTranslation;
-
+                /*
                 switch(drawType) {
                     case DrawType.Rectangle:
                     case DrawType.Image:
+                        
                         _D_ImgRect = new RectangleF(
                             _D_RelativePos.X - image.PixelSize.Width / 2,
                             _D_RelativePos.Y - image.PixelSize.Height / 2,
@@ -242,6 +247,7 @@ namespace Game_Java_Port {
                         _D_Ellipse = new Ellipse(_D_RelativePos, Size / 2, Size / 2);
                         break;
                 }
+            */
 
                 if(UnOwnedTime > DespawnTime) 
                         Dispose();

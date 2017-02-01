@@ -3,7 +3,7 @@ using SharpDX;
 using System.Linq;
 
 namespace Game_Java_Port.Interface {
-
+    /*
     public enum DrawType {
         None,
         Circle,
@@ -11,23 +11,25 @@ namespace Game_Java_Port.Interface {
         Polygon,
         Image
     }
-
+    */
     public interface IRenderable {
         
-        DrawType drawType { get; set; }
+        //DrawType drawType { get; set; }
 
-        RectangleF Area { get; set; }
+        //RectangleF Area { get; set; }
+
+        RenderData RenderData { get; set; }
 
         void draw(DeviceContext rt);
 
-        int Z { get; set; }
+        //int Z { get; set; }
     }
 
     public static class RenderableExtensions {
 
         public static bool isOutOfRange(this IRenderable me) {
 
-            Vector2 relativePos = me.Area.Location + MatrixExtensions.PVTranslation;
+            //Vector2 relativePos = me.Area.Location + MatrixExtensions.PVTranslation;
             float distanceToPlayers = float.PositiveInfinity;
 
             //TODO: Find timer changing collection and create custom tickable class to handle situation instead
@@ -36,7 +38,7 @@ namespace Game_Java_Port.Interface {
                 GameStatus.GameSubjects.FindAll((subj) => subj.Team == FactionNames.Players).ForEach((subj) =>
                 {
                     float temp;
-                    if((temp = Vector2.DistanceSquared(me.Area.Location, subj.Location)) < distanceToPlayers)
+                    if((temp = me.RenderData.mdl.VertexBuffer.Min(vb => Vector2.DistanceSquared(vb.Pos.XY(), subj.Location))) < distanceToPlayers)
                         distanceToPlayers = temp;
                 });
 
