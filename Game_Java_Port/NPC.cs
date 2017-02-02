@@ -28,7 +28,7 @@ namespace Game_Java_Port {
 
         public float ViewRadius { get; private set; }
 
-        public override DrawType drawType { get; set; } = DrawType.Circle;
+        //public override DrawType drawType { get; set; } = DrawType.Circle;
 
         public override Rank Rank { get; set; }
 
@@ -87,19 +87,21 @@ namespace Game_Java_Port {
             Attributes[Attribute.Wisdom] = Wis;
             Attributes[Attribute.Luck] = Luc;
 
-            Image = dataLoader.get2D("player");
+            RenderData.ResID = dataLoader.getResID("player");
 
-            drawType = DrawType.Image;
+            //Image = dataLoader.get2D("player");
+
+            //drawType = DrawType.Image;
             
 
-            Area = new RectangleF(Game.instance.Location.X, Game.instance.Location.Y, Image.PixelSize.Width, Image.PixelSize.Height);
+            RenderData.Area = new RectangleF(Game.instance.Location.X, Game.instance.Location.Y, dataLoader.D3DResources[RenderData.ResID].Description.Width, dataLoader.D3DResources[RenderData.ResID].Description.Height);
             Health = MaxHealth;
 
             Pencil.Color = Color.Blue;
 
 
             if(directAdd) {
-                Program.DebugLog.Add("Adding Subject " + ID + ". NPC(...a lot...).");
+                Program.DebugLog.Add("Adding Subject " + ID + ". NPC(,,,,,,,,).");
                 addToGame();
                 AI = AI_Library.PlayerSim;
             }

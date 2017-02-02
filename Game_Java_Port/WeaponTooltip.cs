@@ -53,6 +53,7 @@ namespace Game_Java_Port {
         }
 
         public override void draw(DeviceContext rt) {
+            /*
             frame.draw(rt);
             RectangleF temp = relLabel.Floor();
             rt.DrawBitmap(Item.image, new RectangleF(temp.X, temp.Y, 16, 16), 1, BitmapInterpolationMode.Linear);
@@ -81,6 +82,7 @@ namespace Game_Java_Port {
 
             temp = new RectangleF(relLabel.X + 20, relLabel.Y + relLabel.Height - 20, relLabel.Width, 20);
             SpriteFont.DEFAULT.directDrawText(Item.SellPrice.ToString("### ### ##0"), temp, rt);
+            */
         }
 
     }

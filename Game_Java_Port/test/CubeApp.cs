@@ -195,6 +195,7 @@ namespace Game_Java_Port.PINGU {
             stream.Position = 0;
             var buffer = new SharpDX.Direct3D11.Buffer(device, stream, len, ResourceUsage.Default,
                 bindFlags, CpuAccessFlags.None, ResourceOptionFlags.None, 0);
+            stream.Dispose();
             return buffer;
         }
         

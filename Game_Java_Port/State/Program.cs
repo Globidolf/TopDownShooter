@@ -173,7 +173,7 @@ namespace Game_Java_Port
         public static void Resize(bool toggledisplaymode = false) {
             _togleFullScreen = false;
             dataLoader.unLoadAll();
-            Tileset.Clear();
+            //Tileset.Clear();
 
             device.ImmediateContext.ClearState();
             device.ImmediateContext.Flush();
@@ -221,11 +221,11 @@ namespace Game_Java_Port
 
 
             dataLoader.LoadAll(device);
-            Tileset.Regenerate();
-            Background_Tiled.Regenerate();
-            Menu_BG_Tiled.Regenerate();
-            GameStatus.Regenerate();
-            CustomCursor.Regenerate();
+            //Tileset.Regenerate();
+            //Background_Tiled.Regenerate();
+            //Menu_BG_Tiled.Regenerate();
+            //GameStatus.Regenerate();
+            //CustomCursor.Regenerate();
             formResized();
         }
 
@@ -310,7 +310,7 @@ namespace Game_Java_Port
 
         static void dispose() {
             swapChain.Dispose();
-            Tileset.Clear();
+            //Tileset.Clear();
             D2DContext.Dispose();
 #if DEBUG
             debugger.Dispose();

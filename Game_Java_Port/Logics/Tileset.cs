@@ -1,4 +1,5 @@
-﻿using SharpDX;
+﻿using Game_Java_Port.Interface;
+using SharpDX;
 using SharpDX.Direct2D1;
 using System;
 using System.Collections.Generic;
@@ -7,12 +8,12 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Game_Java_Port {
+    /*
+    public class Tileset  {
 
-    public class Tileset {
-
-        public Bitmap Source;
-        public readonly Size2 TileSize;
-        private Bitmap[] _Tiles;
+        //public Bitmap Source;
+        //public readonly Size2 TileSize;
+        //private Bitmap[] _Tiles;
 
         private Tileset _Flat;
 
@@ -45,7 +46,8 @@ namespace Game_Java_Port {
             this.Source = Source;
             int cols = Source.PixelSize.Width / TileSize.Width;
             int rows = Source.PixelSize.Height / TileSize.Height;
-            _Tiles = new Bitmap[cols * rows];
+            //_Tiles = new Bitmap[cols * rows];
+
             for(int y = 0; y < rows; y++) {
                 for(int x = 0; x < cols; x++) {
                     _Tiles[x + y * cols] = new Bitmap(Program.D2DContext, TileSize, new BitmapProperties(new PixelFormat(SharpDX.DXGI.Format.R8G8B8A8_UNorm, AlphaMode.Premultiplied)));
@@ -67,7 +69,7 @@ namespace Game_Java_Port {
         /*
         public static Tileset Frame_Set { get { return getTileset("tiled_menu_set_32_96", 32); } }
         public static Tileset Frame_Dev { get { return getTileset("tiled_menu_dev_32_96", 32); } }
-        */
+        *//*
         //implemented
         public static Tileset Frame_Pearl { get { return getTileset("tiled_menu_pearl2_32_96", 32); } }
         public static Tileset Frame_Legend { get { return getTileset("tiled_menu_legend_32_96", 32); } }
@@ -77,7 +79,7 @@ namespace Game_Java_Port {
         /*
         public static Tileset Frame_Uncommon { get { return getTileset("tiled_menu_unc_32_96", 32); } }
         public static Tileset Frame_Garbage { get { return getTileset("tiled_menu_garb_32_96", 32); } }
-        */
+        *//*
 
         public static Tileset Frame_Default { get { return getTileset("tiled_menu_default_32_96", 32); } }
 
@@ -142,4 +144,5 @@ namespace Game_Java_Port {
             }
         }
     }
+    */
 }

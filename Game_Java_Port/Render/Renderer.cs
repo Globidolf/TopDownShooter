@@ -23,13 +23,21 @@ namespace Game_Java_Port {
             disposables.Clear();
         }
 
-        public static void draw() {
-            for(int ResID = 0; ResID <= renderables.Max(r => r.ResID); ResID++) {
-                if(renderables.Any(r => r.ResID == ResID)){
+        public static void draw(Device device) {
+            List<RenderData> allData = new List<RenderData>(renderables);
+            renderables.FindAll(r => r.SubObjs != null && r.SubObjs.Length > 0).ForEach(r => allData.AddRange(r.SubObjs));
+
+            for(int ResID = allData.Min(r => r.ResID); ResID <= allData.Max(r => r.ResID); ResID++) {
+                if(allData.Any(r => r.ResID == ResID)){
                     Context.PixelShader.SetShaderResource(0, dataLoader.ShaderData[ResID]);
-                    renderables.FindAll(r => r.ResID == ResID).ForEach(r =>
-                    {
-                        Context.DrawIndexed(r.mdl.IndexBuffer.Length * 3, 0, 0);
+                    allData.FindAll(r => r.ResID == ResID).ForEach(r => {
+                        using(var indexbuffer = r.mdl.CreateIndexBuffer(device, BindFlags.IndexBuffer))
+                        using(var vertexbuffer = r.mdl.CreateVertexBuffer(device, BindFlags.VertexBuffer)) {
+                            VertexBufferBinding vbb = new VertexBufferBinding(vertexbuffer, Utilities.SizeOf<Vertex>(), 0);
+                            Context.InputAssembler.SetVertexBuffers(0, vbb);
+                            Context.InputAssembler.SetIndexBuffer(indexbuffer, SharpDX.DXGI.Format.R32_UInt, 0);
+                            Context.DrawIndexed(r.mdl.IndexBuffer.Length * 3, 0, 0);
+                        }
                     });
                 }
             }
@@ -46,6 +54,8 @@ namespace Game_Java_Port {
         public Model mdl;
         public int ResID;
 
+        public RenderData[] SubObjs;
+
         //animation
         public Vector2 AnimationFrameSize;
         public float AnimationOffset;
@@ -54,6 +64,7 @@ namespace Game_Java_Port {
         public RectangleF Area { set {
                 mdl.VertexBuffer = mdl.VertexBuffer.ApplyRectangle(value);
             } }
+
     }
 
     public struct Model {
@@ -126,7 +137,7 @@ namespace Game_Java_Port {
         //modifier methods
         public static Vertex[] ApplyRectangle(this Vertex[] V, RectangleF R) {
             Vertex[] temp = Vertex.FromRectangle(R);
-            for(int i = 0; i < 4; i++) {
+            for(int i = 0; i < V.Length; i++) {
                 temp[i].Color = V[i].Color;
                 temp[i].Tex = V[i].Tex;
             }
@@ -136,6 +147,16 @@ namespace Game_Java_Port {
             Vertex[] temp = V;
             for(int i = 0; i < V.Length; i++)
                 temp[i].Pos.Z = Z;
+            return temp;
+        }
+
+
+        public static Vertex[] ApplyColor(this Vertex[] V, Color C) { return V.ApplyColor(C.ToVector4()); }
+
+        public static Vertex[] ApplyColor(this Vertex[] V, Vector4 C) {
+            Vertex[] temp = V;
+            for(int i = 0; i < V.Length; i++)
+                temp[i].Color = C;
             return temp;
         }
 
@@ -246,6 +267,24 @@ namespace Game_Java_Port {
         public static Vector3 XYW(this Vector4 v) { return new Vector3(v.X, v.Y, v.W); }
         public static Vector3 XZW(this Vector4 v) { return new Vector3(v.X, v.Z, v.W); }
         public static Vector3 YZW(this Vector4 v) { return new Vector3(v.Y, v.Z, v.W); }
+
+        //Buffer Creation
+
+        public static SharpDX.Direct3D11.Buffer CreateBuffer<T>( Device device, BindFlags bindFlags, params T[] items) where T : struct {
+            var len = Utilities.SizeOf(items);
+            var stream = new DataStream(len, true, true);
+            foreach(var item in items)
+                stream.Write(item);
+            stream.Position = 0;
+            var buffer = new SharpDX.Direct3D11.Buffer(device, stream, len, ResourceUsage.Default,
+                bindFlags, CpuAccessFlags.None, ResourceOptionFlags.None, 0);
+            stream.Dispose();
+            return buffer;
+        }
+        public static SharpDX.Direct3D11.Buffer CreateBuffer(this Vertex[] item, Device device, BindFlags bindFlags) { return CreateBuffer(device, bindFlags, item); }
+        public static SharpDX.Direct3D11.Buffer CreateBuffer(this TriIndex[] item, Device device, BindFlags bindFlags) { return CreateBuffer(device, bindFlags, item); }
+        public static SharpDX.Direct3D11.Buffer CreateIndexBuffer(this Model item, Device device, BindFlags bindFlags) { return CreateBuffer(device, bindFlags, item.IndexBuffer); }
+        public static SharpDX.Direct3D11.Buffer CreateVertexBuffer(this Model item, Device device, BindFlags bindFlags) { return CreateBuffer(device, bindFlags, item.VertexBuffer); }
     }
 
     /// <summary>

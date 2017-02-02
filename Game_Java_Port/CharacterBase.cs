@@ -82,7 +82,9 @@ namespace Game_Java_Port {
         RectangleF relativeArea;
 
         private bool _dead { get; set; } = false;
-        public Bitmap Image { get; set; }
+
+
+        //public Bitmap Image { get; set; }
 
         public List<Vector2> Poly { get; set; } = new List<Vector2>();
 

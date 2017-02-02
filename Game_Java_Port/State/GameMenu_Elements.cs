@@ -64,6 +64,8 @@ namespace Game_Java_Port {
 
         private abstract class MenuElementBase : IRenderable, IDisposable {
             
+            public RenderData RenderData { get; set; }
+
             public bool doDrawLabel = true;
             public virtual string Label { get; internal set; } = "";
             private Size2 _LabelSize;
@@ -234,9 +236,9 @@ namespace Game_Java_Port {
                 }
             }
 
-            public int Z { get; set; } = 1001;
+            //public int Z { get; set; } = 1001;
 
-            public DrawType drawType { get; set; } = DrawType.Rectangle;
+            //public DrawType drawType { get; set; } = DrawType.Rectangle;
 
             #region Drawing
 
@@ -1007,7 +1009,7 @@ namespace Game_Java_Port {
 
             private EventHandler<onClickArgs> _remoteOnClick;
 
-            Bitmap iconBG;
+            //Bitmap iconBG;
 
             ItemBase Item;
             bool isEquipped {
@@ -1054,7 +1056,11 @@ namespace Game_Java_Port {
                     tooltip = new WeaponTooltip((Weapon)item, Location: () => Area.Center, Validation: () => _Hovering);
                 else
                     tooltip = new Tooltip(item.ItemInfoText, Location: () => Area.Center, Validation: () => _Hovering);
-                iconBG = dataLoader.get2D("border_" + item.Rarity.ToString());
+
+                RenderData.SubObjs = new RenderData[] { RenderData };
+                RenderData.SubObjs[0].ResID = dataLoader.getResID("border_" + item.Rarity.ToString());
+
+                //iconBG = dataLoader.get2D("border_" + item.Rarity.ToString());
                 
                 lock(Parent.Elements)
                     Parent.Elements.Add(this);
@@ -1063,6 +1069,7 @@ namespace Game_Java_Port {
 
 
             public override void draw(DeviceContext rt) {
+                /*
                 Color4 temp = MenuTextBrush.Color;
                 MenuTextBrush.Color = Color.Black;
                 rt.DrawBitmap(iconBG, Area, 1, BitmapInterpolationMode.NearestNeighbor);
@@ -1072,8 +1079,9 @@ namespace Game_Java_Port {
                 if(Item is IEquipable)
                     if(Game.instance._player.getEquipedItem(((IEquipable)Item).Slot) == Item)
                         rt.DrawText("E", MenuFont, Area, MenuTextBrush);
-                 */
+                 
                 MenuTextBrush.Color = temp;
+                */
             }
 
             internal override RectangleF calcArea() {

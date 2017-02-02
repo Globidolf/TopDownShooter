@@ -21,15 +21,17 @@ namespace Game_Java_Port {
     }
 
     public class CustomCursor : IRenderable, ITickable {
-        public float Size { get; set; }
+        //public float Size { get; set; }
 
-        public RectangleF Area { get; set; }
+        //public RectangleF Area { get; set; }
 
         private CursorTypes CurrentCursorType = CursorTypes.Normal;
 
         //public DrawType drawType { get; set; } = DrawType.Image;
 
         //public int Z { get; set; } = 100000;
+
+        private float _Size;
 
         public CursorTypes CursorType { get; set; } = CursorTypes.Normal;
 
@@ -45,19 +47,25 @@ namespace Game_Java_Port {
         };
 
         public CustomCursor(CursorTypes cursor, float Size = 8) {
-            this.Size = Size;
+            /*this.Size = Size;
             Area = new RectangleF(MousePos.X, MousePos.Y, Size, Size);
+            */
+            _Size = Size;
+            RenderData.mdl.VertexBuffer = RenderData.mdl.VertexBuffer.ApplyRectangle(new RectangleF(MousePos.X, MousePos.Y, _Size, _Size)).ApplyZAxis(-10);
             CursorType = cursor;
         }
 
         public void draw(DeviceContext rt) {
-            rt.DrawBitmap(Cursors[CurrentCursorType], Area, 1, BitmapInterpolationMode.Linear);
+            //rt.DrawBitmap(Cursors[CurrentCursorType], Area, 1, BitmapInterpolationMode.Linear);
         }
 
         public void Tick() {
+            /*
             RectangleF temp = Area;
             temp.Location = MousePos;
             Area = temp;
+            */
+            RenderData.mdl.VertexBuffer = RenderData.mdl.VertexBuffer.ApplyRectangle(new RectangleF(MousePos.X, MousePos.Y, _Size, _Size));
         }
 
         public void Apply() {

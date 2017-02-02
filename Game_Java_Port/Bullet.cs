@@ -90,27 +90,25 @@ namespace Game_Java_Port {
 
         float pseudorandom;
 
-        Bitmap bullettexture;
+        //Bitmap bullettexture;
         Animated_Tileset animation;
 
         RawMatrix InitialPerspective;
-
+        /*
         Vector2 relativePos;
         Color _filter;
         ColorMatrix ColorFilter;
         Transform3D Transform;
         Image Effect;
-        
+        */
 
         public void draw(DeviceContext dc) {
             if(_initiated) {
                 if(!disposed) {
                     
                     if (!_source.Behaviour.HasFlag(BulletBehaviour.Beam)) {
-
                         
-
-                        dc.DrawImage(Effect);
+                        //dc.DrawImage(Effect);
                     }
 
                 }
@@ -181,23 +179,23 @@ namespace Game_Java_Port {
                         RenderData.ResID = dataLoader.getResID("bullet_boomerang");//bullettexture = dataLoader.get2D("bullet_boomerang");
                     else if(_source.Name.Contains("Rock")) {
                         animation = Animated_Tileset.Bullet_Rock;
-                        bullettexture = animation.Off_Set_Frame(pseudorandom % 1f);
+                        RenderData.ResID = 0;//animation.Off_Set_Frame(pseudorandom % 1f);
                     } else
-                        bullettexture = dataLoader.get2D("bullet_normal");
+                        RenderData.ResID = dataLoader.getResID("bullet_normal");
                     break;
                 case WeaponType.Acid:
                     animation = Animated_Tileset.Bullet_Acid;
-                    bullettexture = animation.Off_Set_Frame(pseudorandom % 1f);
+                    RenderData.ResID = 0;// animation.Off_Set_Frame(pseudorandom % 1f);
                     break;
 
                 default:
-                    bullettexture = dataLoader.get2D("bullet_normal");
+                    RenderData.ResID = dataLoader.getResID("bullet_normal");
                     break;
             }
 
 
             if(_sourceOwner == Game.instance?._player) {
-                ColorFilter = PlayerTint;
+                RenderData.mdl.VertexBuffer.ApplyColor(PlayerTint);
                 _filter = Color.Blue;
             } else if(
                   (_sourceOwner.Team.Dispositions.ContainsKey(Game.instance._player.Team) &&
@@ -223,7 +221,7 @@ namespace Game_Java_Port {
             
             Transform.SetInputEffect(0, ColorFilter);
 
-            InitialPerspective = MatrixExtensions.CreateScaleMatrix(new Vector2(_hitrange / bullettexture.PixelSize.Width)).Translate(new Vector2(-_hitrange / 2));
+            InitialPerspective = MatrixExtensions.CreateScaleMatrix(new Vector2(_hitrange / dataLoader.D3DResources[RenderData.ResID].Description.Width)).Translate(new Vector2(-_hitrange / 2));
 
             lastPos = _sourceOwner.Area.Center;
             pos = lastPos;
@@ -269,7 +267,7 @@ namespace Game_Java_Port {
 
         public void Tick() {
             if(animation != null) {
-                bullettexture = animation.Off_Set_Frame(pseudorandom % 1f);
+                RenderData.ResID = 0;// animation.Off_Set_Frame(pseudorandom % 1f);
             }
 
             if(!_initiated)
