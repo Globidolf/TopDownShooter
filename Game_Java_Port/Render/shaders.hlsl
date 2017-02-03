@@ -16,14 +16,18 @@ struct VertexObject {
 
 
 VertexObject VSMain2D(VertexObject input) {
-	VertexObject output = (VertexObject)0;
+	VertexObject output = input;
+	output.Pos.xy = (output.Pos.xy + DisplayArea.xy / 2) / DisplayArea.zw * float2(2,-2);
+	output.Pos.z = 0;
+	return output;
+}
+
+VertexObject VSMain3D(VertexObject input) {
+	VertexObject output = input;
 
 	output.Pos.xy = (input.Pos.xy + DisplayArea.xy / 2) / DisplayArea.zw * 2;
 	output.Pos.z = input.Pos.z / 1000 + 0.5;
-	output.Pos.w = input.Pos.w;
 	output.Pos.y = -output.Pos.y;
-	output.Color = input.Color;
-	output.Tex = input.Tex;
 
 	return output;
 }

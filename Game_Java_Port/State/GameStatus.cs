@@ -543,7 +543,6 @@ namespace Game_Java_Port
 		}
 
         public static void init() {
-			Game.instance.register();
             //addRenderable(Game.instance);
             addTickable(Game.instance);
 			Cursor.register();

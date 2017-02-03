@@ -145,13 +145,6 @@ namespace Game_Java_Port
                     //_RenderTarget.DrawText(test3, Font, new RectangleF(0, 0, width, height), brush);
                     //SpriteFont.DEFAULT.directDrawText(fps.ToString() + "\n" + renderables.Count() + "\n" + GameStatus.GameObjects.Count, new RectangleF(0, 0, width, height), D2DContext, Color.Black);
 
-                    i++;
-
-                    if(stopwatch.ElapsedMilliseconds - i2 > 1000) {
-                        fps = i;
-                        i = 0;
-                        i2 = stopwatch.ElapsedMilliseconds;
-                    }
                     D2DContext.EndDraw();
 					*/
 					#endregion
@@ -159,7 +152,15 @@ namespace Game_Java_Port
 					Renderer.updatePositions();
 
 					Renderer.draw();
+					
+                    i++;
 
+                    if(stopwatch.ElapsedMilliseconds - i2 > 1000) {
+                        fps = i;
+                        i = 0;
+                        i2 = stopwatch.ElapsedMilliseconds;
+						Console.WriteLine(fps);
+                    }
                     swapChain.Present(0, PresentFlags.None);
                 });
 

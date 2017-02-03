@@ -21,6 +21,8 @@ namespace Game_Java_Port {
 
 		private static List<IRenderable> Renderables = new List<IRenderable>();
         private static List<RenderData> RenderDataList = new List<RenderData>();
+		private static List<SharpDX.Direct3D11.Buffer> VertexBufferList = new List<SharpDX.Direct3D11.Buffer>();
+		private static List<SharpDX.Direct3D11.Buffer> IndexBufferList = new List<SharpDX.Direct3D11.Buffer>();
 
 		private static Vector4 worldView2D;
 		private static SharpDX.Direct3D11.Buffer constantBuffer;
@@ -143,6 +145,8 @@ namespace Game_Java_Port {
 		private static void add(RenderData rd) {
 			//add object itself and recursively all of its children
 			RenderDataList.Add(rd);
+			VertexBufferList.Add(rd.mdl.CreateVertexBuffer(device, BindFlags.VertexBuffer));
+			IndexBufferList.Add(rd.mdl.CreateIndexBuffer(device, BindFlags.IndexBuffer));
 			if (rd.SubObjs != null)
 				foreach (RenderData rd2 in rd.SubObjs)
 					add(rd2);
@@ -152,6 +156,11 @@ namespace Game_Java_Port {
 			remove(rend.RenderData);
 		}
 		private static void remove(RenderData rd) {
+			int i = RenderDataList.IndexOf(rd);
+			VertexBufferList[i].Dispose();
+			IndexBufferList[i].Dispose();
+			VertexBufferList.RemoveAt(i);
+			IndexBufferList.RemoveAt(i);
 			RenderDataList.Remove(rd);
 			if (rd.SubObjs != null)
 				foreach (RenderData rd2 in rd.SubObjs)
@@ -171,23 +180,19 @@ namespace Game_Java_Port {
 			deviceContext.ClearRenderTargetView(renderTargetView, Color.Transparent);
 			deviceContext.ClearDepthStencilView(depthStencilView, DepthStencilClearFlags.Depth | DepthStencilClearFlags.Stencil, 1f, 0);
 			int ResID = -1;
-			using (var listenumerator = RenderDataList.FindAll(r => r.mdl.IndexBuffer != null && r.mdl.VertexBuffer != null).OrderBy(r => -r.mdl.VertexBuffer[0].Pos.Z).GetEnumerator()) {
-				while (listenumerator.MoveNext()) {
+			var array = RenderDataList.FindAll(r => r.mdl.IndexBuffer != null && r.mdl.VertexBuffer != null).OrderBy(r => -r.mdl.VertexBuffer[0].Pos.Z).ToArray();
 
-					var r = listenumerator.Current;
-					
-					if (r.ResID != ResID) {
-						ResID = r.ResID;
-						deviceContext.PixelShader.SetShaderResource(0, dataLoader.ShaderData[ResID]);
-					}
-					using (var indexbuffer = r.mdl.CreateIndexBuffer(device, BindFlags.IndexBuffer))
-					using (var vertexbuffer = r.mdl.CreateVertexBuffer(device, BindFlags.VertexBuffer)) {
-						VertexBufferBinding vbb = new VertexBufferBinding(vertexbuffer, Utilities.SizeOf<Vertex>(), 0);
-						deviceContext.InputAssembler.SetVertexBuffers(0, vbb);
-						deviceContext.InputAssembler.SetIndexBuffer(indexbuffer, Format.R32_UInt, 0);
-						deviceContext.DrawIndexed(r.mdl.IndexBuffer.Length * 3, 0, 0);
-					}
+			foreach (var r in array) {
+				int i = RenderDataList.IndexOf(r);
+				if (r.ResID != ResID) {
+					ResID = r.ResID;
+					deviceContext.PixelShader.SetShaderResource(0, dataLoader.ShaderData[ResID]);
 				}
+					VertexBufferBinding vbb = new VertexBufferBinding(VertexBufferList[i], Utilities.SizeOf<Vertex>(), 0);
+					deviceContext.InputAssembler.SetVertexBuffers(0, vbb);
+					deviceContext.InputAssembler.SetIndexBuffer(IndexBufferList[i], Format.R32_UInt, 0);
+					deviceContext.DrawIndexed(r.mdl.IndexBuffer.Length * 3, 0, 0);
+
 			}
 		}
 
@@ -220,6 +225,9 @@ namespace Game_Java_Port {
 			worldView2D.W = Program.height;
 			deviceContext.UpdateSubresource(ref worldView2D, constantBuffer);
 			Renderables.ForEach(r => r.updateRenderData());
+			for(int i = 0 ; i < RenderDataList.Count ; i++) {
+				RenderDataList[i].
+			}
         }
 
     }

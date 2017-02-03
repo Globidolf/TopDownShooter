@@ -125,7 +125,11 @@ namespace Game_Java_Port {
                 MenuFrame = bg;
             else
                 MenuFrame = Menu_BG_Tiled.Default;
-			RenderData = new RenderData();
+			RenderData = new RenderData
+			{
+				mdl = Model.Square,
+				ResID = dataLoader.getResID("tiled_menu_default_32_96")
+			};
         }
 
         #endregion

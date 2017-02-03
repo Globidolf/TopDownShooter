@@ -48,9 +48,14 @@ namespace Game_Java_Port {
             Texture2D tx = dataLoader.D3DResources[resID];
             
             Area = Area.HasValue ? Area : new RectangleF(0,0, tx.Description.Width, tx.Description.Height);
-            RenderData = new RenderData {
+			RenderData = new RenderData
+			{
 				ResID = resID,
-				mdl = new Model { VertexBuffer = Vertex.FromRectangle(Area.Value) }
+				mdl = new Model
+				{
+					VertexBuffer = Vertex.FromRectangle(Area.Value),
+					IndexBuffer = TriIndex.QuadIndex
+				}
 			};
 
 			RenderData.mdl.VertexBuffer.ApplyZAxis(settings.HasFlag(Settings.Foreground) ? 5 : -5);
