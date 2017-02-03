@@ -8,125 +8,127 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Game_Java_Port {
-    class Beam : IRenderable, ITickable, IDisposable {
-        float initialDuration;
-        float Duration;
-        
-        private readonly SolidColorBrush InitialBrush;
-        private SolidColorBrush Brush;
+namespace Game_Java_Port
+{
+	class Beam : IRenderable, ITickable, IDisposable
+	{
+		private readonly float initialDuration;
+		private float Duration;
 
-        private readonly List<Vector2> InitialStatics;
-        private List<Vector2> Statics;
+		public RenderData RenderData { get; set; }
 
-        private readonly float  InitialStrokeWidth;
-        private float StrokeWidth;
+		private readonly Color InitialColor;
 
-        //unused
-        public RectangleF Area { get; set; }
+		private readonly float  InitialStrokeWidth;
 
-        public int Z { get; set; } = 10;
+		public Beam(Vector2 PointA, Vector2 PointB,
+			//optional values:
+			float duration = 0.3f, float strokewidth = 2f,
+			bool electric = false, int lightningcount = 4,
+			int seed = 0, Color? beamColor = null) {
 
-        public DrawType drawType { get; set; } = DrawType.Polygon;
+			// get Difference of the two points
+			Vector2 normdir = (PointA - PointB);
+			// rotate by 90° (FAST VERSION)
+			normdir = new Vector2(normdir.Y, -normdir.X);
+			// Normalize
+			normdir.Normalize();
+			// Multiply with half strokewidth
+			normdir *= strokewidth / 2;
+			RenderData = new RenderData
+			{
+				mdl = Model.Quadrilateral(PointA + normdir, PointA- normdir, PointB + normdir, PointB - normdir),
+				ResID = dataLoader.getResID()
+			};
+			beamColor = beamColor.HasValue ? beamColor.Value : new Color() { A = 0x88, B = 255 };
+			InitialStrokeWidth = strokewidth;
+			//new Ellipse(Area.Center + MatrixExtensions.PVTranslation, Area.Width / 2, Area.Height / 2);
+			initialDuration = Duration = duration;
 
-        private Vector2[] Line;
+			RenderData.mdl.VertexBuffer = RenderData.mdl.VertexBuffer.ApplyColor(beamColor.Value);
+
+			if (electric) {
+				List<Vector2> InitialStatics = new List<Vector2>();
+				Random _RNG = new Random(seed);
+				float distance = Vector2.Distance(PointB, PointA);
+				float offset = distance * (float)_RNG.NextDouble();
+				float length = 1 + (float)_RNG.NextDouble() * (distance - offset) / 2;
+				AngleSingle dir = PointA.angleTo(PointB);
+				Vector2 split1 = (PointA).move(dir, offset);
+				InitialStatics.Add(split1);
+				while (offset < distance && length > (distance - offset) / 12 && lightningcount > 0) {
+
+					offset += distance * (float) _RNG.NextDouble();
+					length /= 2;
+					dir.Radians += (float) (-Math.PI / 2 + _RNG.NextDouble() * Math.PI);
 
 
-        public Beam(Vector2 PointA, Vector2 PointB,
-            //optional values:
-            float duration = 0.3f, float strokewidth = 2f,
-            bool electric = false, int lightningcount = 4,
-            int seed = 0, Color? beamColor = null)
-        {
-            beamColor = beamColor.HasValue ? beamColor.Value : new Color() { A = 0x88, B = 255 };
-            InitialStrokeWidth = StrokeWidth = strokewidth;
-            Line = new Vector2[4];
-            Line[0] = PointA;
-            Line[1] = PointB;
-            //new Ellipse(Area.Center + MatrixExtensions.PVTranslation, Area.Width / 2, Area.Height / 2);
-            initialDuration = Duration = duration;
-            InitialBrush = Brush = new SolidColorBrush(Program.D2DContext, beamColor.Value);
-            InitialStatics = new List<Vector2>();
-            Statics = new List<Vector2>();
+					split1 = split1.move(dir, length);
 
-            if(electric) {
-                Random _RNG = new Random(seed);
-                float distance = Vector2.Distance(PointB, PointA);
-                float offset = distance * (float)_RNG.NextDouble();
-                float length = 1 + (float)_RNG.NextDouble() * (distance - offset) / 2;
-                AngleSingle dir = PointA.angleTo(PointB);
-                Vector2 split1 = (PointA).move(dir, offset);
-                InitialStatics.Add(split1);
-                while(offset < distance && length > (distance - offset) / 12 && lightningcount > 0) {
-                    
-                    offset += distance * (float)_RNG.NextDouble();
-                    length /= 2;
-                    dir.Radians += (float)(-Math.PI / 2 + _RNG.NextDouble() * Math.PI);
+					InitialStatics.Add(split1);
 
+					lightningcount--;
+				}
+				RenderData.SubObjs = new RenderData[InitialStatics.Count - 1];
+				int i = 0;
+				InitialStatics.Aggregate((p1, p2) => {
+					// get Difference of the two points
+					normdir = (p2 - p1);
+					// rotate by 90° (FAST VERSION)
+					normdir = new Vector2(normdir.Y, -normdir.X);
+					// Normalize
+					normdir.Normalize();
+					// Multiply with half strokewidth
+					normdir *= strokewidth / 2;
+					RenderData.SubObjs[i] = new RenderData
+					{
+						ResID = RenderData.ResID,
+						mdl = Model.Quadrilateral(p1 + normdir, p1 - normdir, p2 + normdir, p2 - normdir)
+					};
+					RenderData.SubObjs[i].mdl.VertexBuffer = RenderData.SubObjs[i].mdl.VertexBuffer.ApplyColor(beamColor.Value);
+					i++;
+					return p2;
+				});
+			}
+			GameStatus.addRenderable(this);
+			GameStatus.addTickable(this);
+		}
 
-                    split1 = split1.move(dir, length);
+		public void draw(DeviceContext rt) {
 
-                    InitialStatics.Add(split1);
+		}
 
-                    lightningcount--;
-                }
-            }
+		public void Tick() {
+			
+			if (Duration <= 0) {
+				Dispose();
+			} else {
+				Duration -= GameStatus.TimeMultiplier;
+				if (!disposed) {
+					float time = Duration / initialDuration;
+					RenderData.mdl.VertexBuffer = RenderData.mdl.VertexBuffer.ApplyColor(InitialColor.ToVector4() * new Vector4(1,1,1, time * InitialColor.A));
+					
+					float StrokeWidth = InitialStrokeWidth * time;
+				}
+			}
+		}
 
-            foreach(Vector2 point in InitialStatics) {
-                Statics.Add(point + MatrixExtensions.PVTranslation);
-            }
-            GameStatus.addRenderable(this);
-            GameStatus.addTickable(this);
-        }
+		#region IDisposable Support
+		private bool disposed = false; // To detect redundant calls
 
-        public void draw(DeviceContext rt) {
-            Statics.Aggregate((pointA, pointB) =>
-            {
-                rt.DrawLine(pointA, pointB, Brush, StrokeWidth);
-                return pointB;
-            });
-            if(!disposed)
-                rt.DrawLine(Line[2], Line[3], Brush, StrokeWidth);
-        }
+		protected virtual void Dispose(bool disposing) {
+			if (!disposed) {
+				if (disposing) {
+					GameStatus.removeRenderable(this);
+					GameStatus.removeTickable(this);
+				}
+				disposed = true;
+			}
+		}
 
-        public void Tick() {
-            Line[2] = Line[0] + MatrixExtensions.PVTranslation;
-            Line[3] = Line[1] + MatrixExtensions.PVTranslation;
-
-            Statics.Clear();
-            foreach(Vector2 point in InitialStatics) {
-                Statics.Add(point + MatrixExtensions.PVTranslation);
-            }
-
-            if(Duration <= 0) {
-                    Dispose();
-            } else {
-                Duration -= GameStatus.TimeMultiplier;
-                if(!disposed) {
-                    Brush.Color = new Color4(InitialBrush.Color.R, InitialBrush.Color.G, InitialBrush.Color.B, (Duration / initialDuration) * InitialBrush.Color.A);
-                    StrokeWidth = InitialStrokeWidth * (Duration / initialDuration);
-                }
-            }
-        }
-
-        #region IDisposable Support
-        private bool disposed = false; // To detect redundant calls
-
-        protected virtual void Dispose(bool disposing) {
-            if(!disposed) {
-                if(disposing) {
-                    GameStatus.removeRenderable(this);
-                    GameStatus.removeTickable(this);
-                    InitialBrush.Dispose();
-                    Brush.Dispose();
-                }
-                disposed = true;
-            }
-        }
-        
-        public void Dispose() {
-            Dispose(true);
-        }
-        #endregion
-    }
+		public void Dispose() {
+			Dispose(true);
+		}
+		#endregion
+	}
 }

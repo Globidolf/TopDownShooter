@@ -25,8 +25,6 @@ namespace Game_Java_Port {
 
         //public RectangleF Area { get; set; }
 
-        private CursorTypes CurrentCursorType = CursorTypes.Normal;
-
         //public DrawType drawType { get; set; } = DrawType.Image;
 
         //public int Z { get; set; } = 100000;
@@ -35,7 +33,7 @@ namespace Game_Java_Port {
 
         public CursorTypes CursorType { get; set; } = CursorTypes.Normal;
 
-        public RenderData RenderData { get; set; } = new RenderData();
+        public RenderData RenderData { get; set; }
 
         static Dictionary<CursorTypes, int> Cursors = new Dictionary<CursorTypes, int>()
         {   { CursorTypes.Normal,           dataLoader.getResID("cursor")      },
@@ -51,8 +49,12 @@ namespace Game_Java_Port {
             Area = new RectangleF(MousePos.X, MousePos.Y, Size, Size);
             */
             _Size = Size;
+			RenderData = new RenderData
+			{
+				mdl = Model.Square,
+				ResID = Cursors[cursor]
+			};
             RenderData.mdl.VertexBuffer = RenderData.mdl.VertexBuffer.ApplyRectangle(new RectangleF(MousePos.X, MousePos.Y, _Size, _Size)).ApplyZAxis(-10);
-            CursorType = cursor;
         }
 
         public void draw(DeviceContext rt) {
@@ -69,7 +71,7 @@ namespace Game_Java_Port {
         }
 
         public void Apply() {
-            CurrentCursorType = CursorType;
+			RenderData.ResID = Cursors[CursorType];
         }
     }
 }

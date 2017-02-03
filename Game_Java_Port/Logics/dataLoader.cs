@@ -20,7 +20,7 @@ namespace Game_Java_Port {
         public const string imgdir = "./data/img/";
 
 
-        public static int getResID(string ResName = "default") { return Array.FindIndex(filenames, f => f == ResName); }
+        public static int getResID(string ResName = "default") { return Array.FindIndex(filenames, f => f == (ResName.EndsWith(".bmp") ? ResName : ResName + ".bmp")); }
 
         private static string[] filenames;
         public static ShaderResourceView[] ShaderData;
@@ -30,9 +30,7 @@ namespace Game_Java_Port {
         public static void LoadAll(Device device) {
             if (Loaded)
                 unLoadAll();
-
             
-
             if(!Loaded) {
                 Loaded = true;
                 filenames = new List<string>(Directory.EnumerateFiles(imgdir)).ConvertAll(s => s.Remove(0, imgdir.Length)).ToArray();

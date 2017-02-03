@@ -14,9 +14,11 @@ namespace Game_Java_Port {
 
         private bool disposed = false;
 
-        public Tileset Tiles;
+        
 
-        private List<TileArea> buffer = new List<TileArea>();
+        //public Tileset Tiles;
+
+		
 
         private static List<Background_Tiled> backgrounds = new List<Background_Tiled>();
 
@@ -35,79 +37,59 @@ namespace Game_Java_Port {
         }
 
         private void populate() {
-            buffer.Clear();
+			int width = dataLoader.D3DResources[RenderData.ResID].Description.Width,
+				height = dataLoader.D3DResources[RenderData.ResID].Description.Height,
+				countX = (Program.width / width + 1),
+				countY = (Program.height / height + 1);
+			RenderData.SubObjs = new RenderData[countX * countY];
             Random RNG = new Random(seed);
-            for(int y = 0; (y - 1) * Tiles.TileSize.Height < Area.Height; y++)
-                for(int x = 0; (x - 1) * Tiles.TileSize.Width < Area.Width; x++)
-                    buffer.Add(new TileArea(new Point(x, y), Tiles.getRandomTile(RNG)));
+			for (int i = 0 ; i < RenderData.SubObjs.Length ; i++) {
+				int x = i % countX, y = (i / countX) % countY;
+				RenderData.SubObjs[i] = new RenderData
+				{
+					AnimationFrameCount = RenderData.AnimationFrameCount,
+					ResID = RenderData.ResID,
+					mdl = Model.Square,
+				};
+				RenderData.SubObjs[i].Area = new RectangleF(
+					CustomMaths.mod(x * width + MatrixExtensions.PVTranslation.X, Program.width + width) - width,
+					CustomMaths.mod(y * height + MatrixExtensions.PVTranslation.Y, Program.height + height) - height,
+					width, height);
+				RenderData.SubObjs[i].mdl.VertexBuffer.SetAnimationFrame(RNG.Next(RenderData.AnimationFrameCount.X * RenderData.AnimationFrameCount.Y), RenderData.AnimationFrameCount);
+			}
         }
-
         public Background_Tiled(
-            Tileset Tiles,
+            int ResID,
+			Point Tiles,
             int? Seed = null,
             RectangleF? Area = null,
             float lifetime = 0,
             Settings settings = Settings.Default,
             bool add = true)
-            :base(Tiles.Source, Area.HasValue ? Area.Value.TopLeft : Vector2.Zero, lifetime, settings, add) {
-            this.Area = Area.HasValue ? Area.Value : this.Area;
-            this.Tiles = Tiles;
+            :base(ResID, Area.HasValue ? Area.Value.TopLeft : Vector2.Zero, lifetime, settings, add) {
+            RenderData.Area = Area.HasValue ? Area.Value : new RectangleF(0,0,dataLoader.D3DResources[ResID].Description.Width, dataLoader.D3DResources[ResID].Description.Width);
+			//this.Tiles = Tiles;
+			RenderData.AnimationFrameCount = Tiles;
             seed = Seed.HasValue ? Seed.Value : new Random().Next();
             populate();
-            backgrounds.Add(this);
-        }
-        
-        public static void Regenerate() {
-            foreach(Background_Tiled bg in backgrounds) {
-                bg.Area = Game.instance.Area;
-                bg.populate();
-            }
         }
 
         public override void draw(DeviceContext rt) {
-            foreach(TileArea tile in buffer) {
-                
-                rt.DrawBitmap(tile.Tile, tile.Area, 1, BitmapInterpolationMode.Linear);
-            }
+
         }
 
         public override void Tick() {
-            //base.Tick();
-            List<TileArea> backbuffer = new List<TileArea>();
-                buffer.ForEach(t =>
-                {
-                    RectangleF bounds = new RectangleF(
-                        Area.X + t.X * Tiles.TileSize.Width,
-                        Area.Y + t.Y * Tiles.TileSize.Height,
-                        Tiles.TileSize.Width, Tiles.TileSize.Height);
-                    switch(settings) {
-                        case Settings.Parallax | Settings.Fill_Area:
-                            bounds.X = CustomMaths.mod(bounds.X + MatrixExtensions.PVTranslation.X, Area.Width + Tiles.TileSize.Width) - Tiles.TileSize.Width;
-                            bounds.Y = CustomMaths.mod(bounds.Y + MatrixExtensions.PVTranslation.Y, Area.Height + Tiles.TileSize.Height) - Tiles.TileSize.Height;
-                            break;
-                        case Settings.Parallax:
-                            bounds.Location += MatrixExtensions.PVTranslation;
-                            break;
-                    }
-                    bounds.X = (float)Math.Floor(bounds.X);
-                    bounds.Y = (float)Math.Floor(bounds.Y);
-                    backbuffer.Add(new TileArea(
-                        new Point(t.X, t.Y), t.Tile,
-                        bounds));
-                });
-                buffer = backbuffer;
-        }
-
-        protected override void Dispose(bool disposing) {
-            if(disposed) {
-                backgrounds.Remove(this);
-                return;
-            }
-            
-            if(disposing)
-                buffer.Clear();
-            disposed = true;
-            base.Dispose(disposing);
+			int width = dataLoader.D3DResources[RenderData.ResID].Description.Width,
+				height = dataLoader.D3DResources[RenderData.ResID].Description.Height,
+				countX = (Program.width / width + 1),
+				countY = (Program.height / height + 1);
+			for (int i = 0 ; i < RenderData.SubObjs.Length ; i++) {
+				int x = i % countX, y = (i / countX) % countY;
+				RenderData.SubObjs[i].Area = new RectangleF(
+					CustomMaths.mod(x * width + MatrixExtensions.PVTranslation.X, Program.width + width) - width,
+					CustomMaths.mod(y * height + MatrixExtensions.PVTranslation.Y, Program.height + height) - height,
+					width, height);
+			}
         }
     }
 }

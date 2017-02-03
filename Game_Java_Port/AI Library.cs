@@ -203,11 +203,11 @@ namespace Game_Java_Port {
                 range = Math.Max(me.WeaponRangeR, me.MeleeRangeR);
                 _LastMousePos = MousePos;
 
-                me.AimDirection = Game.instance.Area.Center.angleTo(new Vector2(MousePos.X / Program.D2DContext.Size.Width * Program.width, MousePos.Y / Program.D2DContext.Size.Height * Program.height));
+                me.AimDirection = Program.center.angleTo(new Vector2(MousePos.X / Program.D2DContext.Size.Width * Program.width, MousePos.Y / Program.D2DContext.Size.Height * Program.height));
 
             } else if(me.MovementVector.LengthSquared() != 0) {
                 range = Math.Max(me.WeaponRangeR, me.MeleeRangeR);
-                me.AimDirection = Game.instance.Area.Center.angleTo(MousePos);
+                me.AimDirection = Program.center.angleTo(MousePos);
             }
 
             if(Game.instance._client != null && me._lastState != me.inputstate) {

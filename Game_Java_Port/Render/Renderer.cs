@@ -57,7 +57,8 @@ namespace Game_Java_Port {
         public RenderData[] SubObjs;
 
         //animation
-        public Vector2 AnimationFrameSize;
+        public Point AnimationFrameCount;
+        public int[] AnimationIndices;
         public float AnimationOffset;
         public float AnimationSpeed;
 
@@ -101,16 +102,20 @@ namespace Game_Java_Port {
         #region operators
 
         public static Vertex operator /(Vertex V, float div) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() / div, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
+        public static Vertex operator /(Vertex V, Point div) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() / div, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
         public static Vertex operator /(Vertex V, Vector2 div) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() / div, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
         public static Vertex operator /(Vertex V, Size2F div) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY().Divide(div), V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
         public static Vertex operator *(Vertex V, float mult) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() * mult, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
         public static Vertex operator *(Vertex V, Vector2 mult) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() * mult, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
+        public static Vertex operator *(Vertex V, Point mult) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() * mult, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
         public static Vertex operator *(Vertex V, Size2F mult) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY().Multiply(mult), V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
 
         public static Vertex operator -(Vertex V, float sub) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() - sub, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
+        public static Vertex operator -(Vertex V, Point sub) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() - sub, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
         public static Vertex operator -(Vertex V, Vector2 sub) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() - sub, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
         public static Vertex operator -(Vertex V, Size2F sub) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY().Subtract(sub), V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
         public static Vertex operator +(Vertex V, float add) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() + add, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
+        public static Vertex operator +(Vertex V, Point add) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() + add, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
         public static Vertex operator +(Vertex V, Vector2 add) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() + add, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
         public static Vertex operator +(Vertex V, Size2F add) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY().Add(add), V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
 
@@ -143,13 +148,26 @@ namespace Game_Java_Port {
             }
             return temp;
         }
+		public static Vertex[] ApplyPositions(this Vertex[] V, Vector2 TL, Vector2 TR, Vector2 BL, Vector2 BR) {
+			Vertex[] temp = V;
+			temp[0].Pos = new Vector4(TL, temp[0].Pos.Z, temp[0].Pos.W);
+			temp[1].Pos = new Vector4(TR, temp[1].Pos.Z, temp[1].Pos.W);
+			temp[2].Pos = new Vector4(BR, temp[2].Pos.Z, temp[2].Pos.W);
+			temp[3].Pos = new Vector4(BL, temp[3].Pos.Z, temp[3].Pos.W);
+			return temp;
+		}
         public static Vertex[] ApplyZAxis(this Vertex[] V, float Z) {
             Vertex[] temp = V;
             for(int i = 0; i < V.Length; i++)
                 temp[i].Pos.Z = Z;
             return temp;
         }
-
+        public static Vertex[] ApplyRotation(this Vertex[] V, Vector3 Direction, float Rotation) {
+            Vertex[] temp = V;
+            for(int i = 0; i < V.Length; i++)
+                temp[i].Pos = Vector4.Transform(temp[i].Pos, new Quaternion(Direction, Rotation));
+            return temp;
+        }
 
         public static Vertex[] ApplyColor(this Vertex[] V, Color C) { return V.ApplyColor(C.ToVector4()); }
 
@@ -160,15 +178,31 @@ namespace Game_Java_Port {
             return temp;
         }
 
+        //animation methods
+        public static Vertex[] SetAnimationFrame(this Vertex[] V, int index, Point AnimationFrameCount) {
+            int x = index % AnimationFrameCount.X;
+            int y = (index / AnimationFrameCount.X) % AnimationFrameCount.Y; // % count.Y: wraps around the animation to start anew
+
+            return V.MultiplyTex(AnimationFrameCount).TranslatePos(new Vector2(x,y));
+        }
+
         //operator methods
         public static Vertex TranslateTex(this Vertex V, float add) { return new Vertex { Color = V.Color, Pos = V.Pos, Tex = V.Tex + add }; }
+        public static Vertex TranslateTex(this Vertex V, Point add) { return new Vertex { Color = V.Color, Pos = V.Pos, Tex = V.Tex + add }; }
         public static Vertex TranslateTex(this Vertex V, Vector2 add ) { return new Vertex { Color = V.Color, Pos = V.Pos, Tex = V.Tex + add  }; }
         public static Vertex TranslateTex(this Vertex V, Size2F add) { return new Vertex { Color = V.Color, Pos = V.Pos, Tex = V.Tex.Add(add) }; }
-        public static Vertex MultiplyTex (this Vertex V, Vector2 mult) { return new Vertex { Color = V.Color, Pos = V.Pos, Tex = V.Tex * mult }; }
         public static Vertex MultiplyTex (this Vertex V, float mult  ) { return new Vertex { Color = V.Color, Pos = V.Pos, Tex = V.Tex * mult }; }
+        public static Vertex MultiplyTex(this Vertex V, Point mult) { return new Vertex { Color = V.Color, Pos = V.Pos, Tex = V.Tex * mult }; }
+        public static Vertex MultiplyTex (this Vertex V, Vector2 mult) { return new Vertex { Color = V.Color, Pos = V.Pos, Tex = V.Tex * mult }; }
         public static Vertex MultiplyTex(this Vertex V, Size2F mult) { return new Vertex { Color = V.Color, Pos = V.Pos, Tex = V.Tex.Multiply(mult) }; }
 
         public static Vertex[] TranslateTex(this Vertex[] buffer, float add) {
+            List<Vertex> temp = new List<Vertex>();
+            foreach(Vertex v in buffer)
+                temp.Add(v.TranslateTex(add));
+            return temp.ToArray();
+        }
+        public static Vertex[] TranslateTex(this Vertex[] buffer, Point add) {
             List<Vertex> temp = new List<Vertex>();
             foreach(Vertex v in buffer)
                 temp.Add(v.TranslateTex(add));
@@ -187,6 +221,12 @@ namespace Game_Java_Port {
             return temp.ToArray();
         }
         public static Vertex[] MultiplyTex(this Vertex[] buffer, float mult) {
+            List<Vertex> temp = new List<Vertex>();
+            foreach(Vertex v in buffer)
+                temp.Add(v.MultiplyTex(mult));
+            return temp.ToArray();
+        }
+        public static Vertex[] MultiplyTex(this Vertex[] buffer, Point mult) {
             List<Vertex> temp = new List<Vertex>();
             foreach(Vertex v in buffer)
                 temp.Add(v.MultiplyTex(mult));
@@ -211,6 +251,12 @@ namespace Game_Java_Port {
                 temp.Add(v+add);
             return temp.ToArray();
         }
+        public static Vertex[] TranslatePos(this Vertex[] buffer, Point add) {
+            List<Vertex> temp = new List<Vertex>();
+            foreach(Vertex v in buffer)
+                temp.Add(v + add);
+            return temp.ToArray();
+        }
         public static Vertex[] TranslatePos(this Vertex[] buffer, Vector2 add) {
             List<Vertex> temp = new List<Vertex>();
             foreach(Vertex v in buffer)
@@ -227,6 +273,12 @@ namespace Game_Java_Port {
             List<Vertex> temp = new List<Vertex>();
             foreach(Vertex v in buffer)
                 temp.Add(v*mult);
+            return temp.ToArray();
+        }
+        public static Vertex[] MultiplyPos(this Vertex[] buffer, Point mult) {
+            List<Vertex> temp = new List<Vertex>();
+            foreach(Vertex v in buffer)
+                temp.Add(v * mult);
             return temp.ToArray();
         }
         public static Vertex[] MultiplyPos(this Vertex[] buffer, Vector2 mult) {

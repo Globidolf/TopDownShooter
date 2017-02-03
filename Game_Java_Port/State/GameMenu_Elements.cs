@@ -264,7 +264,7 @@ namespace Game_Java_Port {
             /// <param name="g">the Graphics object from the Customdraw parameter</param>
             internal void drawLabel(RenderTarget rt) {
                 if(doDrawLabel) {
-                    Bitmap text = SpriteFont.DEFAULT.generateText(Label, _LabelArea);
+                    //Bitmap text = SpriteFont.DEFAULT.generateText(Label, _LabelArea);
                     /*
                     if(TextColor != null) {
                         Color4 tempColor = MenuTextBrush.Color;
@@ -274,8 +274,8 @@ namespace Game_Java_Port {
                         MenuTextBrush.Color = tempColor;
                     } else*/
 
-                        rt.DrawBitmap(text, new RectangleF((int)_LabelArea.X, (int)_LabelArea.Y, text.PixelSize.Width, text.PixelSize.Height), 1, BitmapInterpolationMode.NearestNeighbor);
-                    text.Dispose();
+                    //rt.DrawBitmap(text, new RectangleF((int)_LabelArea.X, (int)_LabelArea.Y, text.PixelSize.Width, text.PixelSize.Height), 1, BitmapInterpolationMode.NearestNeighbor);
+                    //text.Dispose();
                 }
             }
 
@@ -374,10 +374,10 @@ namespace Game_Java_Port {
                         _Value = value;
                         if(_textBMP != null)
                             _textBMP.Dispose();
-                        _textBMP = SpriteFont.DEFAULT.generateText(value, _TextDisplayArea);
+                        //_textBMP = SpriteFont.DEFAULT.generateText(value, _TextDisplayArea);
                         if(_textBMP_ != null)
                             _textBMP_.Dispose();
-                        _textBMP_ = SpriteFont.DEFAULT.generateText(value + "_", _TextDisplayArea);
+                        //_textBMP_ = SpriteFont.DEFAULT.generateText(value + "_", _TextDisplayArea);
                     }
                 } }
 
@@ -795,9 +795,11 @@ namespace Game_Java_Port {
                     RegulatorArea.Bottom - MenuPadding / 2);
                     */
                 rt.FillEllipse(_Cursor, MenuPen);
+				/*
                 SpriteFont.DEFAULT.directDrawText(float.Parse(Value.ToString()).ToString(".##"), _ValueArea, rt);
                 SpriteFont.DEFAULT.directDrawText(float.Parse(MinValue.ToString()).ToString(".##"), _MinValueArea, rt);
                 SpriteFont.DEFAULT.directDrawText(float.Parse(MaxValue.ToString()).ToString(".##"), _MaxValueArea, rt);
+				*/
                 /*
                 rt.DrawText(float.Parse(Value.ToString()).ToString(".##"), MenuFont, _ValueArea, MenuTextBrush);
                 rt.DrawText(float.Parse(MinValue.ToString()).ToString(".##"), MenuFont, _MinValueArea, MenuTextBrush);
@@ -876,7 +878,7 @@ namespace Game_Java_Port {
                         _Text = value;
                         if(_TextBMP != null) 
                             _TextBMP.Dispose();
-                        _TextBMP = SpriteFont.DEFAULT.generateText(Text, _CustomSize);
+                        //_TextBMP = SpriteFont.DEFAULT.generateText(Text, _CustomSize);
                         resize();
                     }
                 }

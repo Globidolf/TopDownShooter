@@ -84,9 +84,13 @@ namespace Game_Java_Port {
 
         public float[] LrgstRegNumSz { get; set; } = new float[] { 0, 0, 0 };
 
+		/*
         public int Z { get; set; } = 1000;
 
         public DrawType drawType { get; set; } = DrawType.Rectangle;
+		*/
+
+		public RenderData RenderData { get; set; }
 
         #endregion
         #region constants

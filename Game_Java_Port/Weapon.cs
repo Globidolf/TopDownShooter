@@ -119,9 +119,15 @@ namespace Game_Java_Port {
             Weapon Base = wt == null ? BaseWeapons.Random(_RNG) : BaseWeapons[(WeapPreset)wt];
 
             Name = Base.Name;
+			/*
             drawType = Base.drawType;
             image = Base.image;
-
+			*/
+			RenderData = new RenderData
+			{
+				mdl = Model.Square,
+				ResID = Base.RenderData.ResID
+			};
             WType = Base.WType;
             
             float __weakLevelReduction = (float)Math.Pow(0.99f, level - 1);
@@ -633,8 +639,10 @@ namespace Game_Java_Port {
                 int width = 150;
                 RectangleF pos = new RectangleF(-width/2,0,width,20);
                 RectangleF sub = new RectangleF(-width/2,0,width* (ReloadSpeed - _Reload * 1000) / ReloadSpeed, 20);
+				/*
                 pos.Location += Game.instance.Location;
                 sub.Location += Game.instance.Location;
+				*/
                 weaponPen.Color = Color.SmoothStep(Color.Yellow, Color.Black, 0.5f);
                 rt.FillRectangle(pos, GameStatus.BGBrush);
                 weaponPen.Color = Color.Yellow;
@@ -642,7 +650,7 @@ namespace Game_Java_Port {
                 weaponPen.Color = Color.Black;
                 rt.DrawRectangle(pos, weaponPen);
                 pos.Location += 2;
-                SpriteFont.DEFAULT.directDrawText("Reloading...", pos, rt);
+                //SpriteFont.DEFAULT.directDrawText("Reloading...", pos, rt);
                 //rt.DrawText("Reloading...", GameStatus.MenuFont, pos, weaponPen);
             }
         }

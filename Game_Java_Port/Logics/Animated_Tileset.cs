@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Game_Java_Port.Logics {
+    /*
     public class Animated_Tileset {
 
         private Tileset AnimationTile;
@@ -53,4 +54,5 @@ namespace Game_Java_Port.Logics {
         }
 
     }
+    */
 }

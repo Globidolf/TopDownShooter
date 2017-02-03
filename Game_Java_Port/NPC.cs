@@ -94,7 +94,7 @@ namespace Game_Java_Port {
             //drawType = DrawType.Image;
             
 
-            RenderData.Area = new RectangleF(Game.instance.Location.X, Game.instance.Location.Y, dataLoader.D3DResources[RenderData.ResID].Description.Width, dataLoader.D3DResources[RenderData.ResID].Description.Height);
+            RenderData.Area = new RectangleF(Program.width/2, Program.height/2, dataLoader.D3DResources[RenderData.ResID].Description.Width, dataLoader.D3DResources[RenderData.ResID].Description.Height);
             Health = MaxHealth;
 
             Pencil.Color = Color.Blue;
@@ -284,7 +284,7 @@ namespace Game_Java_Port {
                             rt.DrawRectangle(hpRect, Pencil);
                             Pencil.Color = temp;
 
-                            SpriteFont.DEFAULT.directDrawText(Health.ToString("0.##") + " / " + MaxHealth.ToString("0.##"), hpRect, rt);
+                            //SpriteFont.DEFAULT.directDrawText(Health.ToString("0.##") + " / " + MaxHealth.ToString("0.##"), hpRect, rt);
 
                             //rt.DrawText(Health.ToString("0.##") + " / " + MaxHealth.ToString("0.##"), MenuFont, hpRect, Pencil);
                             hpRect.Offset(0, -20);
@@ -293,7 +293,7 @@ namespace Game_Java_Port {
                             rt.FillRectangle(hpRect, Pencil);
                             Pencil.Color = temp;
 
-                            SpriteFont.DEFAULT.directDrawText(displaystring, hpRect, rt);
+                            //SpriteFont.DEFAULT.directDrawText(displaystring, hpRect, rt);
 
                             //rt.DrawText(displaystring, MenuFont, hpRect, Pencil);
 

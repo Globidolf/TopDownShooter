@@ -12,8 +12,8 @@ namespace Game_Java_Port {
         float initialDuration;
         float Duration;
         
+		/*
         SolidColorBrush brush;
-
         public RectangleF Area { get; set; }
 
         public int Z { get; set; } = 10;
@@ -21,31 +21,45 @@ namespace Game_Java_Port {
         public DrawType drawType { get; set; } = DrawType.Circle;
 
         private Ellipse ellipse;
+		*/
+		public RenderData RenderData { get; set; }
 
         public Explosion(RectangleF Area, float duration = 0.3f) {
+			/*
             this.Area = Area;
             ellipse = new Ellipse(Area.Center + MatrixExtensions.PVTranslation, Area.Width / 2, Area.Height / 2);
+			*/
             initialDuration = Duration = duration;
             Color temp = Color.Firebrick;
             temp.A = 0x88;
-            brush = new SolidColorBrush(Program.D2DContext, temp);
+			RenderData = new RenderData
+			{
+				mdl = Model.Square,
+				// TODO: Add explosion animation
+			};
+
+            //brush = new SolidColorBrush(Program.D2DContext, temp);
             GameStatus.addRenderable(this);
             GameStatus.addTickable(this);
         }
 
         public void draw(DeviceContext rt) {
+			/*
                 if(!disposed)
                     rt.FillEllipse(ellipse, brush);
+					*/
         }
 
         public void Tick() {
-            ellipse = new Ellipse(Area.Center + MatrixExtensions.PVTranslation, Area.Width / 2, Area.Height / 2);
+            //ellipse = new Ellipse(Area.Center + MatrixExtensions.PVTranslation, Area.Width / 2, Area.Height / 2);
             if(Duration <= 0) {
                     Dispose();
             } else {
                 Duration -= GameStatus.TimeMultiplier;
+				/*
                     if (!disposed)
                         brush.Color = new Color4(brush.Color.R, brush.Color.G, brush.Color.B, (Duration / initialDuration));
+						*/
             }
         }
 
@@ -57,7 +71,7 @@ namespace Game_Java_Port {
                 if(disposing) {
                     GameStatus.removeRenderable(this);
                     GameStatus.removeTickable(this);
-                    brush.Dispose();
+                    //brush.Dispose();
                 }
                 disposed = true;
             }

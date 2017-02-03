@@ -40,6 +40,7 @@ namespace Game_Java_Port
 
         static Vector2 scale = Vector2.One;
         public static object RenderLock = new object();
+		public static Vector2 center { get { return new Vector2(width/2, height/2); } }
         public static int width { get {
                 return (swapChain != null && swapChain.IsFullScreen) || (swapChain == null && Settings.UserSettings.StartFullscreen) ?
                     Settings.UserSettings.FullscreenResolution.Width :
@@ -74,7 +75,8 @@ namespace Game_Java_Port
             loadImages();
 
             System.Windows.Forms.Cursor.Hide();
-            GameStatus.Cursor = new CustomCursor(CursorTypes.Normal, 16);
+            float CursorSize = 16;
+            GameStatus.Cursor = new CustomCursor(CursorTypes.Normal, CursorSize);
 
             form.MaximizeBox = false;
 
@@ -86,11 +88,9 @@ namespace Game_Java_Port
             form.MouseMove += (obj, args) =>
             {
                 GameStatus.MousePos = new Vector2(args.Location.X, args.Location.Y) / scale;
-                RectangleF temp = GameStatus.Cursor.Area;
 
-                temp.Location = GameStatus.MousePos;
-
-                GameStatus.Cursor.Area = temp;
+                GameStatus.Cursor.RenderData.mdl.VertexBuffer = 
+                GameStatus.Cursor.RenderData.mdl.VertexBuffer.ApplyRectangle( new RectangleF(GameStatus.MousePos.X, GameStatus.MousePos.Y, CursorSize, CursorSize));
             };
 
             form.KeyUp += (obj, args) => GameStatus.SetKeyState(args, false);
@@ -143,7 +143,7 @@ namespace Game_Java_Port
                     }
 
                     //_RenderTarget.DrawText(test3, Font, new RectangleF(0, 0, width, height), brush);
-                    SpriteFont.DEFAULT.directDrawText(fps.ToString() + "\n" + renderables.Count() + "\n" + GameStatus.GameObjects.Count, new RectangleF(0, 0, width, height), D2DContext, Color.Black);
+                    //SpriteFont.DEFAULT.directDrawText(fps.ToString() + "\n" + renderables.Count() + "\n" + GameStatus.GameObjects.Count, new RectangleF(0, 0, width, height), D2DContext, Color.Black);
 
                     i++;
 

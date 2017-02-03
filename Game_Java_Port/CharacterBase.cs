@@ -1048,7 +1048,7 @@ namespace Game_Java_Port {
             float barwidth = 200;
             float barheight = 20;
 
-            SpriteFont.DEFAULT.directDrawText(Name, new RectangleF(padding, pos, Game.instance.Area.Width - padding * 2, Game.instance.Area.Height - pos), rt);
+            //SpriteFont.DEFAULT.directDrawText(Name, new RectangleF(padding, pos, Game.instance.Area.Width - padding * 2, Game.instance.Area.Height - pos), rt);
 
             //rt.DrawText(Name, GameStatus.MenuFont, new RectangleF(padding, pos, Game.instance.Area.Width - padding * 2, Game.instance.Area.Height - pos), Pencil);
 
@@ -1075,7 +1075,7 @@ namespace Game_Java_Port {
 
             Pencil.Color = Color.White;
 
-            SpriteFont.DEFAULT.directDrawText(Health.ToString("0.##") + " / " + MaxHealth.ToString("0.##"), barRegion, rt);
+            //SpriteFont.DEFAULT.directDrawText(Health.ToString("0.##") + " / " + MaxHealth.ToString("0.##"), barRegion, rt);
             //rt.DrawText(Health.ToString("0.##") + " / " + MaxHealth.ToString("0.##"), GameStatus.MenuFont, barRegion, Pencil);
 
             barRegion = new RectangleF(padding, pos, barwidth, barheight);
@@ -1097,7 +1097,7 @@ namespace Game_Java_Port {
 
             Pencil.Color = Color.White;
 
-            SpriteFont.DEFAULT.directDrawText(Exp.ToString("0.##") + " / " + ExpToLvlUp.ToString("0.##"), barRegion, rt);
+            //SpriteFont.DEFAULT.directDrawText(Exp.ToString("0.##") + " / " + ExpToLvlUp.ToString("0.##"), barRegion, rt);
             //rt.DrawText(Exp.ToString("0.##") + " / " + ExpToLvlUp.ToString("0.##"), GameStatus.MenuFont, barRegion, Pencil);
 
             if(EquippedWeaponL != null && EquippedWeaponL.ClipSize > 0) {
@@ -1119,7 +1119,7 @@ namespace Game_Java_Port {
                 rt.DrawRectangle(barRegion, Pencil);
 
                 Pencil.Color = Color.Black;
-                SpriteFont.DEFAULT.directDrawText(EquippedWeaponL.Ammo.ToString("0.##") + " / " + EquippedWeaponL.ClipSize.ToString("0.##") + " (" + AmmoStorage[EquippedWeaponL.WType] + ")", barRegion, rt);
+                //SpriteFont.DEFAULT.directDrawText(EquippedWeaponL.Ammo.ToString("0.##") + " / " + EquippedWeaponL.ClipSize.ToString("0.##") + " (" + AmmoStorage[EquippedWeaponL.WType] + ")", barRegion, rt);
                 //rt.DrawText(EquippedWeaponL.Ammo.ToString("0.##") + " / " + EquippedWeaponL.ClipSize.ToString("0.##") + " (" + AmmoStorage[EquippedWeaponL.WType] + ")", GameStatus.MenuFont, barRegion, Pencil);
             }
 
@@ -1144,7 +1144,7 @@ namespace Game_Java_Port {
 
                 Pencil.Color = Color.Black;
                 
-                SpriteFont.DEFAULT.directDrawText(EquippedWeaponR.Ammo.ToString("0.##") + " / " + EquippedWeaponR.ClipSize.ToString("0.##") + " (" + AmmoStorage[EquippedWeaponR.WType] + ")", barRegion, rt);
+                //SpriteFont.DEFAULT.directDrawText(EquippedWeaponR.Ammo.ToString("0.##") + " / " + EquippedWeaponR.ClipSize.ToString("0.##") + " (" + AmmoStorage[EquippedWeaponR.WType] + ")", barRegion, rt);
                 //rt.DrawText(EquippedWeaponR.Ammo.ToString("0.##") + " / " + EquippedWeaponR.ClipSize.ToString("0.##") + " (" + AmmoStorage[EquippedWeaponR.WType] + ")", GameStatus.MenuFont, barRegion, Pencil);
             }
 

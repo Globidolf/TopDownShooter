@@ -30,7 +30,7 @@ namespace Game_Java_Port {
 
 
         public static void Tick() {
-            _PVTranslation = Game.instance.Location - (Game.instance._player == null ? Vector2.Zero : Game.instance._player.Location);
+            _PVTranslation = new Vector2(Program.width, Program.height)/2 - (Game.instance._player == null ? Vector2.Zero : Game.instance._player.Location);
         }
 
         #region RawMatrix

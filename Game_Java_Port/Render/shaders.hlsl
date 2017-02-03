@@ -1,9 +1,11 @@
+
 Texture2D ShaderTexture : register(t0);
+
 SamplerState Sampler : register(s0);
 
 cbuffer ConstantBuffer: register(b0)
 {
-    float4 DisplayArea;
+    float4 DisplayArea;//XY = XY = Transpose | ZW = Width & Height = Scale
 };
 
 struct VertexObject {
@@ -14,28 +16,23 @@ struct VertexObject {
 
 
 VertexObject VSMain2D(VertexObject input) {
-	VertexObject output = (VertexObject)0;
+	VertexObject output = input;
 
-	output.Pos = input.Pos;
-	output.Tex = input.Tex;
+	output.Pos.xy = (input.Pos.xy + DisplayArea.xy) / DisplayArea.zw;
 
-	return input;
+	return output;
 }
 
+/* unused
 VertexObject VSMain3D(VertexObject input)
 {
-	VertexObject output = (VertexObject)0;
+	VertexObject output = input;
 
     output.Pos = mul(input.Pos, WorldViewProj);
-    output.Tex = input.Tex;
 
     return output;
 }
-
-VertexObject VSSecondary(VertexObject input)
-{
-	return input;
-}
+*/
 
 
 float4 PSMain(VertexObject input) : SV_Target

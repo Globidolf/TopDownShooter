@@ -17,45 +17,7 @@ namespace Game_Java_Port {
     class Bullet : IRenderable, ITickable, IDisposable {
 
         public RenderData RenderData { get; set; }
-
-        public static ColorMatrix _EnemyTint;
-        public static ColorMatrix EnemyTint {
-            get {
-                if(_EnemyTint == null) {
-                    _EnemyTint = new ColorMatrix(Program.D2DContext);
-                    _EnemyTint.Matrix = Color.Red.toColorMatrix();
-                    _EnemyTint.Cached = true;
-                    _EnemyTint.AlphaMode = AlphaMode.Premultiplied;
-                }
-                return _EnemyTint;
-            }
-        }
         
-        public static ColorMatrix _AllyTint;
-        public static ColorMatrix AllyTint {
-            get {
-                if(_AllyTint == null) {
-                    _AllyTint = new ColorMatrix(Program.D2DContext);
-                    _AllyTint.Matrix = Color.Green.toColorMatrix();
-                    _AllyTint.Cached = true;
-                    _AllyTint.AlphaMode = AlphaMode.Premultiplied;
-                }
-                return _AllyTint;
-            }
-        }
-        public static ColorMatrix _PlayerTint;
-        public static ColorMatrix PlayerTint {
-            get {
-                if(_PlayerTint == null) {
-                    _PlayerTint = new ColorMatrix(Program.D2DContext);
-                    _PlayerTint.Matrix = Color.Blue.toColorMatrix();
-                    _PlayerTint.Cached = true;
-                    _PlayerTint.AlphaMode = AlphaMode.Premultiplied;
-                }
-                return _PlayerTint;
-            }
-        }
-
         float creationtime;
 
         CharacterBase _sourceOwner;
@@ -91,9 +53,9 @@ namespace Game_Java_Port {
         float pseudorandom;
 
         //Bitmap bullettexture;
-        Animated_Tileset animation;
+        //Animated_Tileset animation;
 
-        RawMatrix InitialPerspective;
+        //RawMatrix InitialPerspective;
         /*
         Vector2 relativePos;
         Color _filter;
@@ -157,8 +119,11 @@ namespace Game_Java_Port {
 
         public Bullet(Weapon source, int? seed = null, List<CharacterBase> reserved = null) {
 
+            RenderData = new RenderData();
+
             creationtime = (float)Program.stopwatch.Elapsed.TotalSeconds;
-            pseudorandom = (((creationtime * Stopwatch.Frequency) % 10000) / 1000);
+
+            RenderData.AnimationOffset = (((creationtime * Stopwatch.Frequency) % 10000) / 1000) % 1f;
             //initialize RNG
             if(seed == null)
                 _RNG = new Random();
@@ -178,14 +143,18 @@ namespace Game_Java_Port {
                     else if(_source.Name.Contains("Boomerang"))
                         RenderData.ResID = dataLoader.getResID("bullet_boomerang");//bullettexture = dataLoader.get2D("bullet_boomerang");
                     else if(_source.Name.Contains("Rock")) {
-                        animation = Animated_Tileset.Bullet_Rock;
-                        RenderData.ResID = 0;//animation.Off_Set_Frame(pseudorandom % 1f);
+                        //animation = Animated_Tileset.Bullet_Rock;
+                        RenderData.ResID = dataLoader.getResID("bullet_rock_16_32");//animation.Off_Set_Frame(pseudorandom % 1f);
+                        RenderData.AnimationFrameCount = new Point(2, 2);
+                        RenderData.AnimationSpeed = 5.3543f;
                     } else
                         RenderData.ResID = dataLoader.getResID("bullet_normal");
                     break;
                 case WeaponType.Acid:
-                    animation = Animated_Tileset.Bullet_Acid;
-                    RenderData.ResID = 0;// animation.Off_Set_Frame(pseudorandom % 1f);
+                    //animation = Animated_Tileset.Bullet_Acid;
+                    RenderData.ResID = dataLoader.getResID("bullet_acid_16_32");// animation.Off_Set_Frame(pseudorandom % 1f);
+                    RenderData.AnimationFrameCount = new Point(2, 2);
+                    RenderData.AnimationSpeed = 5.472743f;
                     break;
 
                 default:
@@ -195,37 +164,28 @@ namespace Game_Java_Port {
 
 
             if(_sourceOwner == Game.instance?._player) {
-                RenderData.mdl.VertexBuffer.ApplyColor(PlayerTint);
-                _filter = Color.Blue;
+                RenderData.mdl.VertexBuffer.ApplyColor(Color.Blue);
             } else if(
                   (_sourceOwner.Team.Dispositions.ContainsKey(Game.instance._player.Team) &&
                    _sourceOwner.Team.Dispositions[Game.instance._player.Team] == Faction.Disposition.Allied) ||
 
                  (!_sourceOwner.Team.Dispositions.ContainsKey(Game.instance._player.Team) &&
                    _sourceOwner.Team.DefaultDisposition == Faction.Disposition.Allied)) {
-                ColorFilter = AllyTint;
-                _filter = Color.Green;
+                RenderData.mdl.VertexBuffer.ApplyColor(Color.Green);
             } else {
-                ColorFilter = EnemyTint;
-                _filter = Color.Red;
+                RenderData.mdl.VertexBuffer.ApplyColor(Color.Red);
             }
             
             _damage = _source.Damage * _sourceOwner.RangedMult;
 
 
             //TODO: Bullet Size
-
-            Transform = new Transform3D(Program.D2DContext);
-
-            Transform.InterpolationMode = SharpDX.Direct2D1.InterpolationMode.NearestNeighbor;
             
-            Transform.SetInputEffect(0, ColorFilter);
-
-            InitialPerspective = MatrixExtensions.CreateScaleMatrix(new Vector2(_hitrange / dataLoader.D3DResources[RenderData.ResID].Description.Width)).Translate(new Vector2(-_hitrange / 2));
+            //InitialPerspective = MatrixExtensions.CreateScaleMatrix(new Vector2(_hitrange / dataLoader.D3DResources[RenderData.ResID].Description.Width)).Translate(new Vector2(-_hitrange / 2));
 
             lastPos = _sourceOwner.Area.Center;
             pos = lastPos;
-
+            RenderData.Area = new RectangleF(pos.X, pos.Y, _hitrange, _hitrange);
             //init ignore list (do not hit owner)
             _nonTargets = new List<CharacterBase>();
             _nonTargets.Add(_sourceOwner);
@@ -266,9 +226,6 @@ namespace Game_Java_Port {
         //TODO: Add bullet sizes
 
         public void Tick() {
-            if(animation != null) {
-                RenderData.ResID = 0;// animation.Off_Set_Frame(pseudorandom % 1f);
-            }
 
             if(!_initiated)
                 init();
@@ -316,32 +273,33 @@ namespace Game_Java_Port {
 
                 Hitscan();
 
-                relativePos = pos + MatrixExtensions.PVTranslation;
+                //relativePos = pos + MatrixExtensions.PVTranslation;
 
                 switch(_source.WType) {
                     // rotate
                     case WeaponType.Throwable:
                     case WeaponType.Acid:
-                        Transform.TransformMatrix = InitialPerspective.Rotate2D(new AngleSingle(pseudorandom % 1f + (float)Program.stopwatch.Elapsed.TotalSeconds % 1f, AngleType.Revolution)).Translate(relativePos);
+                        RenderData.mdl.VertexBuffer.ApplyRotation(Vector3.UnitZ, GameStatus.TimeMultiplier * (float)Math.PI * 2f);
+                        //Transform.TransformMatrix = InitialPerspective.Rotate2D(new AngleSingle(pseudorandom % 1f + (float)Program.stopwatch.Elapsed.TotalSeconds % 1f, AngleType.Revolution)).Translate(relativePos);
                         break;
                     // apply direction
                     default:
-                        Transform.TransformMatrix = InitialPerspective.Rotate2D(_direction).Translate(relativePos);
+                        //Transform.TransformMatrix = InitialPerspective.Rotate2D(_direction).Translate(relativePos);
                         break;
                 }
-
+                /*
                 if(Effect != null)
                     Effect.Dispose();
 
                 ColorFilter.SetInput(0, bullettexture, false);
 
                 Effect = Transform.Output;
-
+                */
                 // add beam effect
                 if (_source.Behaviour.HasFlag(BulletBehaviour.Beam))
-                    new Beam(lastPos, pos, 3, 2, true, 12, _RNG.Next(), _filter); //double cast... :_(
+                    new Beam(lastPos, pos, 3, 2, true, 12, _RNG.Next(), Color.Aqua); 
 
-                //basic removal check. TODO add all disposals here and remove them elsewhere
+                //basic removal check. 
                 if(_distance >= (_source.Range * _source.Range) - 1 || _hitsRemain == 0) {
                     _disposeMe = true;
                 }
@@ -502,7 +460,7 @@ namespace Game_Java_Port {
             if(disposing) {
                 GameStatus.removeRenderable(this);
                 GameStatus.removeTickable(this);
-                Transform.Dispose();
+                //Transform.Dispose();
             }
 
             disposed = true;
@@ -519,7 +477,7 @@ namespace Game_Java_Port {
 
             lastPos = _sourceOwner.Area.Center;
             pos = lastPos;
-            relativePos = pos + MatrixExtensions.PVTranslation;
+            //relativePos = pos + MatrixExtensions.PVTranslation;
 
             //non bounce or piercing bullets only hit once.
             if(!_source.Behaviour.HasFlag(BulletBehaviour.Bounce) && !_source.Behaviour.HasFlag(BulletBehaviour.Piercing))

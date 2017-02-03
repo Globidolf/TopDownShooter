@@ -56,6 +56,9 @@ namespace Game_Java_Port {
 
         public AngleSingle LastAimDirection = new AngleSingle();
 
+		public RenderData RenderData { get; set; }
+
+		/*
         RectangleF _Area;
 
         public RectangleF Area { get {
@@ -74,7 +77,7 @@ namespace Game_Java_Port {
         public int Z { get; set; }
 
         public DrawType drawType { get; set; } = DrawType.Rectangle;
-
+		*/
         public void addMessage(string msg) {
             if(msg == null)
                 throw new ArgumentException("Message must not be null!", "msg");
@@ -205,12 +208,13 @@ namespace Game_Java_Port {
 
             MenuTextBrush.Color = menucolor;
             MenuTextBrush.Opacity = 1;
-
+			/*
             foreach(string msg in temp) {
                 if(i * 20 < 400 && msg != null)
                     SpriteFont.DEFAULT.directDrawText(msg, new RectangleF(20, ScreenHeight - ++i * 20, ScreenWidth / 2 - 20, 400 - (i - 1) * 20), rt);
                 //rt.DrawText(msg, MenuFont, new RectangleF(20, ScreenHeight - ++i * 20, ScreenWidth/2 - 20, 400 - (i-1) * 20),MenuTextBrush);
             }
+			*/
         }
 
         #region IDisposable Support

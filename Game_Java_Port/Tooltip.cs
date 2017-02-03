@@ -24,11 +24,12 @@ namespace Game_Java_Port {
         protected internal RectangleF _LabelArea;
         protected internal RectangleF relArea;
         protected internal RectangleF relLabel;
-
+		/*
         public int Z { get; set; } = 10000;
 
         public DrawType drawType { get; set; } = DrawType.Rectangle;
-
+		*/
+		public RenderData RenderData { get; set; }
         public Tooltip(string text, Func<Vector2> Location = null, Func<bool> Validation = null, bool ticksInternal = false) {
 
             if(Location != null)
@@ -61,7 +62,7 @@ namespace Game_Java_Port {
         }
 
         protected void drawText(DeviceContext rt) {
-            SpriteFont.DEFAULT.directDrawText(Text, relLabel, rt);
+            //SpriteFont.DEFAULT.directDrawText(Text, relLabel, rt);
             //rt.DrawText(Text, GameStatus.MenuFont, relLabel, GameStatus.MenuTextBrush);
         }
 

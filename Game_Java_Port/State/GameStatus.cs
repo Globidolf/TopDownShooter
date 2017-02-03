@@ -412,7 +412,7 @@ namespace Game_Java_Port
 
         public static void addRenderable(IRenderable obj) {
                 Renderables.Add(obj);
-                Renderables.Sort(new Comparison<IRenderable>((left, right) => left.Z.CompareTo(right.Z) ));
+                //Renderables.Sort(new Comparison<IRenderable>((left, right) => left.Z.CompareTo(right.Z) ));
         }
 
         public static void clearRenderables() {
@@ -548,7 +548,11 @@ namespace Game_Java_Port
             addRenderable(Cursor);
             addTickable(Cursor);
 
-            Background_Tiled back = new Background_Tiled(Tileset.BG_Rock, Area: Game.instance.Area, settings: Background.Settings.Parallax | Background.Settings.Fill_Area);
+			Background_Tiled back = new Background_Tiled(
+				dataLoader.getResID("tiles_rock_32_64"),
+				new Point(2,2),
+				Area: new RectangleF(0,0,Program.width,Program.height),
+				settings: Background.Settings.Parallax | Background.Settings.Fill_Area);// new Background_Tiled(Tileset.BG_Rock, Area: Game.instance.Area, settings: Background.Settings.Parallax | Background.Settings.Fill_Area);
 
             GameMenu.MainMenu.open();
 
