@@ -30,6 +30,8 @@ namespace Game_Java_Port {
 
 
         public static void Tick() {
+			// point zero is the center of the screen. the game is built on the concept of having point zero on the top left corner. this will translate 
+			// the position of all objects, making point zero to the top left and adjusting the camera to the player position.
             _PVTranslation = new Vector2(-Program.width, -Program.height) - (Game.instance._player == null ? Vector2.Zero : Game.instance._player.Location);
         }
 

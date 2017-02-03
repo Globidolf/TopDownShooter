@@ -1,4 +1,5 @@
-﻿using SharpDX;
+﻿using Game_Java_Port.Interface;
+using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
 using System;
@@ -14,13 +15,24 @@ namespace Game_Java_Port {
 
         private bool disposed = false;
 
-        
+		public override void updateRenderData() {
+			
+			int width = dataLoader.D3DResources[RenderData.ResID].Description.Width,
+				height = dataLoader.D3DResources[RenderData.ResID].Description.Height,
+				countX = (Program.width / width + 1),
+				countY = (Program.height / height + 1);
+			for (int i = 0 ; i < RenderData.SubObjs.Length ; i++) {
+				int x = i % countX, y = (i / countX) % countY;
+				RenderData.SubObjs[i].Area = new RectangleF(
+					CustomMaths.mod(x * width + MatrixExtensions.PVTranslation.X, Program.width + width) - width,
+					CustomMaths.mod(y * height + MatrixExtensions.PVTranslation.Y, Program.height + height) - height,
+					width, height);
+			}
+		}
 
-        //public Tileset Tiles;
 
-		
 
-        private static List<Background_Tiled> backgrounds = new List<Background_Tiled>();
+		private static List<Background_Tiled> backgrounds = new List<Background_Tiled>();
 
         private class TileArea {
             public int X;
@@ -55,7 +67,13 @@ namespace Game_Java_Port {
 					CustomMaths.mod(x * width + MatrixExtensions.PVTranslation.X, Program.width + width) - width,
 					CustomMaths.mod(y * height + MatrixExtensions.PVTranslation.Y, Program.height + height) - height,
 					width, height);
-				RenderData.SubObjs[i].mdl.VertexBuffer.SetAnimationFrame(RNG.Next(RenderData.AnimationFrameCount.X * RenderData.AnimationFrameCount.Y), RenderData.AnimationFrameCount);
+				RenderData.SubObjs[i].mdl.VertexBuffer = RenderData.SubObjs[i].mdl.VertexBuffer
+					.SetAnimationFrame(
+						RNG.Next(
+							RenderData.AnimationFrameCount.X *
+							RenderData.AnimationFrameCount.Y),
+						RenderData.AnimationFrameCount)
+					.ApplyZAxis(RenderData.mdl.VertexBuffer[0].Pos.Z);
 			}
         }
         public Background_Tiled(
@@ -66,30 +84,23 @@ namespace Game_Java_Port {
             float lifetime = 0,
             Settings settings = Settings.Default,
             bool add = true)
-            :base(ResID, Area.HasValue ? Area.Value.TopLeft : Vector2.Zero, lifetime, settings, add) {
+            :base(ResID, Area.HasValue ? Area.Value : RectangleF.Empty, lifetime, settings, add) {
+
             RenderData.Area = Area.HasValue ? Area.Value : new RectangleF(0,0,dataLoader.D3DResources[ResID].Description.Width, dataLoader.D3DResources[ResID].Description.Width);
-			//this.Tiles = Tiles;
+
 			RenderData.AnimationFrameCount = Tiles;
             seed = Seed.HasValue ? Seed.Value : new Random().Next();
+			// Remove old indices
+			if (add) 
+				((IRenderable) this).unregister();
+			// populate children
             populate();
-        }
-
-        public override void draw(DeviceContext rt) {
-
-        }
-
-        public override void Tick() {
-			int width = dataLoader.D3DResources[RenderData.ResID].Description.Width,
-				height = dataLoader.D3DResources[RenderData.ResID].Description.Height,
-				countX = (Program.width / width + 1),
-				countY = (Program.height / height + 1);
-			for (int i = 0 ; i < RenderData.SubObjs.Length ; i++) {
-				int x = i % countX, y = (i / countX) % countY;
-				RenderData.SubObjs[i].Area = new RectangleF(
-					CustomMaths.mod(x * width + MatrixExtensions.PVTranslation.X, Program.width + width) - width,
-					CustomMaths.mod(y * height + MatrixExtensions.PVTranslation.Y, Program.height + height) - height,
-					width, height);
-			}
+			// add new indices
+			if (add) 
+				((IRenderable) this).register();
+				
+			// do not render this specific instance, only the children
+			RenderData.mdl.VertexBuffer.ApplyColor(Color.Transparent);
         }
     }
 }

@@ -129,6 +129,7 @@ namespace Game_Java_Port
                     if(GameStatus.Running)
                         GameStatus.tick(false);
 
+					#region old code
 					//_RenderTarget.Target = Target;
 					/*
                     D2DContext.BeginDraw();
@@ -153,6 +154,9 @@ namespace Game_Java_Port
                     }
                     D2DContext.EndDraw();
 					*/
+					#endregion
+
+					Renderer.updatePositions();
 
 					Renderer.draw();
 

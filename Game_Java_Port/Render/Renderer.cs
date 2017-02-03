@@ -25,7 +25,7 @@ namespace Game_Java_Port {
 		private static Vector4 worldView2D;
 		private static SharpDX.Direct3D11.Buffer constantBuffer;
 
-		public static void init(Device device, DeviceContext context, SwapChain swapChain) {
+		public static void init(Device device, DeviceContext context, SwapChain swapChain, bool noalpha = false) {
 			unload();
 			deviceContext = context;
 			Renderer.device = device;
@@ -48,7 +48,6 @@ namespace Game_Java_Port {
 			var rasterizerStateDescription = RasterizerStateDescription.Default();
 			rasterizerStateDescription.CullMode = CullMode.None;
 			rasterizerStateDescription.IsFrontCounterClockwise = false;
-			rasterizerStateDescription.IsDepthClipEnabled = false;
 			
             var depthBufferDescription = new Texture2DDescription {
                 Format = Format.D32_Float_S8X24_UInt,
@@ -67,24 +66,12 @@ namespace Game_Java_Port {
             };
 			
             var depthStencilStateDescription = new DepthStencilStateDescription {
-                IsDepthEnabled = false,
-                DepthComparison = Comparison.Always,
+                IsDepthEnabled = noalpha,
+                DepthComparison = Comparison.Less,
                 DepthWriteMask = DepthWriteMask.All,
                 IsStencilEnabled = false,
                 StencilReadMask = 0xff,
                 StencilWriteMask = 0xff,
-                FrontFace = new DepthStencilOperationDescription {
-                    Comparison = Comparison.Always,
-                    PassOperation = StencilOperation.Keep,
-                    FailOperation = StencilOperation.Keep,
-                    DepthFailOperation = StencilOperation.Increment
-                },
-                BackFace = new DepthStencilOperationDescription {
-                    Comparison = Comparison.Always,
-                    PassOperation = StencilOperation.Keep,
-                    FailOperation = StencilOperation.Keep,
-                    DepthFailOperation = StencilOperation.Decrement
-                }
             };
 			
             var blendStateDescription = new BlendStateDescription();
@@ -180,16 +167,36 @@ namespace Game_Java_Port {
             disposables.Clear();
         }
 
-        public static void draw() {
-            List<RenderData> allData = new List<RenderData>(RenderDataList.FindAll(r => r.mdl.IndexBuffer != null && r.mdl.VertexBuffer != null));
-			deviceContext.ClearRenderTargetView(renderTargetView, Color.Black);
+		public static void draw() {
+			deviceContext.ClearRenderTargetView(renderTargetView, Color.Transparent);
 			deviceContext.ClearDepthStencilView(depthStencilView, DepthStencilClearFlags.Depth | DepthStencilClearFlags.Stencil, 1f, 0);
-			worldView2D.X = MatrixExtensions.PVTranslation.X;
-			worldView2D.Y = MatrixExtensions.PVTranslation.Y;
-			worldView2D.Z = Program.width;
-			worldView2D.W = Program.height;
-			deviceContext.UpdateSubresource(ref worldView2D, constantBuffer);
+			int ResID = -1;
+			using (var listenumerator = RenderDataList.FindAll(r => r.mdl.IndexBuffer != null && r.mdl.VertexBuffer != null).OrderBy(r => -r.mdl.VertexBuffer[0].Pos.Z).GetEnumerator()) {
+				while (listenumerator.MoveNext()) {
 
+					var r = listenumerator.Current;
+					
+					if (r.ResID != ResID) {
+						ResID = r.ResID;
+						deviceContext.PixelShader.SetShaderResource(0, dataLoader.ShaderData[ResID]);
+					}
+					using (var indexbuffer = r.mdl.CreateIndexBuffer(device, BindFlags.IndexBuffer))
+					using (var vertexbuffer = r.mdl.CreateVertexBuffer(device, BindFlags.VertexBuffer)) {
+						VertexBufferBinding vbb = new VertexBufferBinding(vertexbuffer, Utilities.SizeOf<Vertex>(), 0);
+						deviceContext.InputAssembler.SetVertexBuffers(0, vbb);
+						deviceContext.InputAssembler.SetIndexBuffer(indexbuffer, Format.R32_UInt, 0);
+						deviceContext.DrawIndexed(r.mdl.IndexBuffer.Length * 3, 0, 0);
+					}
+				}
+			}
+		}
+
+		public static void drawNoTransparencyPLZ() {
+			
+            List<RenderData> allData = new List<RenderData>(RenderDataList.FindAll(r => r.mdl.IndexBuffer != null && r.mdl.VertexBuffer != null));
+			//deviceContext.ClearRenderTargetView(renderTargetView, Color.Transparent);
+			deviceContext.ClearDepthStencilView(depthStencilView, DepthStencilClearFlags.Depth | DepthStencilClearFlags.Stencil, 1f, 0);
+			
             for(int ResID = allData.Min(r => r.ResID); ResID <= allData.Max(r => r.ResID); ResID++) {
                 if(allData.Any(r => r.ResID == ResID)){
                     deviceContext.PixelShader.SetShaderResource(0, dataLoader.ShaderData[ResID]);
@@ -204,10 +211,15 @@ namespace Game_Java_Port {
                     });
                 }
             }
-        }
+		}
 
         public static void updatePositions() {
-
+			worldView2D.X = MatrixExtensions.PVTranslation.X;
+			worldView2D.Y = MatrixExtensions.PVTranslation.Y;
+			worldView2D.Z = Program.width;
+			worldView2D.W = Program.height;
+			deviceContext.UpdateSubresource(ref worldView2D, constantBuffer);
+			Renderables.ForEach(r => r.updateRenderData());
         }
 
     }
@@ -272,6 +284,7 @@ namespace Game_Java_Port {
         public static Vertex operator *(Vertex V, Point mult) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() * mult, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
         public static Vertex operator *(Vertex V, Size2F mult) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY().Multiply(mult), V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
 
+		
         public static Vertex operator -(Vertex V, float sub) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() - sub, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
         public static Vertex operator -(Vertex V, Point sub) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() - sub, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
         public static Vertex operator -(Vertex V, Vector2 sub) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() - sub, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
@@ -289,11 +302,15 @@ namespace Game_Java_Port {
         /// <param name="R">Source Rectangle</param>
         /// <returns>Returns an array of vertices</returns>
         public static Vertex[] FromRectangle(RectangleF R) { return SquareBuffer.MultiplyPos(R.Size).TranslatePos(R.Location /* new Vector2(1, -1)*/); }
+
+		// RGBA are each set to 1 (max) which represents a solid white color (0xffffffff) or (0xffff).
         public static readonly Vector4 DefaultColor = new Vector4(1);
-        public static Vertex TopLeft { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(-1, 1, 0, 1), Tex = new Vector2(0, 1) }; } }
-        public static Vertex TopRight { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(1, 1, 0, 1), Tex = new Vector2(1, 1) }; } }
-        public static Vertex BottomLeft { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(-1, -1, 0, 1), Tex = new Vector2(0, 0) }; } }
-        public static Vertex BottomRight { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(1, -1, 0, 1), Tex = new Vector2(1, 0) }; } }
+
+		// Base positions are 0.5, not 1 as the difference of -0.5 and 0.5 is 1, which should represent one pixel.
+        public static Vertex TopLeft { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(-0.5f, -0.5f, 0, 1), Tex = new Vector2(0, 0) }; } }
+        public static Vertex TopRight { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(0.5f, -0.5f, 0, 1), Tex = new Vector2(1, 0) }; } }
+        public static Vertex BottomLeft { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(-0.5f, 0.5f, 0, 1), Tex = new Vector2(0, 1) }; } }
+        public static Vertex BottomRight { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(0.5f, 0.5f, 0, 1), Tex = new Vector2(1, 1) }; } }
     }
 
     /// <summary>
@@ -305,6 +322,8 @@ namespace Game_Java_Port {
         public static Vertex[] ApplyRectangle(this Vertex[] V, RectangleF R) {
             Vertex[] temp = Vertex.FromRectangle(R);
             for(int i = 0; i < V.Length; i++) {
+				temp[i].Pos.Z = V[i].Pos.Z;
+				temp[i].Pos.W = V[i].Pos.W;
                 temp[i].Color = V[i].Color;
                 temp[i].Tex = V[i].Tex;
             }
@@ -330,6 +349,13 @@ namespace Game_Java_Port {
                 temp[i].Pos = Vector4.Transform(temp[i].Pos, new Quaternion(Direction, Rotation));
             return temp;
         }
+		public static Vertex[] ApplyTextureRepetition(this Vertex[] V, Vector2 RepetitionCount) {
+			Vertex[] temp = V;
+
+			for (int i = 0 ; i < V.Length ; i++)
+				temp[i].Tex = temp[i].Tex / RepetitionCount;
+			return temp;
+		}
 
         public static Vertex[] ApplyColor(this Vertex[] V, Color C) { return V.ApplyColor(C.ToVector4()); }
 
@@ -530,6 +556,6 @@ namespace Game_Java_Port {
         //First part of a Quad triangle index
         private static readonly TriIndex Sq_A = new TriIndex { A = 0, B = 2, C = 3 };
         //Second part
-        private static readonly TriIndex Sq_B = new TriIndex { A = 0, B = 1, C = 2 };
+        private static readonly TriIndex Sq_B = new TriIndex { A = 0, B = 3, C = 1 };
     }
 }

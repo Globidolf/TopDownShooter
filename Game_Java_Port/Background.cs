@@ -8,168 +8,83 @@ using SharpDX;
 using SharpDX.Direct3D11;
 
 namespace Game_Java_Port {
-    public class Background : IRenderable, ITickable, IDisposable {
+    public class Background : IRenderable, ITickable {
 		
 
-		public void updateRenderData() {
-			//Todo: update renderdata...
+		virtual public void updateRenderData() {
+			//NO UPDATES REQUIRED
 		}
         private float lifetime = 0;
-
-        public event EventHandler TickAction;
-        
-        //public RectangleF Area { get; set; }
 
         [Flags]
         public enum Settings : byte {
             /// <summary>
-            /// BG is single object and bound to screen (Absolute)
+            /// Texture is static on-screen, stretched over it's Area, won't disappear and is rendered behind other objects.
             /// </summary>
             Default = 0x00,
             /// <summary>
-            /// BG fills complete screen
+            /// Texture does not stretch but repeat
             /// </summary>
-            Fill_Area = 0x01,
+            Repeat = 0x01,
             /// <summary>
-            /// BG is not bound to screen (Relative)
+            /// Texture will move with the world
             /// </summary>
             Parallax = 0x01 << 1,
-
+			/// <summary>
+			/// Texture will disappear after some time. (Set lifetime to something)
+			/// </summary>
             Decay = 0x01 << 2,
-
-            Foreground = 0x01 << 3,
-
-            Tileset = 0x10
+			/// <summary>
+			/// Texture will be drawn in front other objects instead of behind them
+			/// </summary>
+            Foreground = 0x01 << 3
         }
 
         public Settings settings = Settings.Default;
+		
+        public RenderData RenderData { get; set; }
 
-        /*
-
-        public ExtendMode ExtendX { get { return tb.ExtendModeX; } set { tb.ExtendModeX = value; } }
-        public ExtendMode ExtendY { get { return tb.ExtendModeY; } set { tb.ExtendModeY = value; } }
-
-        Bitmap img;
-        protected Matrix3x2 transform;
-        protected RectangleF offset;
-
-        private BitmapBrush _tb;
-        BitmapBrush tb {
-            get {
-                if(_tb == null) {
-                        _tb = new BitmapBrush(Program.D2DContext, img);
-                }
-                return _tb;
-            }
-        }
-
-        private int _Z;
-
-        public int Z {
-            get {
-                return settings.HasFlag(Settings.Foreground) ? _Z + 100 : _Z - 100;
-            }
-
-            set {
-                _Z = value;
-            }
-        }
-        */
-
-        //public DrawType drawType { get; set; } = DrawType.Image;
-
-            public RenderData RenderData { get; set; }
-
-        public Background(int resID, RawVector2? location = null, float lifetime = 0, Settings settings = Settings.Default, bool add = true) {
-            RenderData = new RenderData();
-            RenderData.ResID = resID;
+        public Background(int resID, RectangleF? Area = null, float lifetime = 0, Settings settings = Settings.Default, bool add = true) {
             Texture2D tx = dataLoader.D3DResources[resID];
-            RenderData.mdl = new Model { VertexBuffer = Vertex.FromRectangle(
-                new RectangleF(location.Value.X - tx.Description.Width / 2, location.Value.Y - tx.Description.Height / 2, tx.Description.Width, tx.Description.Height)) };
             
-            Factory test = new Factory();
-            if(location == null)
-                location = new RawVector2();
+            Area = Area.HasValue ? Area : new RectangleF(0,0, tx.Description.Width, tx.Description.Height);
+            RenderData = new RenderData {
+				ResID = resID,
+				mdl = new Model { VertexBuffer = Vertex.FromRectangle(Area.Value) }
+			};
 
-            //Area = ;
+			RenderData.mdl.VertexBuffer.ApplyZAxis(settings.HasFlag(Settings.Foreground) ? 5 : -5);
+			
             this.settings = settings;
+			if (settings.HasFlag(Settings.Repeat)) {
+				RenderData.mdl.VertexBuffer.ApplyTextureRepetition(new Vector2(Area.Value.Size.Width / tx.Description.Width, Area.Value.Height / tx.Description.Height));
+			}
             if(lifetime > 0) {
                 this.lifetime = lifetime;
                 this.settings |= Settings.Decay;
             }
-            //Z = -5;
+
             if(add)
                 addToGame();
+
         }
 
 
 
         public virtual void draw(SharpDX.Direct2D1.DeviceContext rt) {
-            if(!disposed) {
-                if(settings.HasFlag(Settings.Fill_Area)) {
-                    /*
-                    if(_tb != null) {
-                        rt.FillRectangle(Game.instance.Area, tb);
-                    }
-                } else {
-                    if(!this.isOutOfRange()) {
-                        rt.DrawBitmap(img, offset, 1, BitmapInterpolationMode.Linear, new RectangleF(0, 0, img.Size.Width, img.Size.Height));
-                    }
-                    */
-                }
-            }
         }
 
         public virtual void Tick() {
-            TickAction?.Invoke(this, EventArgs.Empty);
-            /*
-             if(_tb != null && !disposed) {
-                    transform = Matrix3x2.Identity;
-                    transform.TranslationVector += MatrixExtensions.PVTranslation;
-                    tb.Transform = transform;
-                }
-
-            RectangleF temp = Area.Floor();
-            temp.Offset(MatrixExtensions.PVTranslation);
-
-            offset = temp;
-
-            */
             if(settings.HasFlag(Settings.Decay)) {
                 lifetime -= GameStatus.TimeMultiplier;
-                if(lifetime <= 0)
-                    Dispose();
+				if (lifetime <= 0)
+					this.unregister();
             }
         }
 
         public void addToGame() {
-            GameStatus.addTickable(this);
-			this.register();//GameStatus.addRenderable(this);
+			GameStatus.addTickable(this);
+			this.register();
         }
-
-        #region IDisposable Support
-        private bool disposed = false; // To detect redundant calls
-
-        protected virtual void Dispose(bool disposing) {
-            if(!disposed) {
-                if(disposing) {
-                    GameStatus.removeTickable(this);
-					this.unregister();
-                    //GameStatus.removeRenderable(this);
-                    /*
-                    if(_tb != null)
-                         _tb.Dispose();
-                    //DONT dispose the bitmap, set it to null instead. it is a shared resource and img is merely the reference
-                    img = null;
-                    */
-                    TickAction = null;
-                }
-                disposed = true;
-            }
-        }
-        public void Dispose() {
-            Dispose(true);
-        }
-        #endregion
     }
 }
