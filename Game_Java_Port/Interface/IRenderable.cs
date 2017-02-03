@@ -19,13 +19,18 @@ namespace Game_Java_Port.Interface {
         //RectangleF Area { get; set; }
 
         RenderData RenderData { get; set; }
-
+		
         void draw(DeviceContext rt);
+
+		void updateRenderData();
 
         //int Z { get; set; }
     }
 
     public static class RenderableExtensions {
+
+		public static void register(this IRenderable me) { Renderer.add(me); }
+		public static void unregister(this IRenderable me) { Renderer.remove(me); }
 
         public static bool isOutOfRange(this IRenderable me) {
 

@@ -18,30 +18,15 @@ struct VertexObject {
 VertexObject VSMain2D(VertexObject input) {
 	VertexObject output = input;
 
-	output.Pos.xy = (input.Pos.xy + DisplayArea.xy) / DisplayArea.zw;
+	output.Pos.xy = (input.Pos.xy + DisplayArea.xy / 2) / DisplayArea.zw * 2;
+
+	output.Pos.y = -output.Pos.y;
 
 	return output;
 }
 
-/* unused
-VertexObject VSMain3D(VertexObject input)
-{
-	VertexObject output = input;
-
-    output.Pos = mul(input.Pos, WorldViewProj);
-
-    return output;
-}
-*/
-
 
 float4 PSMain(VertexObject input) : SV_Target
 {
-    return ShaderTexture.Sample(Sampler, input.Tex);
-}
-
-float4 PSAlpha(VertexObject input) : SV_Target
-{
-	float4 sampled = ShaderTexture.Sample(Sampler, input.Tex);
-	return float4(sampled.r, input.Tex.y % 1, input.Tex.x % 1, max(sampled.a, 0.5));
+	return  ShaderTexture.Sample(Sampler, input.Tex) * input.Color;
 }

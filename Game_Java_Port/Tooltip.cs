@@ -82,11 +82,11 @@ namespace Game_Java_Port {
         public virtual void Tick() {
 
             if (doDraw?.Invoke() == true != show) {
-                
-                if(show)
-                    GameStatus.removeRenderable(this);
-                else
-                    GameStatus.addRenderable(this);
+
+				if (show)
+					this.unregister();//GameStatus.removeRenderable(this);
+				else
+					this.register();// GameStatus.addRenderable(this);
                 lock(this)
                     show ^= true;
             }
@@ -115,7 +115,7 @@ namespace Game_Java_Port {
             lock(this) {
                 if(!show) {
                     show = true;
-                    GameStatus.addRenderable(this);
+					this.register();// GameStatus.addRenderable(this);
                 }
             }
         }
@@ -124,7 +124,7 @@ namespace Game_Java_Port {
             lock(this)
                 if(show) {
                     show = false;
-                    GameStatus.removeRenderable(this);
+					this.unregister();//GameStatus.removeRenderable(this);
                 }
         }
 
@@ -133,5 +133,9 @@ namespace Game_Java_Port {
             doDraw = null;
             getTarget = null;
         }
-    }
+
+		public void updateRenderData() {
+			//Todo: update renderdata...
+		}
+	}
 }

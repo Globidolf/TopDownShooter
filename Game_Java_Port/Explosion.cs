@@ -12,6 +12,10 @@ namespace Game_Java_Port {
         float initialDuration;
         float Duration;
         
+
+		public void updateRenderData() {
+			//Todo: update renderdata...
+		}
 		/*
         SolidColorBrush brush;
         public RectangleF Area { get; set; }
@@ -38,8 +42,8 @@ namespace Game_Java_Port {
 				// TODO: Add explosion animation
 			};
 
-            //brush = new SolidColorBrush(Program.D2DContext, temp);
-            GameStatus.addRenderable(this);
+			//brush = new SolidColorBrush(Program.D2DContext, temp);
+			this.register();// GameStatus.addRenderable(this);
             GameStatus.addTickable(this);
         }
 
@@ -69,7 +73,8 @@ namespace Game_Java_Port {
         protected virtual void Dispose(bool disposing) {
             if(!disposed) {
                 if(disposing) {
-                    GameStatus.removeRenderable(this);
+					this.unregister();
+					//GameStatus.removeRenderable(this);
                     GameStatus.removeTickable(this);
                     //brush.Dispose();
                 }

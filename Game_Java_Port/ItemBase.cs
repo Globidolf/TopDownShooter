@@ -7,7 +7,11 @@ using Game_Java_Port.Serializers;
 
 namespace Game_Java_Port {
     public abstract class ItemBase : IRenderable, ITickable, IDisposable, IInteractable, ISerializable<ItemBase>, IIndexable {
+		
 
+		public void updateRenderData() {
+			//Todo: update renderdata...
+		}
         public RenderData RenderData { get; set; }
 
         private bool disposed = false;
@@ -265,7 +269,8 @@ namespace Game_Java_Port {
                 return;
             if(disposing) {
                     GameStatus.GameObjects.Remove(this);
-                GameStatus.removeRenderable(this);
+				this.unregister();
+				//GameStatus.removeRenderable(this);
                 GameStatus.removeTickable(this);
                 Pencil.Dispose();
                 ItemInfo.Dispose();
@@ -276,7 +281,7 @@ namespace Game_Java_Port {
         }
 
         public virtual void AddToGame() {
-            GameStatus.addRenderable(this);
+			this.register();// GameStatus.addRenderable(this);
             GameStatus.addTickable(this);
             if (Owner != null)
                     GameStatus.GameObjects.Add(this);

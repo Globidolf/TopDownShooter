@@ -404,7 +404,7 @@ namespace Game_Java_Port
         public static void clearTickables() {
                 Tickables.Clear();
         }
-
+		/*
         public static void removeRenderable(IRenderable obj) {
             if(Renderables.Contains(obj))
                     Renderables.Remove(obj);
@@ -427,7 +427,7 @@ namespace Game_Java_Port
             
                 Renderables.Clear();
         }
-
+		*/
         public static void tick(bool init) {
             justPressed = pendingPresses;
             pendingPresses = Controls.none;
@@ -507,45 +507,47 @@ namespace Game_Java_Port
             return data.ToArray();
         }
 
-        public static void reset() {
+		public static void reset() {
 
-            if(Game.instance._client != null) {
-                Game.instance._client.Listen = false;
-                Game.instance._client = null;
-            }
-            if(Game.instance.GameHost != null) {
-                Game.instance.GameHost.Listen = false;
-                Game.instance.GameHost.ClientPlayer.Clear();
-                Game.instance.GameHost.ClientList.Clear();
-                Game.instance.GameHost = null;
-            }
+			if (Game.instance._client != null) {
+				Game.instance._client.Listen = false;
+				Game.instance._client = null;
+			}
+			if (Game.instance.GameHost != null) {
+				Game.instance.GameHost.Listen = false;
+				Game.instance.GameHost.ClientPlayer.Clear();
+				Game.instance.GameHost.ClientList.Clear();
+				Game.instance.GameHost = null;
+			}
 
-            CharacterBase[] copy;
-                copy = GameSubjects.ToArray();
-            Array.ForEach(copy,(subj) => {
-                Program.DebugLog.Add("Removing Subject " + subj.ID + ". GameStatus.reset().");
-                subj.removeFromGame();
-                }
-            );
-                    GameSubjects.Clear();
+			CharacterBase[] copy;
+			copy = GameSubjects.ToArray();
+			Array.ForEach(copy, (subj) => {
+				Program.DebugLog.Add("Removing Subject " + subj.ID + ". GameStatus.reset().");
+				subj.removeFromGame();
+			}
+			);
+			GameSubjects.Clear();
 
 
-                    GameObjects.Clear();
+			GameObjects.Clear();
 
-                    clearRenderables();
+			Renderer.clear();
+			//clearRenderables();
 
-                    clearTickables();
+			clearTickables();
 
-                    Game.instance._player = null;
+			Game.instance._player = null;
 
-            init();
-        }
+			init();
+		}
 
         public static void init() {
-
-            addRenderable(Game.instance);
+			Game.instance.register();
+            //addRenderable(Game.instance);
             addTickable(Game.instance);
-            addRenderable(Cursor);
+			Cursor.register();
+            //addRenderable(Cursor);
             addTickable(Cursor);
 
 			Background_Tiled back = new Background_Tiled(

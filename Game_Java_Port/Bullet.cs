@@ -15,7 +15,11 @@ using SharpDX.Direct2D1.Effects;
 
 namespace Game_Java_Port {
     class Bullet : IRenderable, ITickable, IDisposable {
+		
 
+		public void updateRenderData() {
+			//Todo: update renderdata...
+		}
         public RenderData RenderData { get; set; }
         
         float creationtime;
@@ -218,7 +222,7 @@ namespace Game_Java_Port {
 
             _disposeMe = false;
 
-            GameStatus.addRenderable(this);
+			this.register();// GameStatus.addRenderable(this);
             GameStatus.addTickable(this);
         }
         
@@ -458,7 +462,8 @@ namespace Game_Java_Port {
             if(disposed)
                 return;
             if(disposing) {
-                GameStatus.removeRenderable(this);
+				this.unregister();
+				//GameStatus.removeRenderable(this);
                 GameStatus.removeTickable(this);
                 //Transform.Dispose();
             }

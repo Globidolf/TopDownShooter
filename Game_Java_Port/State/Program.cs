@@ -30,7 +30,6 @@ namespace Game_Java_Port
         public static D3DDevice device;
         public static D2DDeviceContext D2DContext;
         public static D3DDeviceContext1 D3DContext;
-        private static RenderTargetView _RenderTargetView;
 #if DEBUG
         private static DeviceDebug debugger;
 #endif
@@ -130,8 +129,8 @@ namespace Game_Java_Port
                     if(GameStatus.Running)
                         GameStatus.tick(false);
 
-                    //_RenderTarget.Target = Target;
-
+					//_RenderTarget.Target = Target;
+					/*
                     D2DContext.BeginDraw();
 
                     IRenderable[] renderables;
@@ -152,9 +151,12 @@ namespace Game_Java_Port
                         i = 0;
                         i2 = stopwatch.ElapsedMilliseconds;
                     }
-                    D3DContext.ClearRenderTargetView(_RenderTargetView, Color.Red);
                     D2DContext.EndDraw();
-                    swapChain.Present(1, PresentFlags.DoNotWait, new PresentParameters() { });
+					*/
+
+					Renderer.draw();
+
+                    swapChain.Present(0, PresentFlags.None);
                 });
 
 
@@ -219,6 +221,7 @@ namespace Game_Java_Port
             D2DContext.UnitMode = UnitMode.Pixels;
             D2DContext.StrokeWidth = 2;
 
+			Renderer.init(device, D3DContext, swapChain);
 
             dataLoader.LoadAll(device);
             //Tileset.Regenerate();
@@ -262,10 +265,8 @@ namespace Game_Java_Port
 
             using(Surface surface = swapChain.GetBackBuffer<Surface>(0)) 
                 D2DContext = new D2DDeviceContext(surface, new CreationProperties());
-
-
-            _RenderTargetView = new RenderTargetView(device, SharpDX.Direct3D11.Resource.FromSwapChain<Texture2D>(swapChain, 0));
-            D3DContext.OutputMerger.SetRenderTargets(_RenderTargetView);
+			
+			Renderer.init(device, D3DContext, swapChain);
 
             D2DContext.UnitMode = UnitMode.Pixels;
             stopwatch = new Stopwatch();

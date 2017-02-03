@@ -22,7 +22,11 @@ namespace Game_Java_Port {
 
     public class CustomCursor : IRenderable, ITickable {
         //public float Size { get; set; }
+		
 
+		public void updateRenderData() {
+			//Todo: update renderdata...
+		}
         //public RectangleF Area { get; set; }
 
         //public DrawType drawType { get; set; } = DrawType.Image;

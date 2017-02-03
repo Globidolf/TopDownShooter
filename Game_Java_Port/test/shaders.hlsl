@@ -54,5 +54,5 @@ float4 PSMain(VertexShaderOutput input) : SV_Target
 float4 PSAlpha(VertexShaderOutput input) : SV_Target
 {
 	float4 sampled = ShaderTexture.Sample(Sampler, input.Tex);
-	return float4(sampled.r, input.Tex.y % 1, input.Tex.x % 1, max(sampled.a, 0.5));
+	return float4(sampled.a, 0, 0, 1);
 }

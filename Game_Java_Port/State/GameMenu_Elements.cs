@@ -64,6 +64,10 @@ namespace Game_Java_Port {
 
         private abstract class MenuElementBase : IRenderable, IDisposable {
             
+
+		public void updateRenderData() {
+			//Todo: update renderdata...
+		}
             public RenderData RenderData { get; set; }
 
             public bool doDrawLabel = true;

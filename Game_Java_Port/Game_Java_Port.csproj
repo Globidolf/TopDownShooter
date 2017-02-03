@@ -207,7 +207,9 @@
     <Content Include="data\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Render\shaders.hlsl" />
+    <Content Include="Render\shaders.hlsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <None Include="Resources\usersettings.txt" />
     <None Include="Resources\user.config.txt" />
   </ItemGroup>

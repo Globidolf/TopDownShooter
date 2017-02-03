@@ -95,6 +95,9 @@ namespace Game_Java_Port {
             addMessage("listening on port " + port);
         }
 
+		public Game() {
+			RenderData = new RenderData();
+		}
 
 
         public void Connect(string IP, int port) {
@@ -240,6 +243,10 @@ namespace Game_Java_Port {
         public void Dispose() {
             Dispose(true);
         }
-        #endregion
-    }
+
+		public void updateRenderData() {
+			//TODO update render data
+		}
+		#endregion
+	}
 }

@@ -12,6 +12,10 @@ namespace Game_Java_Port
 {
 	class Beam : IRenderable, ITickable, IDisposable
 	{
+
+		public void updateRenderData() {
+			//Todo: update renderdata...
+		}
 		private readonly float initialDuration;
 		private float Duration;
 
@@ -90,7 +94,7 @@ namespace Game_Java_Port
 					return p2;
 				});
 			}
-			GameStatus.addRenderable(this);
+			this.register();//GameStatus.addRenderable(this);
 			GameStatus.addTickable(this);
 		}
 
@@ -119,7 +123,8 @@ namespace Game_Java_Port
 		protected virtual void Dispose(bool disposing) {
 			if (!disposed) {
 				if (disposing) {
-					GameStatus.removeRenderable(this);
+					this.unregister();
+					//GameStatus.removeRenderable(this);
 					GameStatus.removeTickable(this);
 				}
 				disposed = true;

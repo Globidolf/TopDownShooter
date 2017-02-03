@@ -58,9 +58,7 @@ namespace Game_Java_Port.PINGU {
                 rasterizerStateDescription.IsDepthClipEnabled = false;
 
                 // Set up the graphics devices
-                using(ImagingFactory2 imgfactory = new ImagingFactory2())
                 using(var device0 = new SharpDX.Direct3D11.Device(DriverType.Hardware, creationFlags, featureLevels)) {
-                    dataLoader.LoadAll(device0);
                     using(var device1 = device0.QueryInterface<SharpDX.Direct3D11.Device1>())
                     using(var context = device0.ImmediateContext.QueryInterface<DeviceContext1>())
 
@@ -76,10 +74,10 @@ namespace Game_Java_Port.PINGU {
                     new InputElement("COLOR", 0, Format.R32G32B32A32_Float, 16, 0),
                     new InputElement("TEXCOORD", 0, Format.R32G32_Float, 32, 0),
                 }))
-                    using(var worldViewProjectionBuffer = new SharpDX.Direct3D11.Buffer(device1, Utilities.SizeOf<Matrix>(), ResourceUsage.Default, BindFlags.ConstantBuffer, CpuAccessFlags.None, ResourceOptionFlags.None, 0))
+                    using(var worldViewProjectionBuffer = new SharpDX.Direct3D11.Buffer(
+						device1, Utilities.SizeOf<Matrix>(), ResourceUsage.Default, BindFlags.ConstantBuffer, CpuAccessFlags.None, ResourceOptionFlags.None, 0))
                     using(var textureView = dataLoader.ShaderData[0])
                     using(var samplerState = new SamplerState(device1, samplerStateDescription))
-                    // Prepare rendering targets and related resources
                     using(var dxgiDevice2 = device1.QueryInterface<SharpDX.DXGI.Device2>())
                     using(var dxgiFactory2 = dxgiDevice2.Adapter.GetParent<Factory2>())
                     using(var swapChain = new SwapChain1(dxgiFactory2, device1, form.Handle, ref swapChainDescription, swapChainFullScreenDescription))
@@ -148,6 +146,8 @@ namespace Game_Java_Port.PINGU {
                                 context.InputAssembler.SetIndexBuffer(indexBuffer, Format.R32_UInt, 0);
                                 context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
 
+								
+
                                 var description = new BlendStateDescription();
                                 description.RenderTarget[0] = new RenderTargetBlendDescription() {
                                     IsBlendEnabled = true,
@@ -166,7 +166,6 @@ namespace Game_Java_Port.PINGU {
                                 time.Start();
                                 RenderLoop.Run(form, () =>
                                 {
-
                                     context.ClearRenderTargetView(renderTargetView, Color.CornflowerBlue);
                                     context.ClearDepthStencilView(depthStencilView, DepthStencilClearFlags.Depth | DepthStencilClearFlags.Stencil, 1f, 0);
 

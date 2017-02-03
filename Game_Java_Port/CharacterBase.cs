@@ -12,7 +12,11 @@ using System.Threading.Tasks;
 
 namespace Game_Java_Port {
     public abstract class CharacterBase : IRenderable, ITickable, ISerializable<CharacterBase>, IIndexable, ICollidible, IDisposable {
+		
 
+		public void updateRenderData() {
+			//Todo: update renderdata...
+		}
         public RenderData RenderData { get; set; } = new RenderData();
 
         #region base values
@@ -574,7 +578,7 @@ namespace Game_Java_Port {
 
         virtual protected void Respawn() {
             GameStatus.addTickable(this);
-            GameStatus.addRenderable(this);
+			this.register();// GameStatus.addRenderable(this);
                 GameStatus.GameSubjects.Add(this);
         }
 
@@ -932,8 +936,9 @@ namespace Game_Java_Port {
 
         virtual public void despawn() {
             GameStatus.removeTickable(this);
-            GameStatus.removeRenderable(this);
-                GameStatus.GameSubjects.Remove(this);
+			this.unregister();
+			//GameStatus.removeRenderable(this);
+            GameStatus.GameSubjects.Remove(this);
         }
 
 
@@ -947,8 +952,9 @@ namespace Game_Java_Port {
 
         virtual public void addToGame() {
             GameStatus.addTickable(this);
-            GameStatus.addRenderable(this);
-                GameStatus.GameSubjects.Add(this);
+			this.register();
+			//GameStatus.addRenderable(this);
+            GameStatus.GameSubjects.Add(this);
         }
 
         public void setState(byte[] buffer, ref int pos) {

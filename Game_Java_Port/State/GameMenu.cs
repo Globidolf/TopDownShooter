@@ -14,6 +14,10 @@ namespace Game_Java_Port {
 
         public const int ScrollBarWidth = 8;
 
+		public void updateRenderData() {
+			// TODO: update render data
+		}
+
         #region fields
 
         public event EventHandler onContinue;
@@ -121,6 +125,7 @@ namespace Game_Java_Port {
                 MenuFrame = bg;
             else
                 MenuFrame = Menu_BG_Tiled.Default;
+			RenderData = new RenderData();
         }
 
         #endregion
@@ -278,11 +283,11 @@ namespace Game_Java_Port {
             Tick();
             Tick();
             Tick();
-            addRenderable(this);
+			this.register();
             _isOpen = true;
         }
         public void close() {
-            removeRenderable(this);
+			this.unregister();
             _isOpen = false;
         }
 

@@ -9,7 +9,11 @@ using SharpDX.Direct2D1;
 
 namespace Game_Java_Port {
     public class Menu_BG_Tiled : IRenderable, ITickable {
+		
 
+		public void updateRenderData() {
+			//Todo: update renderdata...
+		}
 		private const string _pre = "tiled_menu_";
 		private const string _post = "_32_96";
 

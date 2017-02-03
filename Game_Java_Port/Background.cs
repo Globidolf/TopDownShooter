@@ -9,7 +9,11 @@ using SharpDX.Direct3D11;
 
 namespace Game_Java_Port {
     public class Background : IRenderable, ITickable, IDisposable {
+		
 
+		public void updateRenderData() {
+			//Todo: update renderdata...
+		}
         private float lifetime = 0;
 
         public event EventHandler TickAction;
@@ -140,7 +144,7 @@ namespace Game_Java_Port {
 
         public void addToGame() {
             GameStatus.addTickable(this);
-            GameStatus.addRenderable(this);
+			this.register();//GameStatus.addRenderable(this);
         }
 
         #region IDisposable Support
@@ -150,7 +154,8 @@ namespace Game_Java_Port {
             if(!disposed) {
                 if(disposing) {
                     GameStatus.removeTickable(this);
-                    GameStatus.removeRenderable(this);
+					this.unregister();
+                    //GameStatus.removeRenderable(this);
                     /*
                     if(_tb != null)
                          _tb.Dispose();
