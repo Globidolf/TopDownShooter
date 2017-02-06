@@ -8,6 +8,7 @@ using Game_Java_Port.Interface;
 using SharpDX.DXGI;
 
 using Device = SharpDX.Direct3D11.Device;
+using Buffer = SharpDX.Direct3D11.Buffer;
 using SharpDX.D3DCompiler;
 
 namespace Game_Java_Port {
@@ -21,11 +22,11 @@ namespace Game_Java_Port {
 
 		private static List<IRenderable> Renderables = new List<IRenderable>();
         private static List<RenderData> RenderDataList = new List<RenderData>();
-		private static List<SharpDX.Direct3D11.Buffer> VertexBufferList = new List<SharpDX.Direct3D11.Buffer>();
-		private static List<SharpDX.Direct3D11.Buffer> IndexBufferList = new List<SharpDX.Direct3D11.Buffer>();
+		private static List<Buffer> VertexBufferList = new List<Buffer>();
+		private static List<Buffer> IndexBufferList = new List<Buffer>();
 
 		private static Vector4 worldView2D;
-		private static SharpDX.Direct3D11.Buffer constantBuffer;
+		private static Buffer constantBuffer;
 
 		public static void init(Device device, DeviceContext context, SwapChain swapChain, bool noalpha = false) {
 			unload();
@@ -145,8 +146,8 @@ namespace Game_Java_Port {
 		private static void add(RenderData rd) {
 			//add object itself and recursively all of its children
 			RenderDataList.Add(rd);
-			VertexBufferList.Add(rd.mdl.CreateVertexBuffer(device, BindFlags.VertexBuffer));
 			IndexBufferList.Add(rd.mdl.CreateIndexBuffer(device, BindFlags.IndexBuffer));
+			VertexBufferList.Add(rd.mdl.CreateVertexBuffer(device, BindFlags.VertexBuffer, CpuAccessFlags.Write));
 			if (rd.SubObjs != null)
 				foreach (RenderData rd2 in rd.SubObjs)
 					add(rd2);
@@ -167,8 +168,8 @@ namespace Game_Java_Port {
 					remove(rd2);
 		}
 		public static void clear() {
-			Renderables.Clear();
-			RenderDataList.Clear();
+			while (Renderables.Count > 0)
+				remove(Renderables[0]);
 		}
 
         public static void unload() {
@@ -177,7 +178,6 @@ namespace Game_Java_Port {
         }
 
 		public static void draw() {
-			deviceContext.ClearRenderTargetView(renderTargetView, Color.Transparent);
 			deviceContext.ClearDepthStencilView(depthStencilView, DepthStencilClearFlags.Depth | DepthStencilClearFlags.Stencil, 1f, 0);
 			int ResID = -1;
 			var array = RenderDataList.FindAll(r => r.mdl.IndexBuffer != null && r.mdl.VertexBuffer != null).OrderBy(r => -r.mdl.VertexBuffer[0].Pos.Z).ToArray();
@@ -192,7 +192,6 @@ namespace Game_Java_Port {
 					deviceContext.InputAssembler.SetVertexBuffers(0, vbb);
 					deviceContext.InputAssembler.SetIndexBuffer(IndexBufferList[i], Format.R32_UInt, 0);
 					deviceContext.DrawIndexed(r.mdl.IndexBuffer.Length * 3, 0, 0);
-
 			}
 		}
 
@@ -217,18 +216,35 @@ namespace Game_Java_Port {
                 }
             }
 		}
-
-        public static void updatePositions() {
+		
+		public static void updatePositions() {
+			double time = GameStatus.CurrentTick * 1000;
 			worldView2D.X = MatrixExtensions.PVTranslation.X;
 			worldView2D.Y = MatrixExtensions.PVTranslation.Y;
 			worldView2D.Z = Program.width;
 			worldView2D.W = Program.height;
 			deviceContext.UpdateSubresource(ref worldView2D, constantBuffer);
 			Renderables.ForEach(r => r.updateRenderData());
-			for(int i = 0 ; i < RenderDataList.Count ; i++) {
-				RenderDataList[i].
+			for (int i = 0 ; i < RenderDataList.Count ; i++) {
+				//Animate?
+				if ( //RenderDataList[i].AnimationFrameCount != null && //should not be possible i think...
+					RenderDataList[i].AnimationFrameCount.X > 0 && RenderDataList[i].AnimationFrameCount.Y > 0 && // both dimensions are set
+					RenderDataList[i].AnimationFrameCount.X + RenderDataList[i].AnimationFrameCount.Y > 1) { // sum is greater than 1, indicating that there are multiple frames
+					int animationframe = (int)
+						((RenderDataList[i].AnimationFrameCount.X * RenderDataList[i].AnimationFrameCount.Y + 1) *
+						(RenderDataList[i].AnimationSpeed > 0 ?
+						((time + RenderDataList[i].AnimationOffset) % RenderDataList[i].AnimationSpeed) / RenderDataList[i].AnimationSpeed :
+						(time + RenderDataList[i].AnimationOffset) % 1));
+					RenderDataList[i].mdl.VertexBuffer.SetAnimationFrame(animationframe, RenderDataList[i].AnimationFrameCount);
+				}
+				DataStream temp;
+				deviceContext.MapSubresource(VertexBufferList[i], MapMode.WriteDiscard, SharpDX.Direct3D11.MapFlags.None, out temp);
+				temp.Position = 0;
+				foreach (Vertex v in RenderDataList[i].mdl.VertexBuffer)
+					temp.Write(v);
+				deviceContext.UnmapSubresource(VertexBufferList[i], 0);
 			}
-        }
+		}
 
     }
 
@@ -518,21 +534,21 @@ namespace Game_Java_Port {
 
         //Buffer Creation
 
-        public static SharpDX.Direct3D11.Buffer CreateBuffer<T>( Device device, BindFlags bindFlags, params T[] items) where T : struct {
+        public static Buffer CreateBuffer<T>( Device device, BindFlags bindFlags, T[] items, CpuAccessFlags cpuaccflags = CpuAccessFlags.None) where T : struct {
             var len = Utilities.SizeOf(items);
             var stream = new DataStream(len, true, true);
             foreach(var item in items)
                 stream.Write(item);
             stream.Position = 0;
-            var buffer = new SharpDX.Direct3D11.Buffer(device, stream, len, ResourceUsage.Default,
-                bindFlags, CpuAccessFlags.None, ResourceOptionFlags.None, 0);
+            var buffer = new Buffer(device, stream, len, cpuaccflags == CpuAccessFlags.None ? ResourceUsage.Default : ResourceUsage.Dynamic,
+                bindFlags, cpuaccflags, ResourceOptionFlags.None, 0);
             stream.Dispose();
             return buffer;
         }
-        public static SharpDX.Direct3D11.Buffer CreateBuffer(this Vertex[] item, Device device, BindFlags bindFlags) { return CreateBuffer(device, bindFlags, item); }
-        public static SharpDX.Direct3D11.Buffer CreateBuffer(this TriIndex[] item, Device device, BindFlags bindFlags) { return CreateBuffer(device, bindFlags, item); }
-        public static SharpDX.Direct3D11.Buffer CreateIndexBuffer(this Model item, Device device, BindFlags bindFlags) { return CreateBuffer(device, bindFlags, item.IndexBuffer); }
-        public static SharpDX.Direct3D11.Buffer CreateVertexBuffer(this Model item, Device device, BindFlags bindFlags) { return CreateBuffer(device, bindFlags, item.VertexBuffer); }
+        public static Buffer CreateBuffer(this Vertex[] item, Device device, BindFlags    bindFlags, CpuAccessFlags cpuaccflags = CpuAccessFlags.None) { return CreateBuffer(device, bindFlags, item             , cpuaccflags); }
+        public static Buffer CreateBuffer(this TriIndex[] item, Device device, BindFlags  bindFlags, CpuAccessFlags cpuaccflags = CpuAccessFlags.None) { return CreateBuffer(device, bindFlags, item             , cpuaccflags); }
+        public static Buffer CreateIndexBuffer(this Model item, Device device, BindFlags  bindFlags, CpuAccessFlags cpuaccflags = CpuAccessFlags.None) { return CreateBuffer(device, bindFlags, item.IndexBuffer , cpuaccflags); }
+        public static Buffer CreateVertexBuffer(this Model item, Device device, BindFlags bindFlags, CpuAccessFlags cpuaccflags = CpuAccessFlags.None) { return CreateBuffer(device, bindFlags, item.VertexBuffer, cpuaccflags); }
     }
 
     /// <summary>

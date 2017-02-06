@@ -859,7 +859,6 @@ namespace Game_Java_Port {
                 set {
                     if (value != _DownScale) {
                         _DownScale = value;
-                        resize();
                     }
                 }
             }
@@ -867,12 +866,9 @@ namespace Game_Java_Port {
             private Size2F _CustomSize;
             public Size2F CustomSize { get { return _CustomSize; } set {
                     _CustomSize = value;
-                    resize();
                 }
             }
             private Size2F Size;
-
-            private Bitmap _TextBMP;
 
             private string _Text;
             internal string Text { get {
@@ -880,19 +876,10 @@ namespace Game_Java_Port {
                 } set {
                     if(_Text != value) {
                         _Text = value;
-                        if(_TextBMP != null) 
-                            _TextBMP.Dispose();
-                        //_TextBMP = SpriteFont.DEFAULT.generateText(Text, _CustomSize);
-                        resize();
                     }
                 }
             }
-
-
-            private void resize() {
-                Size = _TextBMP.Size;
-                update();
-            }
+			
 
             public TextElement(GameMenu parent, string Text, Size2F size = default(Size2F), bool downscale = false) {
                 if(size == default(Size2F))
@@ -911,10 +898,12 @@ namespace Game_Java_Port {
                 drawBorder(rt);
                 RectangleF dest = _LabelArea;
                 dest.Size = Size;
+				/*
                 lock(_TextBMP) {
                     if (!_TextBMP.IsDisposed)
                         rt.DrawBitmap(_TextBMP, dest, 1, BitmapInterpolationMode.NearestNeighbor);
                 }
+						*/
                 //rt.DrawText(Text, MenuFont, _LabelArea, MenuTextBrush);
             }
 
