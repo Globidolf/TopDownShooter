@@ -30,7 +30,8 @@ namespace Game_Java_Port.Serializers {
             }
             temp.ID = buffer.getULong(ref pos);
             temp.Team = buffer.getEnumByte<FactionNames>(ref pos);
-            temp.Pencil.Color = Color.FromRgba(buffer.getInt(ref pos));
+			//TODO: WAFWFEWADF
+            //temp.Pencil.Color = Color.FromRgba(buffer.getInt(ref pos));
             temp.Location = new Vector2(buffer.getFloat(ref pos), buffer.getFloat(ref pos));
             temp.MovementVector.X = buffer.getFloat(ref pos);
             temp.MovementVector.Y = buffer.getFloat(ref pos);
@@ -60,8 +61,6 @@ namespace Game_Java_Port.Serializers {
         }
 
         public override byte[] Serialize(NPC obj, params object[] data) {
-            if(obj.Pencil.IsDisposed)
-                throw new InvalidOperationException("Attempted to serialize disposed object!");
 
             List<byte> cmd = new List<byte>();
 
@@ -80,7 +79,7 @@ namespace Game_Java_Port.Serializers {
             }
             cmd.AddRange(GetBytes(obj.ID));
             cmd.Add((byte)(FactionNames)obj.Team);
-            cmd.AddRange(GetBytes(((Color4)obj.Pencil.Color).ToRgba()));
+            //cmd.AddRange(GetBytes(((Color4)obj.Pencil.Color).ToRgba()));
             cmd.AddRange(GetBytes(obj.Location.X));
             cmd.AddRange(GetBytes(obj.Location.Y));
             cmd.AddRange(GetBytes(obj.MovementVector.X));

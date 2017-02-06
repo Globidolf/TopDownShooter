@@ -12,82 +12,121 @@ using Buffer = SharpDX.Direct3D11.Buffer;
 using SharpDX.D3DCompiler;
 
 namespace Game_Java_Port {
-    public static class Renderer {
-        private static List<IDisposable> disposables = new List<IDisposable>();
-        
-        private static DeviceContext deviceContext;
+	public static class Renderer
+	{
+		#region constants
+
+		/// <summary>
+		/// no layer should be above this one
+		/// </summary>
+		public const float Layer_Cursor = 100;
+		/// <summary>
+		/// rendered on top of most things
+		/// </summary>
+		public const float Layer_Menu = 70;
+		/// <summary>
+		/// Walls, Ceilings, Trees and such
+		/// </summary>
+		public const float Layer_Map = 50;
+		/// <summary>
+		/// NPCs, Players and such
+		/// </summary>
+		public const float Layer_Characters = 30;
+		/// <summary>
+		/// Bullets go 'trough' characters, to achieve this effect, they're rendered below them
+		/// </summary>
+		public const float Layer_Bullets = 0;
+		/// <summary>
+		/// no layer should be below this one
+		/// </summary>
+		public const float Layer_Background = -100;
+		/// <summary>
+		/// Render above text on the same level
+		/// </summary>
+		public const float LayerOffset_Tooltip = 10;
+		/// <summary>
+		/// To make sure that text is above the content
+		/// </summary>
+		public const float LayerOffset_Text = 5;
+		/// <summary>
+		/// For outlines of objects
+		/// </summary>
+		public const float LayerOffset_Ouline = -1;
+
+		#endregion
+		#region data
+		private static List<IDisposable> disposables = new List<IDisposable>();
+
+		private static DeviceContext deviceContext;
 		private static Device device;
 		private static DepthStencilView depthStencilView;
 		private static RenderTargetView renderTargetView;
 
 		private static List<IRenderable> Renderables = new List<IRenderable>();
-        private static List<RenderData> RenderDataList = new List<RenderData>();
+		private static List<RenderData> RenderDataList = new List<RenderData>();
 		private static List<Buffer> VertexBufferList = new List<Buffer>();
 		private static List<Buffer> IndexBufferList = new List<Buffer>();
 
 		private static Vector4 worldView2D;
 		private static Buffer constantBuffer;
+		#endregion
 
 		public static void init(Device device, DeviceContext context, SwapChain swapChain, bool noalpha = false) {
 			unload();
 			deviceContext = context;
 			Renderer.device = device;
 			// START
-
-			var swapChainFullScreenDescription = new SwapChainFullScreenDescription
-			{
-				RefreshRate = new Rational(60, 1),
-				Scaling = DisplayModeScaling.Centered,
-				Windowed = true
-			};
 			var samplerStateDescription = new SamplerStateDescription
 			{
-				AddressU = TextureAddressMode.Wrap,
-				AddressV = TextureAddressMode.Wrap,
-				AddressW = TextureAddressMode.Wrap,
-				Filter = Filter.MinMagMipLinear
+				AddressU = TextureAddressMode.Clamp,
+				AddressV = TextureAddressMode.Clamp,
+				AddressW = TextureAddressMode.Clamp,
+				Filter = Filter.MinMagMipPoint
 			};
 
 			var rasterizerStateDescription = RasterizerStateDescription.Default();
-			rasterizerStateDescription.CullMode = CullMode.None;
-			rasterizerStateDescription.IsFrontCounterClockwise = false;
-			
-            var depthBufferDescription = new Texture2DDescription {
-                Format = Format.D32_Float_S8X24_UInt,
-                ArraySize = 1,
-                MipLevels = 1,
-                Width = Program.width,
-                Height = Program.height,
-                SampleDescription = swapChain.Description.SampleDescription,
-                BindFlags = BindFlags.DepthStencil,
-            };
-			
-            var depthStencilViewDescription = new DepthStencilViewDescription {
-                Dimension = swapChain.Description.SampleDescription.Count > 1 || swapChain.Description.SampleDescription.Quality > 0
-                    ? DepthStencilViewDimension.Texture2DMultisampled
-                    : DepthStencilViewDimension.Texture2D
-            };
-			
-            var depthStencilStateDescription = new DepthStencilStateDescription {
-                IsDepthEnabled = noalpha,
-                DepthComparison = Comparison.Less,
-                DepthWriteMask = DepthWriteMask.All,
-                IsStencilEnabled = false,
-                StencilReadMask = 0xff,
-                StencilWriteMask = 0xff,
-            };
-			
-            var blendStateDescription = new BlendStateDescription();
-            blendStateDescription.RenderTarget[0] = new RenderTargetBlendDescription() {
-                IsBlendEnabled = true,
-                SourceBlend = BlendOption.SourceAlpha,
-                DestinationBlend = BlendOption.InverseSourceAlpha,
-                BlendOperation = BlendOperation.Add,
-                SourceAlphaBlend = BlendOption.Zero,
-                DestinationAlphaBlend = BlendOption.Zero,
-                AlphaBlendOperation = BlendOperation.Add,
-                RenderTargetWriteMask = ColorWriteMaskFlags.All,
-            };
+			rasterizerStateDescription.CullMode = CullMode.Front;
+
+			var depthBufferDescription = new Texture2DDescription
+			{
+				Format = Format.D32_Float_S8X24_UInt,
+				ArraySize = 1,
+				MipLevels = 1,
+				Width = Program.width,
+				Height = Program.height,
+				SampleDescription = swapChain.Description.SampleDescription,
+				BindFlags = BindFlags.DepthStencil,
+			};
+
+			var depthStencilViewDescription = new DepthStencilViewDescription
+			{
+				Dimension = swapChain.Description.SampleDescription.Count > 1 || swapChain.Description.SampleDescription.Quality > 0
+					? DepthStencilViewDimension.Texture2DMultisampled
+					: DepthStencilViewDimension.Texture2D
+			};
+
+			var depthStencilStateDescription = new DepthStencilStateDescription
+			{
+				IsDepthEnabled = noalpha,
+				DepthComparison = Comparison.Less,
+				DepthWriteMask = DepthWriteMask.All,
+				IsStencilEnabled = false,
+				StencilReadMask = 0xff,
+				StencilWriteMask = 0xff,
+			};
+
+			var blendStateDescription = new BlendStateDescription();
+			blendStateDescription.RenderTarget[0] = new RenderTargetBlendDescription()
+			{
+				IsBlendEnabled = true,
+				SourceBlend = BlendOption.SourceAlpha,
+				DestinationBlend = BlendOption.InverseSourceAlpha,
+				BlendOperation = BlendOperation.Add,
+				SourceAlphaBlend = BlendOption.Zero,
+				DestinationAlphaBlend = BlendOption.Zero,
+				AlphaBlendOperation = BlendOperation.Add,
+				RenderTargetWriteMask = ColorWriteMaskFlags.All,
+			};
 			var vertexShaderBytecode = ShaderBytecode.CompileFromFile("Render/shaders.hlsl", "VSMain2D", "vs_5_0", ShaderFlags.Debug);
 			var vertexShader = new VertexShader(device, vertexShaderBytecode);
 			var pixelShaderBytecode = ShaderBytecode.CompileFromFile("Render/shaders.hlsl", "PSMain", "ps_5_0", ShaderFlags.Debug);
@@ -103,25 +142,25 @@ namespace Game_Java_Port {
 			var depthBuffer = new Texture2D(device, depthBufferDescription);
 			depthStencilView = new DepthStencilView(device, depthBuffer, depthStencilViewDescription);
 			var depthStencilState = new DepthStencilState(device, depthStencilStateDescription);
-            renderTargetView = new RenderTargetView(device, SharpDX.Direct3D11.Resource.FromSwapChain<Texture2D>(swapChain, 0));
-			constantBuffer = SharpDX.Direct3D11.Buffer.Create(device, BindFlags.ConstantBuffer, ref worldView2D);
+			renderTargetView = new RenderTargetView(device, SharpDX.Direct3D11.Resource.FromSwapChain<Texture2D>(swapChain, 0));
+			constantBuffer = Buffer.Create(device, BindFlags.ConstantBuffer, ref worldView2D);
 			var blendState = new BlendState(device, blendStateDescription);
 
-			
 
-            context.Rasterizer.SetViewport(0,0,Program.width, Program.height);
-            context.Rasterizer.State = rasterizerState;
-			
-            context.OutputMerger.SetRenderTargets(depthStencilView, renderTargetView);
-            context.OutputMerger.DepthStencilState = depthStencilState;
+
+			context.Rasterizer.SetViewport(0, 0, Program.width, Program.height);
+			context.Rasterizer.State = rasterizerState;
+
+			context.OutputMerger.SetRenderTargets(depthStencilView, renderTargetView);
+			context.OutputMerger.DepthStencilState = depthStencilState;
 			context.OutputMerger.BlendState = blendState;
-            context.InputAssembler.InputLayout = inputLayout;
+			context.InputAssembler.InputLayout = inputLayout;
 			context.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleList;
-            context.VertexShader.SetConstantBuffer(0, constantBuffer);
-            context.VertexShader.Set(vertexShader);
-            context.PixelShader.SetConstantBuffer(0, constantBuffer);
-            context.PixelShader.Set(pixelShader);
-            context.PixelShader.SetSampler(0, samplerState);
+			context.VertexShader.SetConstantBuffer(0, constantBuffer);
+			context.VertexShader.Set(vertexShader);
+			context.PixelShader.SetConstantBuffer(0, constantBuffer);
+			context.PixelShader.Set(pixelShader);
+			context.PixelShader.SetSampler(0, samplerState);
 
 			disposables.Add(vertexShaderBytecode);
 			disposables.Add(vertexShader);
@@ -172,15 +211,16 @@ namespace Game_Java_Port {
 				remove(Renderables[0]);
 		}
 
-        public static void unload() {
-            disposables.ForEach(d => d.Dispose());
-            disposables.Clear();
-        }
+		public static void unload() {
+			disposables.ForEach(d => d.Dispose());
+			disposables.Clear();
+		}
 
 		public static void draw() {
+			//deviceContext.ClearRenderTargetView(renderTargetView, Color.Wheat);
 			deviceContext.ClearDepthStencilView(depthStencilView, DepthStencilClearFlags.Depth | DepthStencilClearFlags.Stencil, 1f, 0);
 			int ResID = -1;
-			var array = RenderDataList.FindAll(r => r.mdl.IndexBuffer != null && r.mdl.VertexBuffer != null).OrderBy(r => -r.mdl.VertexBuffer[0].Pos.Z).ToArray();
+			var array = RenderDataList.FindAll(r => r.mdl.IndexBuffer != null && r.mdl.VertexBuffer != null).OrderBy(r => r.mdl.VertexBuffer[0].Pos.Z).ToArray();
 
 			foreach (var r in array) {
 				int i = RenderDataList.IndexOf(r);
@@ -188,13 +228,13 @@ namespace Game_Java_Port {
 					ResID = r.ResID;
 					deviceContext.PixelShader.SetShaderResource(0, dataLoader.ShaderData[ResID]);
 				}
-					VertexBufferBinding vbb = new VertexBufferBinding(VertexBufferList[i], Utilities.SizeOf<Vertex>(), 0);
-					deviceContext.InputAssembler.SetVertexBuffers(0, vbb);
-					deviceContext.InputAssembler.SetIndexBuffer(IndexBufferList[i], Format.R32_UInt, 0);
-					deviceContext.DrawIndexed(r.mdl.IndexBuffer.Length * 3, 0, 0);
+				VertexBufferBinding vbb = new VertexBufferBinding(VertexBufferList[i], Utilities.SizeOf<Vertex>(), 0);
+				deviceContext.InputAssembler.SetVertexBuffers(0, vbb);
+				deviceContext.InputAssembler.SetIndexBuffer(IndexBufferList[i], Format.R32_UInt, 0);
+				deviceContext.DrawIndexed(r.mdl.IndexBuffer.Length * 3, 0, 0);
 			}
 		}
-
+		/*
 		public static void drawNoTransparencyPLZ() {
 			
             List<RenderData> allData = new List<RenderData>(RenderDataList.FindAll(r => r.mdl.IndexBuffer != null && r.mdl.VertexBuffer != null));
@@ -217,6 +257,8 @@ namespace Game_Java_Port {
             }
 		}
 		
+		*/
+
 		public static void updatePositions() {
 			double time = GameStatus.CurrentTick * 1000;
 			worldView2D.X = MatrixExtensions.PVTranslation.X;
@@ -227,9 +269,7 @@ namespace Game_Java_Port {
 			Renderables.ForEach(r => r.updateRenderData());
 			for (int i = 0 ; i < RenderDataList.Count ; i++) {
 				//Animate?
-				if ( //RenderDataList[i].AnimationFrameCount != null && //should not be possible i think...
-					RenderDataList[i].AnimationFrameCount.X > 0 && RenderDataList[i].AnimationFrameCount.Y > 0 && // both dimensions are set
-					RenderDataList[i].AnimationFrameCount.X + RenderDataList[i].AnimationFrameCount.Y > 1) { // sum is greater than 1, indicating that there are multiple frames
+				if (RenderDataList[i].animate) {
 					int animationframe = (int)
 						((RenderDataList[i].AnimationFrameCount.X * RenderDataList[i].AnimationFrameCount.Y + 1) *
 						(RenderDataList[i].AnimationSpeed > 0 ?
@@ -245,10 +285,10 @@ namespace Game_Java_Port {
 				deviceContext.UnmapSubresource(VertexBufferList[i], 0);
 			}
 		}
-
-    }
+	}
 
     public class RenderData {
+		public bool animate;
         public Model mdl;
         public int ResID;
 
@@ -261,9 +301,35 @@ namespace Game_Java_Port {
         public float AnimationSpeed;
 
         public RectangleF Area { set {
-                mdl.VertexBuffer = mdl.VertexBuffer.ApplyRectangle(value);
+				if (mdl.VertexBuffer == null)
+					mdl = Model.Square;
+                mdl.VertexBuffer.ApplyRectangle(value);
             } }
-
+		public float Z { set {
+				if (mdl.VertexBuffer == null)
+					mdl = Model.Square;
+				mdl.VertexBuffer = mdl.VertexBuffer.ApplyZAxis(value);
+			} }
+		/// <summary>
+		/// Copies all values of this object to a new instance. Changes to the new instance are guaranteed to not change this object.
+		/// </summary>
+		/// <returns>Return an independent copy of this object</returns>
+		public RenderData ValueCopy() {
+			RenderData result = new RenderData
+			{
+				AnimationFrameCount = AnimationFrameCount,
+				AnimationIndices = AnimationIndices,
+				AnimationOffset = AnimationOffset,
+				AnimationSpeed = AnimationSpeed,
+				mdl = mdl,
+				ResID = ResID,
+				SubObjs = SubObjs == null ? null : new RenderData[SubObjs.Length]
+			};
+			if (result.SubObjs != null)
+				for (int i = 0 ; i < SubObjs.Length ; i++)
+					result.SubObjs[i] = SubObjs[i].ValueCopy();
+			return result;
+		}
     }
 
     public struct Model {
@@ -275,6 +341,16 @@ namespace Game_Java_Port {
         }
 
         public static Model Square { get { return new Model { VertexBuffer = Vertex.SquareBuffer, IndexBuffer = TriIndex.QuadIndex }; } }
+		public Model ValueCopy() {
+			Model result = new Model();
+			result.IndexBuffer = new TriIndex[IndexBuffer.Length];
+			result.VertexBuffer = new Vertex[VertexBuffer.Length];
+			for (int i = 0 ; i < IndexBuffer.Length ; i++)
+				result.IndexBuffer[i] = IndexBuffer[i];
+			for (int i = 0 ; i < VertexBuffer.Length ; i++)
+				result.VertexBuffer[i] = VertexBuffer[i];
+			return result;
+		}
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -342,24 +418,33 @@ namespace Game_Java_Port {
     /// </summary>
     public static class VertexExtensions {
 
-        //modifier methods
-        public static Vertex[] ApplyRectangle(this Vertex[] V, RectangleF R) {
-            Vertex[] temp = Vertex.FromRectangle(R);
-            for(int i = 0; i < V.Length; i++) {
+		//modifier methods
+		public static Vertex[] FromRectangle(this Vertex[] V, RectangleF R) {
+			Vertex[] temp = Vertex.FromRectangle(R);
+			for (int i = 0 ; i < V.Length ; i++) {
 				temp[i].Pos.Z = V[i].Pos.Z;
 				temp[i].Pos.W = V[i].Pos.W;
-                temp[i].Color = V[i].Color;
-                temp[i].Tex = V[i].Tex;
-            }
-            return temp;
-        }
-		public static Vertex[] ApplyPositions(this Vertex[] V, Vector2 TL, Vector2 TR, Vector2 BL, Vector2 BR) {
+				temp[i].Color = V[i].Color;
+				temp[i].Tex = V[i].Tex;
+			}
+			return temp;
+		}
+		public static Vertex[] FromPositions(this Vertex[] V, Vector2 TL, Vector2 TR, Vector2 BL, Vector2 BR) {
 			Vertex[] temp = V;
 			temp[0].Pos = new Vector4(TL, temp[0].Pos.Z, temp[0].Pos.W);
 			temp[1].Pos = new Vector4(TR, temp[1].Pos.Z, temp[1].Pos.W);
-			temp[2].Pos = new Vector4(BR, temp[2].Pos.Z, temp[2].Pos.W);
-			temp[3].Pos = new Vector4(BL, temp[3].Pos.Z, temp[3].Pos.W);
+			temp[2].Pos = new Vector4(BL, temp[2].Pos.Z, temp[2].Pos.W);
+			temp[3].Pos = new Vector4(BR, temp[3].Pos.Z, temp[3].Pos.W);
 			return temp;
+		}
+
+		public static void ApplyRectangle(this Vertex[] V, RectangleF R) { V.ApplyPositions(R.TopLeft, R.TopRight, R.BottomLeft, R.BottomRight); }
+
+		public static void ApplyPositions(this Vertex[] V, Vector2 TL, Vector2 TR, Vector2 BL, Vector2 BR) {
+			V[0].Pos = new Vector4(TL, V[0].Pos.Z, V[0].Pos.W);
+			V[1].Pos = new Vector4(TR, V[1].Pos.Z, V[1].Pos.W);
+			V[2].Pos = new Vector4(BL, V[2].Pos.Z, V[2].Pos.W);
+			V[3].Pos = new Vector4(BR, V[3].Pos.Z, V[3].Pos.W);
 		}
         public static Vertex[] ApplyZAxis(this Vertex[] V, float Z) {
             Vertex[] temp = V;
@@ -391,15 +476,27 @@ namespace Game_Java_Port {
         }
 
         //animation methods
-        public static Vertex[] SetAnimationFrame(this Vertex[] V, int index, Point AnimationFrameCount) {
-            int x = index % AnimationFrameCount.X;
-            int y = (index / AnimationFrameCount.X) % AnimationFrameCount.Y; // % count.Y: wraps around the animation to start anew
+        public static void SetAnimationFrame(this Vertex[] V, int index, Point AnimationFrameCount) {
+			float i = index % AnimationFrameCount.X;
+			float j = (index / AnimationFrameCount.X) % AnimationFrameCount.Y; // % count.Y: wraps around the animation to start anew
+			float x1 = i / AnimationFrameCount.X;
+			float y1 = j / AnimationFrameCount.Y;
+			float x2 = 1f / AnimationFrameCount.X + x1;
+			float y2 = 1f / AnimationFrameCount.Y + y1;
+			V[0].Tex = new Vector2(x1, y1);
+			V[1].Tex = new Vector2(x2, y1);
+			V[2].Tex = new Vector2(x1, y2);
+			V[3].Tex = new Vector2(x2, y2);
+		}
+		public static Vertex[] GetAnimationFrame(this Vertex[] V, int index, Point AnimationFrameCount) {
+			int x = index % AnimationFrameCount.X;
+			int y = (index / AnimationFrameCount.X) % AnimationFrameCount.Y; // % count.Y: wraps around the animation to start anew
 
-            return V.MultiplyTex(AnimationFrameCount).TranslatePos(new Vector2(x,y));
-        }
+			return V.MultiplyTex(AnimationFrameCount).TranslateTex(new Vector2(x, y));
+		}
 
-        //operator methods
-        public static Vertex TranslateTex(this Vertex V, float add) { return new Vertex { Color = V.Color, Pos = V.Pos, Tex = V.Tex + add }; }
+		//operator methods
+		public static Vertex TranslateTex(this Vertex V, float add) { return new Vertex { Color = V.Color, Pos = V.Pos, Tex = V.Tex + add }; }
         public static Vertex TranslateTex(this Vertex V, Point add) { return new Vertex { Color = V.Color, Pos = V.Pos, Tex = V.Tex + add }; }
         public static Vertex TranslateTex(this Vertex V, Vector2 add ) { return new Vertex { Color = V.Color, Pos = V.Pos, Tex = V.Tex + add  }; }
         public static Vertex TranslateTex(this Vertex V, Size2F add) { return new Vertex { Color = V.Color, Pos = V.Pos, Tex = V.Tex.Add(add) }; }

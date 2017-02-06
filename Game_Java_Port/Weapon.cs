@@ -569,7 +569,6 @@ namespace Game_Java_Port {
                                 break;
                             else
                                 i--;
-                            if(!targ.IsDisposed) {
                                 Owner.Attack(targ, Owner.MeleeDamageR);
                                 if(Behaviour.HasFlag(BulletBehaviour.Knockback)) {
 
@@ -577,7 +576,6 @@ namespace Game_Java_Port {
                                     //targ.MovementVector.X += -(float)Math.Cos(Owner.Location.angleTo(targ.Location).Radians) * Math.Min(80000 / GameVars.TicksPerSecond, ((Owner.MeleeDamageR / targ.MaxHealth)) * 10000 / GameVars.TicksPerSecond);
                                     //targ.MovementVector.Y += -(float)Math.Sin(Owner.Location.angleTo(targ.Location).Radians) * Math.Min(80000 / GameVars.TicksPerSecond, ((Owner.MeleeDamageR / targ.MaxHealth)) * 10000 / GameVars.TicksPerSecond);
                                 }
-                            }
                         }
                     }
 

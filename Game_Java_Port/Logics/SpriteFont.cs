@@ -138,75 +138,48 @@ namespace Game_Java_Port.Logics {
         }
 
         #region generateText overloads
-        public RenderData generateText(string s, float X = 0, float Y = 0, float Width = 0, float Height = 0) { return generateText(s, new RectangleF(X, Y, Width, Height)); }
-        public RenderData generateText(string s, int X = 0, int Y = 0, int Width = 0, int Height = 0) { return generateText(s, new RectangleF(X,Y,Width,Height)); }
-        public RenderData generateText(string s, Point pos) { return generateText(s, new RectangleF(pos.X, pos.Y, 0, 0)); }
-        public RenderData generateText(string s, Vector2 pos) { return generateText(s, new RectangleF(pos.X, pos.Y, 0,0)); }
-        public RenderData generateText(string s, Size2 size) { return generateText(s, new RectangleF(0,0,size.Width, size.Height)); }
-        public RenderData generateText(string s, Size2F size) { return generateText(s, new RectangleF(0, 0, size.Width, size.Height)); }
-        public RenderData generateText(string s, Rectangle area) { return generateText(s, new RectangleF(area.X, area.Y, area.Width, area.Height)); }
+        public RenderData generateText(string s, float X = 0, float Y = 0, float Z = 0, float Width = 0, float Height = 0) { return generateText(s, new RectangleF(X, Y, Width, Height), Z); }
+        public RenderData generateText(string s, Point pos, float Z = 0) { return generateText(s, new RectangleF(pos.X, pos.Y, 0, 0), Z); }
+        public RenderData generateText(string s, Vector2 pos, float Z = 0) { return generateText(s, new RectangleF(pos.X, pos.Y, 0,0), Z); }
+        public RenderData generateText(string s, Size2 size, float Z = 0) { return generateText(s, new RectangleF(0,0,size.Width, size.Height), Z); }
+        public RenderData generateText(string s, Size2F size, float Z = 0) { return generateText(s, new RectangleF(0, 0, size.Width, size.Height), Z); }
+        public RenderData generateText(string s, Rectangle area, float Z = 0) { return generateText(s, new RectangleF(area.X, area.Y, area.Width, area.Height), Z); }
         #endregion
 
-        public RenderData generateText(string s, RectangleF? Area = null) {
-
-            RectangleF ActualArea = Area.GetValueOrDefault();
-
+        public RenderData generateText(string s, RectangleF Area, float Z = 0) {
 
             Size2 Size = Size2.Empty;
 
             // gets lines seperated by \n's and the final size of the text
-            string[] substr = prepare(s, new Size2((int)ActualArea.Width, (int)ActualArea.Height), out Size);
+            string[] substr = prepare(s, new Size2((int)Area.Width, (int)Area.Height), out Size);
 
 
-            ActualArea.Size = new Size2F(Size.Width,Size.Height);
+			Area.Size = new Size2F(Size.Width,Size.Height);
 
-            RenderData result = _Font;
+            RenderData result = _Font.ValueCopy();
 
-            result.Area = ActualArea;
+            result.Area = Area;
+			result.Z = Z;
 
-            /*
-            // this block creates a pointer to the buffer which is required for the datapointer constructor.
-            // the normal constructor of the sharpdx bitmap wrapper class is bugged. it randomly inserts red pixels.
-            // to prevent that from happening we create our own empty buffer as dataset for the empty bitmap.
-            unsafe {
-                fixed (byte* pointer = buffer) {
-                    IntPtr ptr = new IntPtr(pointer);
-                    result = new Bitmap(Program.D2DContext, Size, new DataPointer(pointer, buffer.Length), 4 * Size.Width, new BitmapProperties(Program.PForm));
-                }
-            }
-            */
-
-            //draws the text into the bitmap while preserving the bitmaps transparency.
             drawText(substr, result);
 
             return result;
         }
 
-		/*
-        /// <summary>
-        /// Fills the bitmap with the last character in the spriteset
-        /// </summary>
-        /// <param name="result"></param>
-        private void fill(Bitmap result) {
-            for(int y = 0; y < result.PixelSize.Height; y += _Font.TileSize.Height) {
-                for(int x = 0; x < result.PixelSize.Width; x += _Font.TileSize.Width) {
-                    result.CopyFromBitmap(_Font.Tiles.Last(), new Point(x, y));
-                }
-            }
-        }
-		*/
-
         private void drawText(string[] s, RenderData output) {
-            // 
-            int y = ParagraphSpacing;
 
+			List<RenderData> characters = new List<RenderData>();
+
+            int y = ParagraphSpacing;
             int x = 0;
             foreach(string substring in s) { 
 
                 foreach(char c in substring) {
-                    
-                    //output.CopyFromBitmap(translate(c), new Point(x,y));
-                    
+					RenderData rd = translate(c);
+					rd.Z = output.mdl.VertexBuffer[0].Pos.Z + Renderer.LayerOffset_Text;
+					rd.mdl.VertexBuffer.ApplyRectangle(new RectangleF(TileSize.Width * x, TileSize.Height * y, TileSize.Width, TileSize.Height));
+					characters.Add(rd);
+
                     x += TileSize.Width;
 
                     if (x > dataLoader.D3DResources[output.ResID].Description.Width) { // line break
@@ -218,15 +191,17 @@ namespace Game_Java_Port.Logics {
                 y += TileSize.Height + ParagraphSpacing;// new line
                 x = 0;
             }
+			output.SubObjs = characters.ToArray();
         }
 
         public RenderData translate(char c) {
 			RenderData result = new RenderData {
 				AnimationFrameCount = _Font.AnimationFrameCount,
 				ResID = _Font.ResID,
-				mdl = _Font.mdl
+				mdl = _Font.mdl.ValueCopy()
 			};
-            if(c < 32 || c - 32 > _Font.AnimationFrameCount.X * _Font.AnimationFrameCount.Y)
+			result.mdl.VertexBuffer.ApplyColor(Color.White);
+            if(c < 32 || c - 32 >= _Font.AnimationFrameCount.X * _Font.AnimationFrameCount.Y)
 				result.mdl.VertexBuffer.SetAnimationFrame(result.AnimationFrameCount.X * result.AnimationFrameCount.Y - 1, result.AnimationFrameCount);
 			else
 				result.mdl.VertexBuffer.SetAnimationFrame(c - 32, result.AnimationFrameCount);
@@ -239,11 +214,10 @@ namespace Game_Java_Port.Logics {
                 dataLoader.D3DResources[ResID].Description.Height / rows);
             _Font = new RenderData {
                 AnimationFrameCount = new Point(cols, rows),
-                mdl = Model.Square,
                 ResID = ResID,
                 Area = new RectangleF(0,0,TileSize.Width, TileSize.Height)
             };
-
+			_Font.mdl.VertexBuffer.ApplyColor(Color.Transparent);
         }
 
         private static SpriteFont _DEFAULT;

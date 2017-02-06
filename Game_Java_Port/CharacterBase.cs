@@ -11,13 +11,13 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Game_Java_Port {
-    public abstract class CharacterBase : IRenderable, ITickable, ISerializable<CharacterBase>, IIndexable, ICollidible, IDisposable {
+    public abstract class CharacterBase : IRenderable, ITickable, ISerializable<CharacterBase>, IIndexable, ICollidible {
 		
 
 		public void updateRenderData() {
 			//Todo: update renderdata...
 		}
-        public RenderData RenderData { get; set; } = new RenderData();
+        public RenderData RenderData { get; set; }
 
         #region base values
 
@@ -46,15 +46,11 @@ namespace Game_Java_Port {
         }
 
         public abstract GenerationType GenType { get; }
-        
-        public bool IsDisposed { get { return disposed; } }
 
         private float _CoolDown = 0;
 
         public Faction Team = FactionNames.Environment;
 
-        //public abstract DrawType drawType { get; set; }
-        public SolidColorBrush Pencil = new SolidColorBrush(Program.D2DContext, Color.FromRgba(0xFF00FFFF));
         public bool IsMoving { get; set; }
         private RectangleF _Area;
         public RectangleF Area {
@@ -695,11 +691,7 @@ namespace Game_Java_Port {
 
         public virtual void draw(DeviceContext rt) {
             if(!Game.state.HasFlag(Game.GameState.Menu)) {
-
-
-                if(!disposed) {
-
-                    Color4 tempColor = Pencil.Color;
+				
 
                     /*
                     switch(drawType) {
@@ -819,62 +811,53 @@ namespace Game_Java_Port {
                         
                     }
                     */
-                }
             }
         }
 
+		public virtual void Tick() {
+			if (_CoolDown > 0)
+				_CoolDown -= GameStatus.TimeMultiplier;
 
-        public float radToDeg(float rad) {
-            return (float)(rad / 2 / Math.PI * 360);
-        }
+			if (IsMoving) {
+				applyAcceleration();
+			}
 
-        public virtual void Tick() {
-            if(_CoolDown > 0)
-                _CoolDown -= GameStatus.TimeMultiplier;
+			slowDown();
 
-            if(IsMoving) {
-                applyAcceleration();
-            }
+			RectangleF temp = Area;
 
-            slowDown();
+			List<CharacterBase> list = new List<CharacterBase>();
 
-            RectangleF temp = Area;
-
-            List<CharacterBase> list = new List<CharacterBase>();
-            
-                list.AddRange(GameStatus.GameSubjects);
+			list.AddRange(GameStatus.GameSubjects);
 
 
-            list.Remove(this);
+			list.Remove(this);
 
-            if(list.Any((subj) => subj.CollidesWith(ColType, temp.Center, Size, Area, Poly))) {
-                while(list.Any((subj) => subj.CollidesWith(ColType, temp.Center, Size, Area, Poly))) {
+			if (list.Any((subj) => subj.CollidesWith(ColType, temp.Center, Size, Area, Poly))) {
+				while (list.Any((subj) => subj.CollidesWith(ColType, temp.Center, Size, Area, Poly))) {
 
-                    list.RemoveAll((subj) => !subj.CollidesWith(ColType, temp.Center, Size, Area, Poly));
+					list.RemoveAll((subj) => !subj.CollidesWith(ColType, temp.Center, Size, Area, Poly));
 
-                    list = list.OrderBy((subj) => Vector2.DistanceSquared(subj.Location, Location)).ToList();
+					list = list.OrderBy((subj) => Vector2.DistanceSquared(subj.Location, Location)).ToList();
 
-                    CharacterBase closest = list.First();
+					CharacterBase closest = list.First();
 
-                    temp.Location = Area.Location.move(
-                        closest.Location.angleTo(Location),
-                        (float)Math.Ceiling(closest.Size / 2 + Size / 2 -
-                        Vector2.Distance(Location, closest.Location)));
-                }
-                Area = temp;
-            } else {
-                temp.Location += MovementVector * GameStatus.TimeMultiplier;
+					temp.Location = Area.Location.move(
+						closest.Location.angleTo(Location),
+						(float) Math.Ceiling(closest.Size / 2 + Size / 2 -
+						Vector2.Distance(Location, closest.Location)));
+				}
+			} else {
+				temp.Location += MovementVector * GameStatus.TimeMultiplier;
 
-                Area = temp;
-            }
+			}
+			Area = temp;
 
-            float range = Math.Max(WeaponRangeR, MeleeRangeR);
+			/*
+            float range = Math.Max(Math.Max(WeaponRangeR, MeleeRangeR), Math.Max(WeaponRangeL, MeleeDamageL));
             Target = Location + AimDirection.toVector() * range;
+			
 
-            /*
-                generatelaserlines(range);
-
-    */
             relativePos = Location + MatrixExtensions.PVTranslation;
             relativeTarget = Target + MatrixExtensions.PVTranslation;
 
@@ -882,36 +865,20 @@ namespace Game_Java_Port {
 
             temp.Offset(MatrixExtensions.PVTranslation);
             relativeArea = temp;
-        }
-
-        private void generatelaserlines(float range) {
-
-            if(PrecisionR < 1) {
-
-                laser = new Vector2[3];
-
-                laser[0] = Location + MatrixExtensions.PVTranslation;
-                laser[1] = laser[0].move(new AngleSingle(AimDirection.Revolutions + (1 - PrecisionR) / 2, AngleType.Revolution), range);
-                laser[2] = laser[0].move(new AngleSingle(AimDirection.Revolutions - (1 - PrecisionR) / 2, AngleType.Revolution), range);
+			*/
+		}
 
 
-            } else {
-                laser = new Vector2[2];
-                laser[0] = Location + MatrixExtensions.PVTranslation;
-                laser[1] = Target + MatrixExtensions.PVTranslation;
-            }
-        }
+		private void applyAcceleration() {
+			Vector2 nextMovementVector = MovementVector + DirectionVector * Acceleration;
 
-        private void applyAcceleration() {
-            Vector2 nextMovementVector = MovementVector + DirectionVector * Acceleration;
+			if (nextMovementVector.LengthSquared() > MaxMovementSpeed * MaxMovementSpeed) {
+				nextMovementVector.Normalize();
+				nextMovementVector *= MaxMovementSpeed;
+			}
+			MovementVector = nextMovementVector;
 
-            if(nextMovementVector.LengthSquared() > MaxMovementSpeed * MaxMovementSpeed) {
-                nextMovementVector.Normalize();
-                nextMovementVector *= MaxMovementSpeed;
-            }
-            MovementVector = nextMovementVector;
-
-        }
+		}
 
         private void slowDown() {
 
@@ -947,7 +914,6 @@ namespace Game_Java_Port {
         /// </summary>
         public void removeFromGame() {
             despawn();
-                Dispose();
         }
 
         virtual public void addToGame() {
@@ -1047,24 +1013,53 @@ namespace Game_Java_Port {
 
         public void drawUI(DeviceContext rt) {
 
-            float padding = 5;
+            int padding = 5;
 
-            float pos = padding;
+            int pos = padding;
 
-            float barwidth = 200;
-            float barheight = 20;
+            int barwidth = 200;
+            int barheight = 20;
 
             //SpriteFont.DEFAULT.directDrawText(Name, new RectangleF(padding, pos, Game.instance.Area.Width - padding * 2, Game.instance.Area.Height - pos), rt);
 
             //rt.DrawText(Name, GameStatus.MenuFont, new RectangleF(padding, pos, Game.instance.Area.Width - padding * 2, Game.instance.Area.Height - pos), Pencil);
 
+			//TODO: add name
+
             pos += 12 + 2 * padding;
 
+			float percent = Health / MaxHealth;
+
             RectangleF barRegion = new RectangleF(padding, pos, barwidth, barheight);
-            RectangleF barSubRegion = new RectangleF(padding, pos, barwidth * Health / MaxHealth, barheight);
+            RectangleF barSubRegion = new RectangleF(padding, pos, barwidth * percent, barheight);
 
             pos += barheight + 2 * padding;
-             
+
+			RenderData bar;
+
+			//healthbar
+
+			bar = new RenderData
+			{
+				ResID = dataLoader.getResID("cmap_bar"),
+				Area = barRegion,
+			};
+			bar.mdl.VertexBuffer.ApplyColor(Color.DarkRed);
+
+			bar.SubObjs = new[] {
+				new RenderData {
+					ResID = dataLoader.getResID("border_bar"),
+					Area = barRegion
+				},
+				new RenderData {
+					ResID = dataLoader.getResID("cmap_bar"),
+					Area = barSubRegion
+				}
+			};
+
+			bar.SubObjs[1].mdl.VertexBuffer.ApplyColor(Color.Red);
+			bar.SubObjs[1].mdl.VertexBuffer.ApplyTextureRepetition(new Vector2(percent, 1));
+			/*
             Color4 temp = Pencil.Color;
 
             Pencil.Color = Color.DarkRed;
@@ -1083,12 +1078,12 @@ namespace Game_Java_Port {
 
             //SpriteFont.DEFAULT.directDrawText(Health.ToString("0.##") + " / " + MaxHealth.ToString("0.##"), barRegion, rt);
             //rt.DrawText(Health.ToString("0.##") + " / " + MaxHealth.ToString("0.##"), GameStatus.MenuFont, barRegion, Pencil);
-
+			*/
             barRegion = new RectangleF(padding, pos, barwidth, barheight);
             barSubRegion = new RectangleF(padding, pos, barwidth * Exp / ExpToLvlUp, barheight);
 
             pos += barheight + 2 * padding;
-
+			/*
             Pencil.Color = Color.DarkBlue;
 
             rt.FillRectangle(barRegion, Pencil);
@@ -1155,22 +1150,8 @@ namespace Game_Java_Port {
             }
 
             Pencil.Color = temp;
+			*/
         }
-
-        #region IDisposable Support
-        private bool disposed = false; // To detect redundant calls
-
-        protected virtual void Dispose(bool disposing) {
-            if(!disposed) {
-                if(disposing) {
-                    Pencil.Dispose();
-                }
-                disposed = true;
-            }
-        }
-        public void Dispose() {
-            Dispose(true);
-        }
-        #endregion
+		
     }
 }

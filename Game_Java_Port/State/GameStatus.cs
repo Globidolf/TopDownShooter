@@ -433,7 +433,7 @@ namespace Game_Java_Port
             pendingPresses = Controls.none;
 
             Cursor.CursorType = CursorTypes.Normal;
-            Cursor.Tick();
+            //Cursor.Tick();
             
                 _RegisteredMenus.ForEach((menu) =>
                 {
@@ -442,7 +442,7 @@ namespace Game_Java_Port
                 });
             
 
-            Cursor.Tick();
+            //Cursor.Tick();
             
 
             if(!Paused || init) {
@@ -466,9 +466,9 @@ namespace Game_Java_Port
             }
             
 
-            Cursor.Tick();
+            //Cursor.Tick();
 
-            Cursor.Apply();
+            //Cursor.Apply();
 
             justPressed = Controls.none;
         }
@@ -547,7 +547,7 @@ namespace Game_Java_Port
             addTickable(Game.instance);
 			Cursor.register();
             //addRenderable(Cursor);
-            addTickable(Cursor);
+            //addTickable(Cursor);
 
 			Background_Tiled back = new Background_Tiled(
 				dataLoader.getResID("tiles_rock_32_64"),

@@ -18,7 +18,7 @@ namespace Game_Java_Port {
 		
 
 		public void updateRenderData() {
-			//Todo: update renderdata...
+            RenderData.Area = new RectangleF(pos.X, pos.Y, _hitrange, _hitrange);
 		}
         public RenderData RenderData { get; set; }
         
@@ -53,34 +53,6 @@ namespace Game_Java_Port {
         float _damage;
 
         float _hitrange = 10;
-
-        float pseudorandom;
-
-        //Bitmap bullettexture;
-        //Animated_Tileset animation;
-
-        //RawMatrix InitialPerspective;
-        /*
-        Vector2 relativePos;
-        Color _filter;
-        ColorMatrix ColorFilter;
-        Transform3D Transform;
-        Image Effect;
-        */
-
-        public void draw(DeviceContext dc) {
-            if(_initiated) {
-                if(!disposed) {
-                    
-                    if (!_source.Behaviour.HasFlag(BulletBehaviour.Beam)) {
-                        
-                        //dc.DrawImage(Effect);
-                    }
-
-                }
-                _rendered = true;
-            }
-        }
 
         public CharacterBase getCurrentTarget() {
             return _currentTarget;
@@ -122,12 +94,16 @@ namespace Game_Java_Port {
         //public DrawType drawType { get; set; } = DrawType.Polygon;
 
         public Bullet(Weapon source, int? seed = null, List<CharacterBase> reserved = null) {
-
-            RenderData = new RenderData();
-
+            lastPos = _sourceOwner.Location;
+            pos = lastPos;
             creationtime = (float)Program.stopwatch.Elapsed.TotalSeconds;
+			RenderData = new RenderData
+			{
+				AnimationOffset = (((creationtime * Stopwatch.Frequency) % 10000) / 1000) % 1f
+			};
+            RenderData.Area = new RectangleF(pos.X, pos.Y, _hitrange, _hitrange);
 
-            RenderData.AnimationOffset = (((creationtime * Stopwatch.Frequency) % 10000) / 1000) % 1f;
+            
             //initialize RNG
             if(seed == null)
                 _RNG = new Random();
@@ -187,9 +163,6 @@ namespace Game_Java_Port {
             
             //InitialPerspective = MatrixExtensions.CreateScaleMatrix(new Vector2(_hitrange / dataLoader.D3DResources[RenderData.ResID].Description.Width)).Translate(new Vector2(-_hitrange / 2));
 
-            lastPos = _sourceOwner.Area.Center;
-            pos = lastPos;
-            RenderData.Area = new RectangleF(pos.X, pos.Y, _hitrange, _hitrange);
             //init ignore list (do not hit owner)
             _nonTargets = new List<CharacterBase>();
             _nonTargets.Add(_sourceOwner);

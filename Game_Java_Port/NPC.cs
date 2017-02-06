@@ -97,7 +97,7 @@ namespace Game_Java_Port {
             RenderData.Area = new RectangleF(Program.width/2, Program.height/2, dataLoader.D3DResources[RenderData.ResID].Description.Width, dataLoader.D3DResources[RenderData.ResID].Description.Height);
             Health = MaxHealth;
 
-            Pencil.Color = Color.Blue;
+            //Pencil.Color = Color.Blue;
 
 
             if(directAdd) {
@@ -167,42 +167,42 @@ namespace Game_Java_Port {
             switch(Rank) {
                 case Rank.Furniture:
                     Size = minSize + 6 + (float)RNG.NextDouble() * 24;
-                    Pencil.Color = Color.LightPink;
+                    //Pencil.Color = Color.LightPink;
                     Team = Faction.Environment;
                     AI = null;
                     break;
                 case Rank.Trash:
                     Size = minSize + 4 + (float)RNG.NextDouble() * 2;
-                    Pencil.Color = Color.Gray;
+                    //Pencil.Color = Color.Gray;
                     ViewRadius = 200 * viewmult;
                     break;
                 case Rank.Common:
                     Size = minSize + 8 + (float)RNG.NextDouble() * 4;
-                    Pencil.Color = Color.White;
+                    //Pencil.Color = Color.White;
                     ViewRadius = 220 * viewmult;
                     break;
                 case Rank.Elite:
                     Size = minSize + 12 + (float)RNG.NextDouble() * 4;
-                    Pencil.Color = Color.Blue;
+                    //Pencil.Color = Color.Blue;
                     ViewRadius = 250 * viewmult;
                     break;
                 case Rank.Rare:
                     Size = minSize + 16 + (float)RNG.NextDouble() * 4;
-                    Pencil.Color = Color.Yellow;
+                    //Pencil.Color = Color.Yellow;
                     ViewRadius = 300 * viewmult;
                     break;
                 case Rank.Leader:
                     Size = minSize + 20 + (float)RNG.NextDouble() * 5;
-                    Pencil.Color = Color.Orange;
+                    //Pencil.Color = Color.Orange;
                     ViewRadius = 400 * viewmult;
                     break;
                 case Rank.Boss:
                     Size = minSize + 30 + (float)RNG.NextDouble() * 30;
-                    Pencil.Color = Color.Red;
+                    //Pencil.Color = Color.Red;
                     ViewRadius = 500 * viewmult;
                     break;
                 case Rank.Player:
-                    Pencil.Color = Color.Green;
+                    //Pencil.Color = Color.Green;
                     Team = Faction.Players;
                     break;
             }
@@ -272,6 +272,7 @@ namespace Game_Java_Port {
 
                     if(this != Game.instance._player) {
                         if(Game.instance._player != null) {
+						/*
                             Color4 temp = Pencil.Color;
 
                             // prevent concurrent exceptions
@@ -296,7 +297,7 @@ namespace Game_Java_Port {
                             //SpriteFont.DEFAULT.directDrawText(displaystring, hpRect, rt);
 
                             //rt.DrawText(displaystring, MenuFont, hpRect, Pencil);
-
+							*/
                         }
                     } else
                         drawUI(rt);
@@ -317,15 +318,6 @@ namespace Game_Java_Port {
             if(_ActionInfo != null)
                 _ActionInfo.Show();
                 GameObjects.Add(this);
-        }
-
-        protected override void Dispose(bool disposing) {
-            if(!disposed) {
-                if(_ActionInfo != null)
-                    _ActionInfo.Dispose();
-            }
-            disposed = true;
-            base.Dispose(disposing);
         }
 
         public void setInputState(byte[] buffer, ref int pos) {

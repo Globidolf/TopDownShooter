@@ -10,11 +10,12 @@ using System.Threading.Tasks;
 
 namespace Game_Java_Port
 {
-	class Beam : IRenderable, ITickable, IDisposable
+	class Beam : IRenderable, ITickable
 	{
 
 		public void updateRenderData() {
-			//Todo: update renderdata...
+			float time = Duration / initialDuration;
+			RenderData.mdl.VertexBuffer = RenderData.mdl.VertexBuffer.ApplyColor(InitialColor.ToVector4() * new Vector4(1,1,1, time * InitialColor.A));
 		}
 		private readonly float initialDuration;
 		private float Duration;
@@ -22,8 +23,6 @@ namespace Game_Java_Port
 		public RenderData RenderData { get; set; }
 
 		private readonly Color InitialColor;
-
-		private readonly float  InitialStrokeWidth;
 
 		public Beam(Vector2 PointA, Vector2 PointB,
 			//optional values:
@@ -45,7 +44,6 @@ namespace Game_Java_Port
 				ResID = dataLoader.getResID()
 			};
 			beamColor = beamColor.HasValue ? beamColor.Value : new Color() { A = 0x88, B = 255 };
-			InitialStrokeWidth = strokewidth;
 			//new Ellipse(Area.Center + MatrixExtensions.PVTranslation, Area.Width / 2, Area.Height / 2);
 			initialDuration = Duration = duration;
 
@@ -97,43 +95,13 @@ namespace Game_Java_Port
 			this.register();//GameStatus.addRenderable(this);
 			GameStatus.addTickable(this);
 		}
-
-		public void draw(DeviceContext rt) {
-
-		}
-
+		
 		public void Tick() {
-			
 			if (Duration <= 0) {
-				Dispose();
-			} else {
+				GameStatus.removeTickable(this);
+				this.unregister();
+			} else
 				Duration -= GameStatus.TimeMultiplier;
-				if (!disposed) {
-					float time = Duration / initialDuration;
-					RenderData.mdl.VertexBuffer = RenderData.mdl.VertexBuffer.ApplyColor(InitialColor.ToVector4() * new Vector4(1,1,1, time * InitialColor.A));
-					
-					float StrokeWidth = InitialStrokeWidth * time;
-				}
-			}
 		}
-
-		#region IDisposable Support
-		private bool disposed = false; // To detect redundant calls
-
-		protected virtual void Dispose(bool disposing) {
-			if (!disposed) {
-				if (disposing) {
-					this.unregister();
-					//GameStatus.removeRenderable(this);
-					GameStatus.removeTickable(this);
-				}
-				disposed = true;
-			}
-		}
-
-		public void Dispose() {
-			Dispose(true);
-		}
-		#endregion
 	}
 }

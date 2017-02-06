@@ -87,9 +87,7 @@ namespace Game_Java_Port
             form.MouseMove += (obj, args) =>
             {
                 GameStatus.MousePos = new Vector2(args.Location.X, args.Location.Y) / scale;
-
-                GameStatus.Cursor.RenderData.mdl.VertexBuffer = 
-                GameStatus.Cursor.RenderData.mdl.VertexBuffer.ApplyRectangle( new RectangleF(GameStatus.MousePos.X, GameStatus.MousePos.Y, CursorSize, CursorSize));
+				GameStatus.Cursor.invalidate = true;
             };
 
             form.KeyUp += (obj, args) => GameStatus.SetKeyState(args, false);

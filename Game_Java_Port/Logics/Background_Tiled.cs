@@ -67,13 +67,13 @@ namespace Game_Java_Port {
 					CustomMaths.mod(x * width + MatrixExtensions.PVTranslation.X, Program.width + width) - width,
 					CustomMaths.mod(y * height + MatrixExtensions.PVTranslation.Y, Program.height + height) - height,
 					width, height);
-				RenderData.SubObjs[i].mdl.VertexBuffer = RenderData.SubObjs[i].mdl.VertexBuffer
+				RenderData.SubObjs[i].mdl.VertexBuffer
 					.SetAnimationFrame(
 						RNG.Next(
 							RenderData.AnimationFrameCount.X *
 							RenderData.AnimationFrameCount.Y),
-						RenderData.AnimationFrameCount)
-					.ApplyZAxis(RenderData.mdl.VertexBuffer[0].Pos.Z);
+						RenderData.AnimationFrameCount);
+				RenderData.SubObjs[i].mdl.VertexBuffer.ApplyZAxis(RenderData.mdl.VertexBuffer[0].Pos.Z);
 			}
         }
         public Background_Tiled(
