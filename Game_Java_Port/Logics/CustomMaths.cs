@@ -386,12 +386,16 @@ namespace Game_Java_Port {
             return (T)minvalue;
         }
 
-        public static float mod(float left, float right) {
-            float rest = left % right;
-            return rest < 0 ? rest + right : rest;
-        }
+		public static float mod(float left, float right) {
+			float rest = left % right;
+			return rest < 0 ? rest + right : rest;
+		}
+		public static int mod(int left, int right) {
+			int rest = left % right;
+			return rest < 0 ? rest + right : rest;
+		}
 
-        public static bool isInBetween( this AngleSingle a0, AngleSingle a1, AngleSingle a2) {
+		public static bool isInBetween( this AngleSingle a0, AngleSingle a1, AngleSingle a2) {
 
             //normalize all values
             a0.Wrap();
@@ -454,7 +458,13 @@ namespace Game_Java_Port {
             return track(a0, target, new AngleSingle(strength, type), perfect);
         }
 
-        public static RectangleF Floor(this RectangleF rect) {
+		public static Rectangle Floor(this Rectangle rect) {
+			return new Rectangle((int) rect.X, (int) rect.Y, (int) rect.Width, (int) rect.Height);
+		}
+		public static Rectangle Ceil(this Rectangle rect) {
+			return new Rectangle((int) (rect.X + 1 - float.Epsilon), (int) (rect.Y + 1 - float.Epsilon), (int) (rect.Width + 1 - float.Epsilon), (int) (rect.Height + 1 - float.Epsilon));
+		}
+		public static RectangleF Floor(this RectangleF rect) {
             return new RectangleF((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height);
         }
         public static RectangleF Ceil(this RectangleF rect) {

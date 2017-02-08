@@ -18,7 +18,7 @@ namespace Game_Java_Port {
 		
 
 		public void updateRenderData() {
-            RenderData.Area = new RectangleF(pos.X, pos.Y, _hitrange, _hitrange);
+            RenderData.Area = new Rectangle((int)pos.X, (int) pos.Y, (int) _hitrange, (int) _hitrange);
 		}
         public RenderData RenderData { get; set; }
         
@@ -101,7 +101,7 @@ namespace Game_Java_Port {
 			{
 				AnimationOffset = (((creationtime * Stopwatch.Frequency) % 10000) / 1000) % 1f
 			};
-            RenderData.Area = new RectangleF(pos.X, pos.Y, _hitrange, _hitrange);
+            RenderData.Area = new Rectangle((int) pos.X, (int) pos.Y, (int) _hitrange, (int) _hitrange);
 
             
             //initialize RNG

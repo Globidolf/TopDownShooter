@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 
-using Resource = SharpDX.Direct3D11.Resource;
 using Device = SharpDX.Direct3D11.Device;
 
 namespace Game_Java_Port {

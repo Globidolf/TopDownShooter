@@ -435,12 +435,6 @@ namespace Game_Java_Port
             Cursor.CursorType = CursorTypes.Normal;
             //Cursor.Tick();
             
-                _RegisteredMenus.ForEach((menu) =>
-                {
-                    if(menu.isOpen)
-                        menu.Tick();
-                });
-            
 
             //Cursor.Tick();
             

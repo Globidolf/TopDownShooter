@@ -27,8 +27,10 @@ namespace Game_Java_Port {
 		public void updateRenderData() {
 			if (invalidate) {
 				RenderData.mdl.VertexBuffer.ApplyRectangle(new RectangleF(MousePos.X, MousePos.Y, _Size, _Size));
+				/*
 				for (int i = 0 ; i < RenderData.SubObjs[0].SubObjs.Length ; i++)
 					RenderData.SubObjs[0].SubObjs[i].mdl.VertexBuffer.ApplyRectangle(new RectangleF(MousePos.X + 6 * (i + 3), MousePos.Y, 6, 8));
+					*/
 				invalidate = false;
 			}
 		}
@@ -62,7 +64,7 @@ namespace Game_Java_Port {
 				Z = Renderer.Layer_Cursor,
 				SubObjs = new[]
 				{
-					SpriteFont.DEFAULT.generateText("TEST nachricht ablablablabsdfsa jfwoie jfwaiesjf alheijhf soikjfnlrgnedngksdjrngsdlkjngslkdjngslker",Z: 100)
+					SpriteFont.DEFAULT.generateText("TEST nachricht",Z: 100)
 				}
 			};
             RenderData.mdl.VertexBuffer.ApplyRectangle(new RectangleF(MousePos.X, MousePos.Y, _Size, _Size));

@@ -15,7 +15,9 @@ namespace Game_Java_Port.Logics {
         public Size2 TileSize;
 
         public RenderData _Font;
-        //private Tileset _Font;
+		//private Tileset _Font;
+
+		private readonly RenderData[] buffer;
 
         private string[] prepare(string s, Size2 max, out Size2 actualSize) {
 
@@ -82,7 +84,8 @@ namespace Game_Java_Port.Logics {
             return MeasureString(s, Size2.Empty);
         }
         public Size2 MeasureString(string s, Size2 max) {
-
+			if (s == null || s == "")
+				return max;
             string[] substrings = s.Split('\n');
             int[] charcounts = new int[substrings.Length];
             int[] calculatedwidths = new int[substrings.Length];
@@ -138,15 +141,15 @@ namespace Game_Java_Port.Logics {
         }
 
         #region generateText overloads
-        public RenderData generateText(string s, float X = 0, float Y = 0, float Z = 0, float Width = 0, float Height = 0) { return generateText(s, new RectangleF(X, Y, Width, Height), Z); }
-        public RenderData generateText(string s, Point pos, float Z = 0) { return generateText(s, new RectangleF(pos.X, pos.Y, 0, 0), Z); }
-        public RenderData generateText(string s, Vector2 pos, float Z = 0) { return generateText(s, new RectangleF(pos.X, pos.Y, 0,0), Z); }
-        public RenderData generateText(string s, Size2 size, float Z = 0) { return generateText(s, new RectangleF(0,0,size.Width, size.Height), Z); }
-        public RenderData generateText(string s, Size2F size, float Z = 0) { return generateText(s, new RectangleF(0, 0, size.Width, size.Height), Z); }
-        public RenderData generateText(string s, Rectangle area, float Z = 0) { return generateText(s, new RectangleF(area.X, area.Y, area.Width, area.Height), Z); }
+        public RenderData generateText(string s, float X = 0, float Y = 0, float Z = 0, float Width = 0, float Height = 0, Color? color = null, Color? shadow = null) { return generateText(s, new Rectangle((int) X, (int) Y, (int) Width, (int) Height), Z	,color,shadow); }
+        public RenderData generateText(string s, Point pos, float Z = 0			, Color? color = null, Color? shadow = null) { return generateText(s, new Rectangle(pos.X, pos.Y, 0, 0), Z												,color,shadow); }
+        public RenderData generateText(string s, Vector2 pos, float Z = 0		, Color? color = null, Color? shadow = null) { return generateText(s, new Rectangle((int) pos.X, (int) pos.Y, 0,0), Z												,color,shadow); }
+        public RenderData generateText(string s, Size2 size, float Z = 0		, Color? color = null, Color? shadow = null) { return generateText(s, new Rectangle(0,0,size.Width, size.Height), Z									,color,shadow); }
+        public RenderData generateText(string s, Size2F size, float Z = 0		, Color? color = null, Color? shadow = null) { return generateText(s, new Rectangle(0, 0, (int) size.Width, (int) size.Height), Z									,color,shadow); }
+        public RenderData generateText(string s, RectangleF area, float Z = 0	, Color? color = null, Color? shadow = null) { return generateText(s, new Rectangle((int) area.X, (int) area.Y, (int) area.Width, (int) area.Height), Z						,color,shadow); }
         #endregion
 
-        public RenderData generateText(string s, RectangleF Area, float Z = 0) {
+        public RenderData generateText(string s, Rectangle Area, float Z = 0, Color? color = null, Color? shadow = null) {
 
             Size2 Size = Size2.Empty;
 
@@ -154,7 +157,8 @@ namespace Game_Java_Port.Logics {
             string[] substr = prepare(s, new Size2((int)Area.Width, (int)Area.Height), out Size);
 
 
-			Area.Size = new Size2F(Size.Width,Size.Height);
+			Area.Width = Size.Width;
+			Area.Height = Size.Height;
 
             RenderData result = _Font.ValueCopy();
 
@@ -166,21 +170,31 @@ namespace Game_Java_Port.Logics {
             return result;
         }
 
-        private void drawText(string[] s, RenderData output) {
+        private void drawText(string[] s, RenderData output, Color? color = null, Color? shadow = null) {
+
+			shadow = shadow.HasValue ? shadow : Color.Black;
+			color = color.HasValue ? color : Color.White;
 
 			List<RenderData> characters = new List<RenderData>();
 
-            int y = ParagraphSpacing;
+            int y = LineSpacing;
             int x = 0;
             foreach(string substring in s) { 
 
                 foreach(char c in substring) {
 					RenderData rd = translate(c);
+					rd.mdl.VertexBuffer.ApplyRectangle(new RectangleF(output.mdl.VertexBuffer[0].Pos.X + x, output.mdl.VertexBuffer[0].Pos.Y + y, TileSize.Width, TileSize.Height));
+					rd.mdl.VertexBuffer.ApplyColor(shadow.Value);
+					rd.mdl.VertexBuffer.TranslatePos(1);
 					rd.Z = output.mdl.VertexBuffer[0].Pos.Z + Renderer.LayerOffset_Text;
-					rd.mdl.VertexBuffer.ApplyRectangle(new RectangleF(TileSize.Width * x, TileSize.Height * y, TileSize.Width, TileSize.Height));
+					characters.Add(rd);
+					rd = rd.ValueCopy();
+					rd.mdl.VertexBuffer.ApplyColor(color.Value);
+					rd.Z = output.mdl.VertexBuffer[0].Pos.Z + Renderer.LayerOffset_Text + Renderer.LayerOffset_Outline;
+					rd.mdl.VertexBuffer.TranslatePos(-1);
 					characters.Add(rd);
 
-                    x += TileSize.Width;
+					x += TileSize.Width;
 
                     if (x > dataLoader.D3DResources[output.ResID].Description.Width) { // line break
                         y += TileSize.Height + LineSpacing;
@@ -191,21 +205,13 @@ namespace Game_Java_Port.Logics {
                 y += TileSize.Height + ParagraphSpacing;// new line
                 x = 0;
             }
-			output.SubObjs = characters.ToArray();
+			output.mdl = characters.Merge().mdl;
         }
 
         public RenderData translate(char c) {
-			RenderData result = new RenderData {
-				AnimationFrameCount = _Font.AnimationFrameCount,
-				ResID = _Font.ResID,
-				mdl = _Font.mdl.ValueCopy()
-			};
-			result.mdl.VertexBuffer.ApplyColor(Color.White);
-            if(c < 32 || c - 32 >= _Font.AnimationFrameCount.X * _Font.AnimationFrameCount.Y)
-				result.mdl.VertexBuffer.SetAnimationFrame(result.AnimationFrameCount.X * result.AnimationFrameCount.Y - 1, result.AnimationFrameCount);
-			else
-				result.mdl.VertexBuffer.SetAnimationFrame(c - 32, result.AnimationFrameCount);
-            return result;
+			if (buffer.Length >= c - 32)
+				return buffer[c - 32].ValueCopy();
+			else return buffer[buffer.Length - 1].ValueCopy();
         }
 
         private SpriteFont(int ResID, int cols = 32, int rows = 3) {
@@ -215,9 +221,24 @@ namespace Game_Java_Port.Logics {
             _Font = new RenderData {
                 AnimationFrameCount = new Point(cols, rows),
                 ResID = ResID,
-                Area = new RectangleF(0,0,TileSize.Width, TileSize.Height)
+                Area = new Rectangle(0,0,TileSize.Width, TileSize.Height)
             };
 			_Font.mdl.VertexBuffer.ApplyColor(Color.Transparent);
+			buffer = new RenderData[cols * rows];
+			for (int i = 0 ; i < rows ; i++)
+				for (int j = 0 ; j < cols ; j++) {
+					RenderData result = new RenderData
+					{
+						AnimationFrameCount = _Font.AnimationFrameCount,
+						ResID = _Font.ResID,
+						mdl = _Font.mdl.ValueCopy()
+					};
+					result.mdl.VertexBuffer.ApplyColor(Color.White);
+
+					result.mdl.VertexBuffer.SetAnimationFrame(i * cols + j, result.AnimationFrameCount);
+
+					buffer[i * cols + j] = result;
+				}
         }
 
         private static SpriteFont _DEFAULT;

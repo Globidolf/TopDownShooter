@@ -147,7 +147,6 @@
     <Compile Include="Explosion.cs" />
     <Compile Include="Logics\Faction.cs" />
     <Compile Include="Logics\SpriteFont.cs" />
-    <Compile Include="Menu_BG_Tiled.cs" />
     <Compile Include="Render\Renderer.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="State\Game.cs" />
@@ -205,7 +204,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="data\**\*.*">
+    <Content Include="data\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Render\shaders.hlsl">

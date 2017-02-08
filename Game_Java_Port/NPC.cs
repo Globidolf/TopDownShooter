@@ -94,7 +94,7 @@ namespace Game_Java_Port {
             //drawType = DrawType.Image;
             
 
-            RenderData.Area = new RectangleF(Program.width/2, Program.height/2, dataLoader.D3DResources[RenderData.ResID].Description.Width, dataLoader.D3DResources[RenderData.ResID].Description.Height);
+            RenderData.Area = new Rectangle(Program.width/2, Program.height/2, dataLoader.D3DResources[RenderData.ResID].Description.Width, dataLoader.D3DResources[RenderData.ResID].Description.Height);
             Health = MaxHealth;
 
             //Pencil.Color = Color.Blue;

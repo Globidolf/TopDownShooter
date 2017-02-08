@@ -31,8 +31,8 @@ namespace Game_Java_Port.State
 			}
 		}
 
-		public UI_Bar(RectangleF Area, Func<string> textProvider, Color front, Color back) : this(Area, textProvider(), front, back) { }
-		public UI_Bar(RectangleF Area, string text				, Color front, Color back) {
+		public UI_Bar(Rectangle Area, Func<string> textProvider, Color front, Color back) : this(Area, textProvider(), front, back) { }
+		public UI_Bar(Rectangle Area, string text				, Color front, Color back) {
 			stringbuffer = text;
 			int ID_colormap = dataLoader.getResID("cmap_bar");
 			int ID_barborder = dataLoader.getResID("border_bar");

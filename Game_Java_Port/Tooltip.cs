@@ -14,8 +14,6 @@ namespace Game_Java_Port {
 
         bool show = false;
 
-        protected Menu_BG_Tiled frame;
-
         public float Padding { get; set; } = 2;
 
         protected internal string Text { get; set; }
@@ -55,8 +53,6 @@ namespace Game_Java_Port {
 
             Text = text;
 
-            frame = Menu_BG_Tiled.Default;
-
             if (!ticksInternal)
                 GameStatus.addTickable(this);
         }
@@ -67,8 +63,10 @@ namespace Game_Java_Port {
         }
 
         public virtual void draw(DeviceContext rt) {
+			/*
             frame.draw(rt);
             drawText(rt);
+			*/
         }
 
         /// <summary>
@@ -106,8 +104,11 @@ namespace Game_Java_Port {
 
                     relArea.Offset(Offset);
                     relLabel.Offset(Offset);
+					RenderData.mdl.VertexBuffer.ApplyRectangle(Area);
+					/*
                     frame.Area = relArea;
                     frame.Tick();
+					*/
                 }
         }
 

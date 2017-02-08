@@ -13,8 +13,6 @@ namespace Game_Java_Port {
 
         private int seed;
 
-        private bool disposed = false;
-
 		public override void updateRenderData() {
 			
 			int width = dataLoader.D3DResources[RenderData.ResID].Description.Width,
@@ -23,9 +21,9 @@ namespace Game_Java_Port {
 				countY = (Program.height / height + 1);
 			for (int i = 0 ; i < RenderData.SubObjs.Length ; i++) {
 				int x = i % countX, y = (i / countX) % countY;
-				RenderData.SubObjs[i].Area = new RectangleF(
-					CustomMaths.mod(x * width + MatrixExtensions.PVTranslation.X, Program.width + width) - width,
-					CustomMaths.mod(y * height + MatrixExtensions.PVTranslation.Y, Program.height + height) - height,
+				RenderData.SubObjs[i].Area = new Rectangle(
+					CustomMaths.mod(x * width + (int) MatrixExtensions.PVTranslation.X, Program.width + width) - width,
+					CustomMaths.mod(y * height + (int) MatrixExtensions.PVTranslation.Y, Program.height + height) - height,
 					width, height);
 			}
 		}
@@ -63,9 +61,9 @@ namespace Game_Java_Port {
 					ResID = RenderData.ResID,
 					mdl = Model.Square,
 				};
-				RenderData.SubObjs[i].Area = new RectangleF(
-					CustomMaths.mod(x * width + MatrixExtensions.PVTranslation.X, Program.width + width) - width,
-					CustomMaths.mod(y * height + MatrixExtensions.PVTranslation.Y, Program.height + height) - height,
+				RenderData.SubObjs[i].Area = new Rectangle(
+					CustomMaths.mod(x * width + (int) MatrixExtensions.PVTranslation.X, Program.width + width) - width,
+					CustomMaths.mod(y * height + (int) MatrixExtensions.PVTranslation.Y, Program.height + height) - height,
 					width, height);
 				RenderData.SubObjs[i].mdl.VertexBuffer
 					.SetAnimationFrame(
@@ -86,7 +84,9 @@ namespace Game_Java_Port {
             bool add = true)
             :base(ResID, Area.HasValue ? Area.Value : RectangleF.Empty, lifetime, settings, add) {
 
-            RenderData.Area = Area.HasValue ? Area.Value : new RectangleF(0,0,dataLoader.D3DResources[ResID].Description.Width, dataLoader.D3DResources[ResID].Description.Width);
+            RenderData.Area = Area.HasValue ?
+				new Rectangle((int) Area.Value.X, (int) Area.Value.Y, (int) Area.Value.Width, (int) Area.Value.Height) :
+				new Rectangle(0,0,dataLoader.D3DResources[ResID].Description.Width, dataLoader.D3DResources[ResID].Description.Height);
 
 			RenderData.AnimationFrameCount = Tiles;
             seed = Seed.HasValue ? Seed.Value : new Random().Next();

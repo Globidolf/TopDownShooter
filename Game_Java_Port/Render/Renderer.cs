@@ -51,7 +51,7 @@ namespace Game_Java_Port {
 		/// <summary>
 		/// For outlines of objects
 		/// </summary>
-		public const float LayerOffset_Ouline = -1;
+		public const float LayerOffset_Outline = -1;
 
 		#endregion
 		#region data
@@ -145,7 +145,7 @@ namespace Game_Java_Port {
 			renderTargetView = new RenderTargetView(device, SharpDX.Direct3D11.Resource.FromSwapChain<Texture2D>(swapChain, 0));
 			constantBuffer = Buffer.Create(device, BindFlags.ConstantBuffer, ref worldView2D);
 			var blendState = new BlendState(device, blendStateDescription);
-
+			
 
 
 			context.Rasterizer.SetViewport(0, 0, Program.width, Program.height);
@@ -181,8 +181,7 @@ namespace Game_Java_Port {
 			Renderables.Add(rend);
 			add(rend.RenderData);
 		}
-
-		private static void add(RenderData rd) {
+		public static void add(RenderData rd) {
 			//add object itself and recursively all of its children
 			RenderDataList.Add(rd);
 			IndexBufferList.Add(rd.mdl.CreateIndexBuffer(device, BindFlags.IndexBuffer));
@@ -195,7 +194,7 @@ namespace Game_Java_Port {
 			Renderables.Remove(rend);
 			remove(rend.RenderData);
 		}
-		private static void remove(RenderData rd) {
+		public static void remove(RenderData rd) {
 			int i = RenderDataList.IndexOf(rd);
 			VertexBufferList[i].Dispose();
 			IndexBufferList[i].Dispose();
@@ -226,7 +225,10 @@ namespace Game_Java_Port {
 				int i = RenderDataList.IndexOf(r);
 				if (r.ResID != ResID) {
 					ResID = r.ResID;
-					deviceContext.PixelShader.SetShaderResource(0, dataLoader.ShaderData[ResID]);
+					if (ResID < 0)
+						deviceContext.PixelShader.SetShaderResource(0, dataLoader.ShaderData[dataLoader.getResID()]);
+					else
+						deviceContext.PixelShader.SetShaderResource(0, dataLoader.ShaderData[ResID]);
 				}
 				VertexBufferBinding vbb = new VertexBufferBinding(VertexBufferList[i], Utilities.SizeOf<Vertex>(), 0);
 				deviceContext.InputAssembler.SetVertexBuffers(0, vbb);
@@ -266,7 +268,9 @@ namespace Game_Java_Port {
 			worldView2D.Z = Program.width;
 			worldView2D.W = Program.height;
 			deviceContext.UpdateSubresource(ref worldView2D, constantBuffer);
-			Renderables.ForEach(r => r.updateRenderData());
+			for (int i = 0 ; i < Renderables.Count ; i++) {
+				Renderables[i].updateRenderData();
+			}
 			for (int i = 0 ; i < RenderDataList.Count ; i++) {
 				//Animate?
 				if (RenderDataList[i].animate) {
@@ -300,7 +304,7 @@ namespace Game_Java_Port {
         public float AnimationOffset;
         public float AnimationSpeed;
 
-        public RectangleF Area { set {
+        public Rectangle Area { set {
 				if (mdl.VertexBuffer == null)
 					mdl = Model.Square;
                 mdl.VertexBuffer.ApplyRectangle(value);
@@ -321,7 +325,7 @@ namespace Game_Java_Port {
 				AnimationIndices = AnimationIndices,
 				AnimationOffset = AnimationOffset,
 				AnimationSpeed = AnimationSpeed,
-				mdl = mdl,
+				mdl = mdl.ValueCopy(),
 				ResID = ResID,
 				SubObjs = SubObjs == null ? null : new RenderData[SubObjs.Length]
 			};
@@ -418,6 +422,34 @@ namespace Game_Java_Port {
     /// </summary>
     public static class VertexExtensions {
 
+		public static RenderData Merge(this List<RenderData> list) { return list.ToArray().Merge(); }
+
+		public static RenderData Merge(this RenderData[] list) {
+			List<Vertex> vertices = new List<Vertex>();
+			List<TriIndex> indices = new List<TriIndex>();
+			for (int i = 0 ; i < list.Length ; i++) {
+				int[] newindexbuffer = new int[list[i].mdl.IndexBuffer.Length];
+				for (int j = 0 ; j < list[i].mdl.VertexBuffer.Length ; j++) {
+					if (!vertices.Contains(list[i].mdl.VertexBuffer[j]))
+						vertices.Add(list[i].mdl.VertexBuffer[j]);
+				}
+				for (int j = 0 ; j < list[i].mdl.IndexBuffer.Length ; j++) {
+					indices.Add(new TriIndex
+					{
+						A = (uint) vertices.IndexOf(list[i].mdl.VertexBuffer[list[i].mdl.IndexBuffer[j].A]),
+						B = (uint) vertices.IndexOf(list[i].mdl.VertexBuffer[list[i].mdl.IndexBuffer[j].B]),
+						C = (uint) vertices.IndexOf(list[i].mdl.VertexBuffer[list[i].mdl.IndexBuffer[j].C])
+					});
+				}
+			}
+			RenderData result = new RenderData { mdl = new Model
+			{
+				VertexBuffer = vertices.ToArray(),
+				IndexBuffer = indices.ToArray()
+			} };
+			return result;
+		}
+
 		//modifier methods
 		public static Vertex[] FromRectangle(this Vertex[] V, RectangleF R) {
 			Vertex[] temp = Vertex.FromRectangle(R);
@@ -439,6 +471,13 @@ namespace Game_Java_Port {
 		}
 
 		public static void ApplyRectangle(this Vertex[] V, RectangleF R) { V.ApplyPositions(R.TopLeft, R.TopRight, R.BottomLeft, R.BottomRight); }
+		public static void ApplyRectangle(this Vertex[] V, Rectangle R) {
+			V.ApplyPositions(
+				new Vector2(R.Left, R.Top),
+				new Vector2(R.Right, R.Top),
+				new Vector2(R.Left, R.Bottom),
+				new Vector2(R.Right, R.Bottom));
+		}
 
 		public static void ApplyPositions(this Vertex[] V, Vector2 TL, Vector2 TR, Vector2 BL, Vector2 BR) {
 			V[0].Pos = new Vector4(TL, V[0].Pos.Z, V[0].Pos.W);
@@ -554,11 +593,11 @@ namespace Game_Java_Port {
             return temp.ToArray();
         }
 
-        public static Vertex[] TranslatePos(this Vertex[] buffer, float add) {
-            List<Vertex> temp = new List<Vertex>();
-            foreach(Vertex v in buffer)
-                temp.Add(v+add);
-            return temp.ToArray();
+        public static void TranslatePos(this Vertex[] buffer, float add) {
+			buffer[0] += add;
+			buffer[1] += add;
+			buffer[2] += add;
+			buffer[3] += add;
         }
         public static Vertex[] TranslatePos(this Vertex[] buffer, Point add) {
             List<Vertex> temp = new List<Vertex>();

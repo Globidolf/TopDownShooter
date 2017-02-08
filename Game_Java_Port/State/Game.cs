@@ -58,26 +58,6 @@ namespace Game_Java_Port {
 
 		public RenderData RenderData { get; set; }
 
-		/*
-        RectangleF _Area;
-
-        public RectangleF Area { get {
-                if (_Area == RectangleF.Empty ||_Area.Height != ScreenHeight || _Area.Width != ScreenWidth)
-                    _Area = new RectangleF(0, 0, ScreenWidth, ScreenHeight);
-                return _Area;
-            } set { _Area = value.Floor(); } }
-
-        public Vector2 Location {
-            get {
-                    return new Vector2(ScreenWidth / 2, ScreenHeight / 2);
-            }
-            set { }
-        }
-
-        public int Z { get; set; }
-
-        public DrawType drawType { get; set; } = DrawType.Rectangle;
-		*/
         public void addMessage(string msg) {
             if(msg == null)
                 throw new ArgumentException("Message must not be null!", "msg");
@@ -187,18 +167,13 @@ namespace Game_Java_Port {
         }
 
         public void draw(DeviceContext rt) {
-
+			/*
             List<string> temp = new List<string>();
              if (!disposed) {
                 temp.AddRange(_messages.Keys);
             }
             temp.Reverse();
             
-
-
-
-            int i = 0;
-
             Color menucolor = (Color)(Color4)MenuTextBrush.Color;
 
             // double cast resets alpha channel
@@ -245,7 +220,7 @@ namespace Game_Java_Port {
         }
 
 		public void updateRenderData() {
-			//TODO update render data
+			//TODO: update render data
 		}
 		#endregion
 	}

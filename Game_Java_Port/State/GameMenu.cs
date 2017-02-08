@@ -6,16 +6,63 @@ using System.Linq;
 using static Game_Java_Port.GameStatus;
 using static System.Windows.Forms.MouseButtons;
 using SharpDX;
-using SharpDX.Direct2D1;
 using Game_Java_Port.Logics;
 
 namespace Game_Java_Port {
-    public partial class GameMenu : IRenderable, ITickable {
+    public partial class GameMenu : IRenderable {
 
         public const int ScrollBarWidth = 8;
+		public const int MenuMargin = 64;
+
+		public const int ElementHeight = 16;
+		public const int ElementMargin = 8;
+		public const int GroupMargin = 4;
+
+		public bool update = true;
 
 		public void updateRenderData() {
-			// TODO: update render data
+			if (update) {
+				update = false;
+				#region height
+				_height = MenuMargin * 2;
+				Elements.FindAll((ele) => ele.Container == null).ForEach((ele) => {
+					_height += ElementMargin + (int) ele.Height;
+				});
+				_trueHeight = _height;
+				_height = Math.Min(
+					ScreenHeight,
+					_height);
+				if (_ScrollOffset < 0)
+					_ScrollOffset = 0;
+				if (_ScrollOffset > _trueHeight - _height)
+					_ScrollOffset = _trueHeight - _height;
+
+				#endregion
+
+				#region width
+
+				//default width
+				resizeStrings();
+				_Width = (int) (
+					(Elements.Any() ? Elements.Max((ele) => ele.Area.Width) : 0)
+					+ 2 * MenuMargin) - (tooLarge ? ScrollBarWidth : 0);
+
+				// max width
+				if (Elements.Any(ele => ele.GetType().Name.StartsWith("Regulator") ||
+					(ele is MenuElementListBase && ((MenuElementListBase) ele).Children.Any(ele2 => ele2.GetType().Name.StartsWith("Regulator"))))
+				) _Width = ScreenWidth - (tooLarge ? ScrollBarWidth : 0);
+				#endregion
+
+				_X = ScreenWidth / 2 - _Width / 2;
+				_Y = ScreenHeight / 2 - _height / 2;
+				RectangleF temp = new RectangleF(_X, _Y, _Width + (tooLarge ? ScrollBarWidth : 0), Height);
+				if (_Area != temp) {
+					_Area = temp;
+					update = true;
+					RenderData.mdl.VertexBuffer.ApplyRectangle(_Area);
+					Elements.ForEach(e => e.update = true);
+				}
+			}
 		}
 
         #region fields
@@ -27,8 +74,6 @@ namespace Game_Java_Port {
         public event EventHandler<onClickArgs> OnClick;
         private bool _isOpen;
         private Dictionary<string, object> _data = new Dictionary<string, object>();
-
-        private Menu_BG_Tiled MenuFrame;
 
         internal int TextYOffset { get { return 1; } }
         internal int TextXOffset { get { return 5; } }
@@ -58,7 +103,7 @@ namespace Game_Java_Port {
         private int _Y = MenuPadding;
         private int _X = MenuPadding;
 
-        public float ScrollOffset { get { return _ScrollOffset; } }
+        public int ScrollOffset { get { return _ScrollOffset; } }
 
         int Height {
             get {
@@ -81,12 +126,36 @@ namespace Game_Java_Port {
             get {
                 return _Area;
             }
-            set { _Area = value; }
+            set {
+				if (_Area != value) {
+					_Area = value;
+					update = true;
+				}
+			}
         }
+		private int _LargestStringSize = 0; 
+		public int LargestStringSize
+		{
+			get { return _LargestStringSize; }
+			set {
+				if (_LargestStringSize != value) {
+					_LargestStringSize = value;
+					update = true;
+				}
+			}
+		}
 
-        public float LargestStringSize { get; set; } = 0;
-
-        public float[] LrgstRegNumSz { get; set; } = new float[] { 0, 0, 0 };
+		private int[] _LrgstRegNumSz = {0,0,0};
+		public int[] LrgstRegNumSz
+		{
+			get { return _LrgstRegNumSz; }
+			set {
+				if(_LrgstRegNumSz != value) {
+					_LrgstRegNumSz = value;
+					update = true;
+				}
+			}
+		}
 
 		/*
         public int Z { get; set; } = 1000;
@@ -99,10 +168,6 @@ namespace Game_Java_Port {
         #endregion
         #region constants
 
-        public const int ElementHeight = 20;
-        public const int ElementMargin = 5;
-        public const int GroupMargin = 3;
-
         private const bool _log = false;
         #endregion
         #region Generation
@@ -111,20 +176,17 @@ namespace Game_Java_Port {
         /// <summary>
         /// This class will use presets. no need for a public constructor.
         /// </summary>
-        private GameMenu(Menu_BG_Tiled bg = null) {
+        private GameMenu() {
             onScrollEvent += (obj, args) =>
             {
                 _ScrollOffset -= args.Delta / 10;
+				update = true;
             };
             onClickEvent += (obj, args) =>
             {
                 if(OnClick != null)
                     OnClick.Invoke(this, args);
             };
-            if(bg != null)
-                MenuFrame = bg;
-            else
-                MenuFrame = Menu_BG_Tiled.Default;
 			RenderData = new RenderData
 			{
 				mdl = Model.Square,
@@ -142,7 +204,7 @@ namespace Game_Java_Port {
 
         public void resizeNumbers(bool makeSmaller = false) {
 
-            float[] curMaxSizes = new float[] { 0, 0, 0 };
+            int[] curMaxSizes = new int[] { 0, 0, 0 };
                 foreach(MenuElementBase element in Elements) {
 
                     Type eletype = element.GetType();
@@ -194,7 +256,7 @@ namespace Game_Java_Port {
                             default:
                                 throw new NotImplementedException("Cast not implemented yet: " + types[0].Name);
                         }
-                        float[] numsize = new float[3];
+                        int[] numsize = new int[3];
 
                     
                             numsize[0] = SpriteFont.DEFAULT.MeasureString(float.Parse(val.ToString()).ToString("0.##")).Width;
@@ -220,7 +282,7 @@ namespace Game_Java_Port {
 
         public void resizeStrings() {
                 foreach(MenuElementBase element in Elements) {
-                    float size = 0;
+                    int size = 0;
 
                     size = SpriteFont.DEFAULT.MeasureString(element.Label).Width;
                 
@@ -284,15 +346,14 @@ namespace Game_Java_Port {
 
         public void open() {
             onOpen?.Invoke(this, EventArgs.Empty);
-            Tick();
-            Tick();
-            Tick();
 			this.register();
+			Elements.ForEach(e => e.register());
             _isOpen = true;
         }
         public void close() {
+			Elements.ForEach(e => e.unregister());
 			this.unregister();
-            _isOpen = false;
+			_isOpen = false;
         }
 
         private void addInput(
@@ -314,74 +375,6 @@ namespace Game_Java_Port {
                 Elements.Add(temp);
         }
         
-        public void draw(DeviceContext rt) {
-            //draws the border of the menu and each element afterwards
-
-            if (MenuFrame != null) {
-                MenuFrame.draw(rt);
-            } else {
-                rt.FillRectangle(Area, BGBrush);
-                rt.DrawRectangle(Area, MenuBorderPen);
-            }
-            
-            Elements.ForEach((ele) =>
-            {
-                ele.draw(rt);
-            });
-        }
-
-        public void Tick() {
-            update();
-            
-            Elements.ForEach((ele) => { lock(ele) if (!ele.IsDisposed) ele.update(); });
-        }
-
-        public void update() {
-
-            #region height
-            _height = ElementMargin;
-                Elements.FindAll((ele) => ele.Container == null).ForEach((ele) =>
-                {
-                    _height += ElementMargin + (int)ele.Height;
-                });
-            _trueHeight = _height;
-            _height = Math.Min(
-                ScreenHeight - 2 * MenuPadding,
-                _height);
-            if(_ScrollOffset < 0)
-                _ScrollOffset = 0;
-            if(_ScrollOffset > _trueHeight - _height)
-                _ScrollOffset = _trueHeight - _height;
-
-            #endregion
-
-            #region width
-
-            //default width
-            resizeStrings();
-                _Width = (int)(
-                    (Elements.Any() ? Elements.Max((ele) => ele.Area.Width) : 0)
-                    + 2 * ElementMargin) - (tooLarge ? ScrollBarWidth : 0);
-
-            // max width
-                if(Elements.Any(ele =>  ele.GetType().Name.StartsWith("Regulator") ||
-                (ele is MenuElementListBase && ((MenuElementListBase)ele).Children.Any(ele2 => ele2.GetType().Name.StartsWith("Regulator"))))
-              ) {
-                    _Width = ScreenWidth - 2 * MenuPadding - (tooLarge ? ScrollBarWidth : 0);
-                    // rounds width down to the nearest 64x multiplier available.
-                    if(MenuFrame != null)
-                        _Width = _Width / 64 * 64;
-                }              
-            #endregion
-
-            _X = ScreenWidth / 2 - _Width / 2;
-            _Y = ScreenHeight / 2 - _height / 2;
-            _Area = new RectangleF(_X, _Y, _Width + (tooLarge ? ScrollBarWidth : 0), Height);
-            if(MenuFrame != null) {
-                    MenuFrame.Area = _Area;
-                    MenuFrame.Tick();
-            }
-        }
 
         #endregion
     }

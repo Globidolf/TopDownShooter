@@ -653,7 +653,7 @@ namespace Game_Java_Port {
                     temp.onOpen = (obj, args2) =>
                     {
                         Console.WriteLine(justPressed);
-                        weaponDetails = new TextElement(temp, "", new Size2F(ScreenWidth / 4, ScreenHeight), true);
+                        weaponDetails = new TextElement(temp, "", new Size2(ScreenWidth / 4, ScreenHeight));
                         inventory = new InventoryElement(temp, Game.instance._player.Inventory, onClick: (args) => refresh() );
                         onKeyEvent += inputHandler;
                         refresh();

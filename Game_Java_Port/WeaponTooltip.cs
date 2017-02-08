@@ -32,23 +32,29 @@ namespace Game_Java_Port {
             Area = temp;
             switch(Item.Rarity) {
                 case ItemType.Pearlescent:
-                    frame = Menu_BG_Tiled.Pearlescent;
+					//frame = Menu_BG_Tiled.Pearlescent;
+					RenderData.ResID = dataLoader.getResID("tiled_menu_peal_32_96");
                     break;
                 case ItemType.Epic:
-                    frame = Menu_BG_Tiled.Epic;
-                    break;
+					//frame = Menu_BG_Tiled.Epic;
+					RenderData.ResID = dataLoader.getResID("tiled_menu_epic_32_96");
+					break;
                 case ItemType.Legendary:
-                    frame = Menu_BG_Tiled.Legendary;
-                    break;
+					//frame = Menu_BG_Tiled.Legendary;
+					RenderData.ResID = dataLoader.getResID("tiled_menu_legend_32_96");
+					break;
                 case ItemType.Rare:
-                    frame = Menu_BG_Tiled.Rare;
-                    break;
+					//frame = Menu_BG_Tiled.Rare;
+					RenderData.ResID = dataLoader.getResID("tiled_menu_rare_32_96");
+					break;
                 case ItemType.Common:
-                    frame = Menu_BG_Tiled.Common;
-                    break;
+					//frame = Menu_BG_Tiled.Common;
+					RenderData.ResID = dataLoader.getResID("tiled_menu_common_32_96");
+					break;
                 default:
-                    frame = Menu_BG_Tiled.Default;
-                    break;
+					//frame = Menu_BG_Tiled.Default;
+					RenderData.ResID = dataLoader.getResID("tiled_menu_default_32_96");
+					break;
             }
         }
 

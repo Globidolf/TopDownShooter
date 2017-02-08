@@ -1030,8 +1030,8 @@ namespace Game_Java_Port {
 
 			float percent = Health / MaxHealth;
 
-            RectangleF barRegion = new RectangleF(padding, pos, barwidth, barheight);
-            RectangleF barSubRegion = new RectangleF(padding, pos, barwidth * percent, barheight);
+            Rectangle barRegion = new Rectangle(padding, pos, barwidth, barheight);
+            Rectangle barSubRegion = new Rectangle(padding, pos, (int)(barwidth * percent), barheight);
 
             pos += barheight + 2 * padding;
 
@@ -1059,28 +1059,11 @@ namespace Game_Java_Port {
 
 			bar.SubObjs[1].mdl.VertexBuffer.ApplyColor(Color.Red);
 			bar.SubObjs[1].mdl.VertexBuffer.ApplyTextureRepetition(new Vector2(percent, 1));
-			/*
-            Color4 temp = Pencil.Color;
 
-            Pencil.Color = Color.DarkRed;
+			percent = Exp / ExpToLvlUp;
 
-            rt.FillRectangle(barRegion, Pencil);
-
-            Pencil.Color = Color.Red;
-
-            rt.FillRectangle(barSubRegion, Pencil);
-
-            Pencil.Color = Color.White;
-
-            rt.DrawRectangle(barRegion, Pencil);
-
-            Pencil.Color = Color.White;
-
-            //SpriteFont.DEFAULT.directDrawText(Health.ToString("0.##") + " / " + MaxHealth.ToString("0.##"), barRegion, rt);
-            //rt.DrawText(Health.ToString("0.##") + " / " + MaxHealth.ToString("0.##"), GameStatus.MenuFont, barRegion, Pencil);
-			*/
-            barRegion = new RectangleF(padding, pos, barwidth, barheight);
-            barSubRegion = new RectangleF(padding, pos, barwidth * Exp / ExpToLvlUp, barheight);
+            barRegion = new Rectangle(padding, pos, barwidth, barheight);
+            barSubRegion = new Rectangle(padding, pos, (int) (barwidth * percent), barheight);
 
             pos += barheight + 2 * padding;
 			/*
