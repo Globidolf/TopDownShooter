@@ -544,7 +544,7 @@ namespace Game_Java_Port
             //addTickable(Cursor);
 
 			Background_Tiled back = new Background_Tiled(
-				dataLoader.getResID("tiles_rock_32_64"),
+				dataLoader.getResID("bg_rock_2_2"),
 				new Point(2,2),
 				Area: new RectangleF(0,0,Program.width,Program.height),
 				settings: Background.Settings.Parallax | Background.Settings.Repeat);// new Background_Tiled(Tileset.BG_Rock, Area: Game.instance.Area, settings: Background.Settings.Parallax | Background.Settings.Fill_Area);

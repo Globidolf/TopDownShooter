@@ -135,7 +135,7 @@ namespace Game_Java_Port {
 			{
 					new InputElement("SV_Position", 0, Format.R32G32B32A32_Float, 0, 0),
 					new InputElement("COLOR", 0, Format.R32G32B32A32_Float, 16, 0),
-					new InputElement("TEXCOORD", 0, Format.R32G32_Float, 32, 0),
+					new InputElement("TEXCOORD", 0, Format.R32G32B32_Float, 32, 0),
 				});
 			var samplerState = new SamplerState(device, samplerStateDescription);
 			var rasterizerState = new RasterizerState(device, rasterizerStateDescription);
@@ -161,7 +161,9 @@ namespace Game_Java_Port {
 			context.PixelShader.SetConstantBuffer(0, constantBuffer);
 			context.PixelShader.Set(pixelShader);
 			context.PixelShader.SetSampler(0, samplerState);
-
+			context.PixelShader.SetShaderResource(0, dataLoader.FontResource);
+			context.PixelShader.SetShaderResource(1, dataLoader.ShaderResources);
+			
 			disposables.Add(vertexShaderBytecode);
 			disposables.Add(vertexShader);
 			disposables.Add(pixelShaderBytecode);
@@ -218,18 +220,9 @@ namespace Game_Java_Port {
 		public static void draw() {
 			//deviceContext.ClearRenderTargetView(renderTargetView, Color.Wheat);
 			deviceContext.ClearDepthStencilView(depthStencilView, DepthStencilClearFlags.Depth | DepthStencilClearFlags.Stencil, 1f, 0);
-			int ResID = -1;
 			var array = RenderDataList.FindAll(r => r.mdl.IndexBuffer != null && r.mdl.VertexBuffer != null).OrderBy(r => r.mdl.VertexBuffer[0].Pos.Z).ToArray();
-
 			foreach (var r in array) {
 				int i = RenderDataList.IndexOf(r);
-				if (r.ResID != ResID) {
-					ResID = r.ResID;
-					if (ResID < 0)
-						deviceContext.PixelShader.SetShaderResource(0, dataLoader.ShaderData[dataLoader.getResID()]);
-					else
-						deviceContext.PixelShader.SetShaderResource(0, dataLoader.ShaderData[ResID]);
-				}
 				VertexBufferBinding vbb = new VertexBufferBinding(VertexBufferList[i], Utilities.SizeOf<Vertex>(), 0);
 				deviceContext.InputAssembler.SetVertexBuffers(0, vbb);
 				deviceContext.InputAssembler.SetIndexBuffer(IndexBufferList[i], Format.R32_UInt, 0);
@@ -294,7 +287,16 @@ namespace Game_Java_Port {
     public class RenderData {
 		public bool animate;
         public Model mdl;
-        public int ResID;
+		private int _ResID;
+        public int ResID {
+			get { return _ResID; }
+			set {
+				_ResID = value;
+				if (mdl.VertexBuffer != null) {
+					for (int i = 0 ; i < mdl.VertexBuffer.Length ; i++)
+						mdl.VertexBuffer[i].Resource = value;
+				}
+			} }
 
         public RenderData[] SubObjs;
 
@@ -308,6 +310,7 @@ namespace Game_Java_Port {
 				if (mdl.VertexBuffer == null)
 					mdl = Model.Square;
                 mdl.VertexBuffer.ApplyRectangle(value);
+				ResID = _ResID;
             } }
 		public float Z { set {
 				if (mdl.VertexBuffer == null)
@@ -370,8 +373,9 @@ namespace Game_Java_Port {
         /// <summary>
         /// Texture position of the Vertex in normalized XY
         /// </summary>
-        public Vector2 Tex;
-
+        public Vector2 TexCoord { get { return Tex.XY(); } set{ Tex.X = value.X; Tex.Y = value.Y; } }
+		public float Resource { get { return Tex.Z; } set { Tex.Z = value; } }
+		public Vector3 Tex;
         /// <summary>
         /// Returns a vertex buffer defining a 1x1 pixel square
         /// </summary>
@@ -379,24 +383,24 @@ namespace Game_Java_Port {
 
         #region operators
 
-        public static Vertex operator /(Vertex V, float div) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() / div, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
-        public static Vertex operator /(Vertex V, Point div) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() / div, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
-        public static Vertex operator /(Vertex V, Vector2 div) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() / div, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
-        public static Vertex operator /(Vertex V, Size2F div) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY().Divide(div), V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
-        public static Vertex operator *(Vertex V, float mult) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() * mult, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
-        public static Vertex operator *(Vertex V, Vector2 mult) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() * mult, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
-        public static Vertex operator *(Vertex V, Point mult) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() * mult, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
-        public static Vertex operator *(Vertex V, Size2F mult) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY().Multiply(mult), V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
+        public static Vertex operator /(Vertex V, float div) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() / div, V.Pos.Z, V.Pos.W), TexCoord = V.TexCoord }; }
+        public static Vertex operator /(Vertex V, Point div) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() / div, V.Pos.Z, V.Pos.W), TexCoord = V.TexCoord }; }
+        public static Vertex operator /(Vertex V, Vector2 div) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() / div, V.Pos.Z, V.Pos.W), TexCoord = V.TexCoord }; }
+        public static Vertex operator /(Vertex V, Size2F div) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY().Divide(div), V.Pos.Z, V.Pos.W), TexCoord = V.TexCoord }; }
+        public static Vertex operator *(Vertex V, float mult) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() * mult, V.Pos.Z, V.Pos.W), TexCoord = V.TexCoord }; }
+        public static Vertex operator *(Vertex V, Vector2 mult) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() * mult, V.Pos.Z, V.Pos.W), TexCoord = V.TexCoord }; }
+        public static Vertex operator *(Vertex V, Point mult) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() * mult, V.Pos.Z, V.Pos.W), TexCoord = V.TexCoord }; }
+        public static Vertex operator *(Vertex V, Size2F mult) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY().Multiply(mult), V.Pos.Z, V.Pos.W), TexCoord = V.TexCoord }; }
 
 		
-        public static Vertex operator -(Vertex V, float sub) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() - sub, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
-        public static Vertex operator -(Vertex V, Point sub) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() - sub, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
-        public static Vertex operator -(Vertex V, Vector2 sub) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() - sub, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
-        public static Vertex operator -(Vertex V, Size2F sub) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY().Subtract(sub), V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
-        public static Vertex operator +(Vertex V, float add) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() + add, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
-        public static Vertex operator +(Vertex V, Point add) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() + add, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
-        public static Vertex operator +(Vertex V, Vector2 add) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() + add, V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
-        public static Vertex operator +(Vertex V, Size2F add) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY().Add(add), V.Pos.Z, V.Pos.W), Tex = V.Tex }; }
+        public static Vertex operator -(Vertex V, float sub) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() - sub, V.Pos.Z, V.Pos.W), TexCoord = V.TexCoord }; }
+        public static Vertex operator -(Vertex V, Point sub) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() - sub, V.Pos.Z, V.Pos.W), TexCoord = V.TexCoord }; }
+        public static Vertex operator -(Vertex V, Vector2 sub) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() - sub, V.Pos.Z, V.Pos.W), TexCoord = V.TexCoord }; }
+        public static Vertex operator -(Vertex V, Size2F sub) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY().Subtract(sub), V.Pos.Z, V.Pos.W), TexCoord = V.TexCoord }; }
+        public static Vertex operator +(Vertex V, float add) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() + add, V.Pos.Z, V.Pos.W), TexCoord = V.TexCoord }; }
+        public static Vertex operator +(Vertex V, Point add) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() + add, V.Pos.Z, V.Pos.W), TexCoord = V.TexCoord }; }
+        public static Vertex operator +(Vertex V, Vector2 add) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY() + add, V.Pos.Z, V.Pos.W), TexCoord = V.TexCoord }; }
+        public static Vertex operator +(Vertex V, Size2F add) { return new Vertex { Color = V.Color, Pos = new Vector4(V.Pos.XY().Add(add), V.Pos.Z, V.Pos.W), TexCoord = V.TexCoord }; }
 
         #endregion
 
@@ -411,10 +415,10 @@ namespace Game_Java_Port {
         public static readonly Vector4 DefaultColor = new Vector4(1);
 
 		// Base positions are 0.5, not 1 as the difference of -0.5 and 0.5 is 1, which should represent one pixel.
-        public static Vertex TopLeft { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(-0.5f, -0.5f, 0, 1), Tex = new Vector2(0, 0) }; } }
-        public static Vertex TopRight { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(0.5f, -0.5f, 0, 1), Tex = new Vector2(1, 0) }; } }
-        public static Vertex BottomLeft { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(-0.5f, 0.5f, 0, 1), Tex = new Vector2(0, 1) }; } }
-        public static Vertex BottomRight { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(0.5f, 0.5f, 0, 1), Tex = new Vector2(1, 1) }; } }
+        public static Vertex TopLeft { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(-0.5f, -0.5f, 0, 1), TexCoord = new Vector2(0, 0) }; } }
+        public static Vertex TopRight { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(0.5f, -0.5f, 0, 1), TexCoord = new Vector2(1, 0) }; } }
+        public static Vertex BottomLeft { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(-0.5f, 0.5f, 0, 1), TexCoord = new Vector2(0, 1) }; } }
+        public static Vertex BottomRight { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(0.5f, 0.5f, 0, 1), TexCoord = new Vector2(1, 1) }; } }
     }
 
     /// <summary>
@@ -457,7 +461,7 @@ namespace Game_Java_Port {
 				temp[i].Pos.Z = V[i].Pos.Z;
 				temp[i].Pos.W = V[i].Pos.W;
 				temp[i].Color = V[i].Color;
-				temp[i].Tex = V[i].Tex;
+				temp[i].TexCoord = V[i].TexCoord;
 			}
 			return temp;
 		}
@@ -501,7 +505,7 @@ namespace Game_Java_Port {
 			Vertex[] temp = V;
 
 			for (int i = 0 ; i < V.Length ; i++)
-				temp[i].Tex = temp[i].Tex / RepetitionCount;
+				temp[i].TexCoord = temp[i].TexCoord / RepetitionCount;
 			return temp;
 		}
 
@@ -522,10 +526,10 @@ namespace Game_Java_Port {
 			float y1 = j / AnimationFrameCount.Y;
 			float x2 = 1f / AnimationFrameCount.X + x1;
 			float y2 = 1f / AnimationFrameCount.Y + y1;
-			V[0].Tex = new Vector2(x1, y1);
-			V[1].Tex = new Vector2(x2, y1);
-			V[2].Tex = new Vector2(x1, y2);
-			V[3].Tex = new Vector2(x2, y2);
+			V[0].TexCoord = new Vector2(x1, y1);
+			V[1].TexCoord = new Vector2(x2, y1);
+			V[2].TexCoord = new Vector2(x1, y2);
+			V[3].TexCoord = new Vector2(x2, y2);
 		}
 		public static Vertex[] GetAnimationFrame(this Vertex[] V, int index, Point AnimationFrameCount) {
 			int x = index % AnimationFrameCount.X;
@@ -535,14 +539,14 @@ namespace Game_Java_Port {
 		}
 
 		//operator methods
-		public static Vertex TranslateTex(this Vertex V, float add) { return new Vertex { Color = V.Color, Pos = V.Pos, Tex = V.Tex + add }; }
-        public static Vertex TranslateTex(this Vertex V, Point add) { return new Vertex { Color = V.Color, Pos = V.Pos, Tex = V.Tex + add }; }
-        public static Vertex TranslateTex(this Vertex V, Vector2 add ) { return new Vertex { Color = V.Color, Pos = V.Pos, Tex = V.Tex + add  }; }
-        public static Vertex TranslateTex(this Vertex V, Size2F add) { return new Vertex { Color = V.Color, Pos = V.Pos, Tex = V.Tex.Add(add) }; }
-        public static Vertex MultiplyTex (this Vertex V, float mult  ) { return new Vertex { Color = V.Color, Pos = V.Pos, Tex = V.Tex * mult }; }
-        public static Vertex MultiplyTex(this Vertex V, Point mult) { return new Vertex { Color = V.Color, Pos = V.Pos, Tex = V.Tex * mult }; }
-        public static Vertex MultiplyTex (this Vertex V, Vector2 mult) { return new Vertex { Color = V.Color, Pos = V.Pos, Tex = V.Tex * mult }; }
-        public static Vertex MultiplyTex(this Vertex V, Size2F mult) { return new Vertex { Color = V.Color, Pos = V.Pos, Tex = V.Tex.Multiply(mult) }; }
+		public static Vertex TranslateTex(this Vertex V, float add) { return new Vertex { Color = V.Color, Pos = V.Pos, TexCoord = V.TexCoord + add }; }
+        public static Vertex TranslateTex(this Vertex V, Point add) { return new Vertex { Color = V.Color, Pos = V.Pos, TexCoord = V.TexCoord + add }; }
+        public static Vertex TranslateTex(this Vertex V, Vector2 add ) { return new Vertex { Color = V.Color, Pos = V.Pos, TexCoord = V.TexCoord + add  }; }
+        public static Vertex TranslateTex(this Vertex V, Size2F add) { return new Vertex { Color = V.Color, Pos = V.Pos, TexCoord = V.TexCoord.Add(add) }; }
+        public static Vertex MultiplyTex (this Vertex V, float mult  ) { return new Vertex { Color = V.Color, Pos = V.Pos, TexCoord = V.TexCoord * mult }; }
+        public static Vertex MultiplyTex(this Vertex V, Point mult) { return new Vertex { Color = V.Color, Pos = V.Pos, TexCoord = V.TexCoord * mult }; }
+        public static Vertex MultiplyTex (this Vertex V, Vector2 mult) { return new Vertex { Color = V.Color, Pos = V.Pos, TexCoord = V.TexCoord * mult }; }
+        public static Vertex MultiplyTex(this Vertex V, Size2F mult) { return new Vertex { Color = V.Color, Pos = V.Pos, TexCoord = V.TexCoord.Multiply(mult) }; }
 
         public static Vertex[] TranslateTex(this Vertex[] buffer, float add) {
             List<Vertex> temp = new List<Vertex>();

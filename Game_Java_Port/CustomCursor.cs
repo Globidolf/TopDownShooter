@@ -13,12 +13,13 @@ using Game_Java_Port.Logics;
 namespace Game_Java_Port {
 
     public enum CursorTypes {
-        Normal,
-        Inventory_Equip,
-        Inventory_Remove,
-        Inventory_Add,
-        Inventory_Use,
-        Interact
+        Normal = 0,
+        Inventory_Equip = 6,
+        Inventory_Remove = 7,
+        Inventory_Add = 5,
+        Inventory_Use = 4,
+        Exclamation = 1,
+		Question = 2
     }
 
     public class CustomCursor : IRenderable {
@@ -38,7 +39,7 @@ namespace Game_Java_Port {
         private float _Size;
 
         public CursorTypes CursorType { set {
-				RenderData.ResID = Cursors[value];
+				RenderData.mdl.VertexBuffer.SetAnimationFrame((int)value, RenderData.AnimationFrameCount);
 			}
 		}
 
@@ -46,21 +47,13 @@ namespace Game_Java_Port {
 
         public RenderData RenderData { get; set; }
 
-        static Dictionary<CursorTypes, int> Cursors = new Dictionary<CursorTypes, int>()
-        {   { CursorTypes.Normal,           dataLoader.getResID("cursor")      },
-            { CursorTypes.Inventory_Equip,  dataLoader.getResID("cursor_invE") },
-            { CursorTypes.Inventory_Add,    dataLoader.getResID("cursor_invA") },
-            { CursorTypes.Inventory_Remove, dataLoader.getResID("cursor_invR") },
-            { CursorTypes.Inventory_Use,    dataLoader.getResID("cursor_invU") },
-            { CursorTypes.Interact,         dataLoader.getResID("cursor_U")    }
-        };
-
         public CustomCursor(CursorTypes cursor, float Size = 8) {
             _Size = Size;
 			RenderData = new RenderData
 			{
 				mdl = Model.Square,
-				ResID = Cursors[cursor],
+				ResID = -1,
+				AnimationFrameCount = new Point(4,4),
 				Z = Renderer.Layer_Cursor,
 				SubObjs = new[]
 				{

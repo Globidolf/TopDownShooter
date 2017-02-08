@@ -58,8 +58,8 @@ namespace Game_Java_Port {
 				RenderData.SubObjs[i] = new RenderData
 				{
 					AnimationFrameCount = RenderData.AnimationFrameCount,
-					ResID = RenderData.ResID,
 					mdl = Model.Square,
+					ResID = RenderData.ResID,
 				};
 				RenderData.SubObjs[i].Area = new Rectangle(
 					CustomMaths.mod(x * width + (int) MatrixExtensions.PVTranslation.X, Program.width + width) - width,

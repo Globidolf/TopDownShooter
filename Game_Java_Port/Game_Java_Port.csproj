@@ -175,7 +175,6 @@
     <Compile Include="Serializers\ItemSerializer.cs" />
     <Compile Include="Logics\Tileset.cs" />
     <Compile Include="State\UI_Bar.cs" />
-    <Compile Include="test\CubeApp.cs" />
     <Compile Include="Tooltip.cs" />
     <Compile Include="Weapon.cs" />
     <Compile Include="WeaponTooltip.cs" />

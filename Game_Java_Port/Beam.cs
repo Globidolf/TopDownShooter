@@ -84,8 +84,8 @@ namespace Game_Java_Port
 					normdir *= strokewidth / 2;
 					RenderData.SubObjs[i] = new RenderData
 					{
+						mdl = Model.Quadrilateral(p1 + normdir, p1 - normdir, p2 + normdir, p2 - normdir),
 						ResID = RenderData.ResID,
-						mdl = Model.Quadrilateral(p1 + normdir, p1 - normdir, p2 + normdir, p2 - normdir)
 					};
 					RenderData.SubObjs[i].mdl.VertexBuffer = RenderData.SubObjs[i].mdl.VertexBuffer.ApplyColor(beamColor.Value);
 					i++;

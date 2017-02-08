@@ -1,5 +1,6 @@
+Texture2D Font : register(t0);
 
-Texture2D ShaderTexture : register(t0);
+Texture2DArray Textures : register(t1);
 
 SamplerState Sampler : register(s0);
 
@@ -11,7 +12,7 @@ cbuffer ConstantBuffer: register(b0)
 struct VertexObject {
 	float4 Pos : SV_Position;
 	float4 Color : COLOR; // filter
-	float2 Tex : TEXCOORD0;
+	float3 Tex : TEXCOORD0;
 };
 
 
@@ -34,8 +35,7 @@ VertexObject VSMain3D(VertexObject input) {
 }
 */
 
-
 float4 PSMain(VertexObject input) : SV_Target
 {
-	return  ShaderTexture.Sample(Sampler, input.Tex) * input.Color; // filter the texture
+	return input.Tex.z >= 0 ? Textures.Sample(Sampler, input.Tex) * input.Color : Font.Sample(Sampler, input.Tex.xy) * input.Color;
 }

@@ -50,12 +50,12 @@ namespace Game_Java_Port {
             Area = Area.HasValue ? Area : new RectangleF(0,0, tx.Description.Width, tx.Description.Height);
 			RenderData = new RenderData
 			{
-				ResID = resID,
 				mdl = new Model
 				{
 					VertexBuffer = Vertex.FromRectangle(Area.Value),
 					IndexBuffer = TriIndex.QuadIndex
-				}
+				},
+				ResID = resID
 			};
 
 			RenderData.mdl.VertexBuffer.ApplyZAxis(settings.HasFlag(Settings.Foreground) ? 5 : -5);

@@ -242,7 +242,7 @@ namespace Game_Java_Port {
                     if(Team.InteractionConduct != Faction.Conduct.Ignore) {
                         ActionInfo.Tick();
                         if (this.drawActionInfo())
-                            Cursor.CursorType = CursorTypes.Interact;
+                            Cursor.CursorType = CursorTypes.Exclamation;
                     }
                 } else {
                     removeCounter -= TimeMultiplier;

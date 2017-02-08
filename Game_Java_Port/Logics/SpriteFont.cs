@@ -196,7 +196,7 @@ namespace Game_Java_Port.Logics {
 
 					x += TileSize.Width;
 
-                    if (x > dataLoader.D3DResources[output.ResID].Description.Width) { // line break
+                    if (x > dataLoader.Font.Description.Width) { // line break
                         y += TileSize.Height + LineSpacing;
                         x = 0;
                     }
@@ -214,13 +214,13 @@ namespace Game_Java_Port.Logics {
 			else return buffer[buffer.Length - 1].ValueCopy();
         }
 
-        private SpriteFont(int ResID, int cols = 32, int rows = 3) {
+        private SpriteFont(int cols = 32, int rows = 3) {
             TileSize = new Size2(
-                dataLoader.D3DResources[ResID].Description.Width / cols,
-                dataLoader.D3DResources[ResID].Description.Height / rows);
+                dataLoader.Font.Description.Width / cols,
+                dataLoader.Font.Description.Height / rows);
             _Font = new RenderData {
                 AnimationFrameCount = new Point(cols, rows),
-                ResID = ResID,
+                ResID = -1,
                 Area = new Rectangle(0,0,TileSize.Width, TileSize.Height)
             };
 			_Font.mdl.VertexBuffer.ApplyColor(Color.Transparent);
@@ -230,8 +230,8 @@ namespace Game_Java_Port.Logics {
 					RenderData result = new RenderData
 					{
 						AnimationFrameCount = _Font.AnimationFrameCount,
+						mdl = _Font.mdl.ValueCopy(),
 						ResID = _Font.ResID,
-						mdl = _Font.mdl.ValueCopy()
 					};
 					result.mdl.VertexBuffer.ApplyColor(Color.White);
 
@@ -245,7 +245,7 @@ namespace Game_Java_Port.Logics {
 
         public static SpriteFont DEFAULT { get {
                 if (_DEFAULT == null) {
-                    _DEFAULT = new SpriteFont(dataLoader.getResID("font_default_6_8"));
+                    _DEFAULT = new SpriteFont();
                 }
                 return _DEFAULT;
             } }

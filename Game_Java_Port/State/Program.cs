@@ -70,9 +70,7 @@ namespace Game_Java_Port
             init();
 
             D2DContext.StrokeWidth = 2;
-
-            loadImages();
-
+			
             System.Windows.Forms.Cursor.Hide();
             float CursorSize = 16;
             GameStatus.Cursor = new CustomCursor(CursorTypes.Normal, CursorSize);
@@ -165,10 +163,6 @@ namespace Game_Java_Port
 
             // Release all resources
             dispose();
-        }
-
-        static void loadImages() {
-            dataLoader.LoadAll(device);
         }
 
         public static void PrepareToggleFullscreen() {
@@ -268,7 +262,8 @@ namespace Game_Java_Port
 
             using(Surface surface = swapChain.GetBackBuffer<Surface>(0)) 
                 D2DContext = new D2DDeviceContext(surface, new CreationProperties());
-			
+
+			dataLoader.LoadAll(device);
 			Renderer.init(device, D3DContext, swapChain);
 
             D2DContext.UnitMode = UnitMode.Pixels;

@@ -365,8 +365,8 @@ namespace Game_Java_Port
 				base.init();
 				RenderData = new RenderData
 				{
-					ResID = dataLoader.getResID("menu_element"),
-					mdl = Model.Square
+					mdl = Model.Square,
+					ResID = dataLoader.getResID("m_frame_default"),
 				};
 				RenderData.mdl.VertexBuffer.ApplyColor(Color.Transparent);
 			}
@@ -451,8 +451,8 @@ namespace Game_Java_Port
 			public override void init() {
 				RenderData = new RenderData
 				{
-					ResID = dataLoader.getResID("menu_element"),
 					mdl = Model.Square,
+					ResID = dataLoader.getResID("m_frame_default"),
 					SubObjs = new[]
 					{
 						new RenderData { mdl = Model.Square },
@@ -664,7 +664,7 @@ namespace Game_Java_Port
 
 				RenderData = new RenderData
 				{
-					ResID = dataLoader.getResID("menu_element"),
+					ResID = dataLoader.getResID("m_frame_default"),
 					Area = _Area,
 					SubObjs = new[]
 					{
@@ -673,8 +673,8 @@ namespace Game_Java_Port
 						SpriteFont.DEFAULT.generateText(MaxValue.ToString(), _MaxValueArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text),
 						SpriteFont.DEFAULT.generateText(Value.ToString(), _ValueArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text),
 						new RenderData {
-							ResID = dataLoader.getResID("menu_element"),
-							Area = RegulatorArea
+							Area = RegulatorArea,
+							ResID = dataLoader.getResID("m_frame_default"),
 						}
 					}
 				};
@@ -1025,7 +1025,7 @@ namespace Game_Java_Port
 			public override void init() {
 				RenderData = new RenderData
 				{
-					ResID = dataLoader.getResID("menu_element"),
+					ResID = dataLoader.getResID("m_frame_default"),
 					Area = _Area,
 					SubObjs = new[]
 					{
@@ -1098,8 +1098,8 @@ namespace Game_Java_Port
 			public override void init() {
 				RenderData = new RenderData
 				{
-					ResID = dataLoader.getResID("menu_element"),
 					mdl = Model.Square,
+					ResID = dataLoader.getResID("m_frame_default"),
 					SubObjs = new[] {
 						SpriteFont.DEFAULT.generateText(Label, _LabelArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text)
 					}
@@ -1175,8 +1175,8 @@ namespace Game_Java_Port
 			public override void init() {
 				RenderData = new RenderData
 				{
-					ResID = dataLoader.getResID("menu_element"),
 					mdl = Model.Square,
+					ResID = dataLoader.getResID("m_frame_default"),
 					SubObjs = new[] {
 						new RenderData { ResID = dataLoader.getResID("border_" + Item.Rarity.ToString())
 						}
@@ -1326,8 +1326,8 @@ namespace Game_Java_Port
 			public override void init() {
 				RenderData = new RenderData
 				{
-					ResID = dataLoader.getResID("menu_element"),
-					mdl = Model.Square
+					mdl = Model.Square,
+					ResID = dataLoader.getResID("m_frame_default"),
 				};
 			}
 			private int _ElementSize = 32;
