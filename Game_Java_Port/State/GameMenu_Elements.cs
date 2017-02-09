@@ -35,6 +35,14 @@ namespace Game_Java_Port
 
 				Children.ForEach(ch => temp.Height = Math.Max(temp.Height, ch.Height + ElementMargin * 2));
 
+				//base.update();
+				_Hovering = _Hovering && !Children.Exists(ch => ch.Area.Contains(MousePos.X, MousePos.Y));
+
+				_ContentArea = new Rectangle(
+					Area.Left +Parent.LargestStringSize,
+					Area.Top,
+					Area.Width -  Parent.LargestStringSize,
+					Area.Height);
 				return temp.Floor();
 			}
 
@@ -43,19 +51,6 @@ namespace Game_Java_Port
 				temp.Y += (_Area.Height - ElementHeight) / 2;
 				return temp.Floor();
 			}
-			/*
-			public override void update() {
-				base.update();
-				_Hovering = _Hovering && !Children.Exists(ch => ch.Area.Contains(MousePos));
-
-				_ContentArea = new RectangleF(
-					Area.Left + (int) Parent.LargestStringSize,
-					Area.Top,
-					Area.Width - (int) Parent.LargestStringSize,
-					Area.Height);
-
-			}
-			*/
 		}
 
 		private abstract class MenuElementBase : IRenderable, IDisposable
@@ -634,12 +629,28 @@ namespace Game_Java_Port
 						Area.Height);
 					_Sep = _MinValueArea.Left - new Vector2(TextXOffset, TextYOffset);
 
+
+
+					base.updateRenderData();
 					//change position if user is clicking on the bar
 					if (IsRegulating) {
 						// all values are ints, need to cast to get flating point numbers
 						RelativePos = (MousePos.X - RegulatorArea.Left) / RegulatorArea.Width;
+						update = true;
 					}
-					base.updateRenderData();
+					Renderer.remove(RenderData.SubObjs[0]);
+					Renderer.remove(RenderData.SubObjs[1]);
+					Renderer.remove(RenderData.SubObjs[2]);
+					Renderer.remove(RenderData.SubObjs[3]);
+					RenderData.SubObjs[0] = SpriteFont.DEFAULT.generateText(Label, _LabelArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text);
+					RenderData.SubObjs[1] = SpriteFont.DEFAULT.generateText(MinValue.ToString(), _MinValueArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text);
+					RenderData.SubObjs[2] = SpriteFont.DEFAULT.generateText(MaxValue.ToString(), _MaxValueArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text);
+					RenderData.SubObjs[3] = SpriteFont.DEFAULT.generateText(Value.ToString(), _ValueArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text);
+					Renderer.add(RenderData.SubObjs[0]);
+					Renderer.add(RenderData.SubObjs[1]);
+					Renderer.add(RenderData.SubObjs[2]);
+					Renderer.add(RenderData.SubObjs[3]);
+					RenderData.SubObjs[4].mdl.VertexBuffer.ApplyRectangle(RegulatorArea);
 				}
 			}
 			public override void init() {
@@ -905,7 +916,7 @@ namespace Game_Java_Port
 				onClickEvent += (obj, args) => {
 					if (parent.isOpen && !args.Consumed && args.Button == Left && args.Down && RegulatorArea.Contains(args.Position.X, args.Position.Y)) {
 						IsRegulating = true;
-
+						update = true;
 						onClickEvent += stopregulation;
 					}
 				};

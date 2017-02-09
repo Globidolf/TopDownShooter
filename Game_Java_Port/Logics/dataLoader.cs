@@ -20,8 +20,10 @@ namespace Game_Java_Port
 
 		public const string imgdir = "./data/img/";
 
-
-		public static int getResID(string ResName = "default") { return Array.FindIndex(filenames, f => f == (ResName.EndsWith(".bmp") ? ResName : ResName + ".bmp")); }
+		public static int getResID(string ResName = "default") {
+			int id = Array.FindIndex(filenames, f => f == (ResName.EndsWith(".bmp") ? ResName : ResName + ".bmp"));
+			return id >= 0 ? id : 0;
+		}
 
 		private static string[] filenames;
 		public static Texture2D[] D3DResources;
@@ -39,7 +41,9 @@ namespace Game_Java_Port
 
 			if (!Loaded) {
 				Loaded = true;
-				filenames = new List<string>(Directory.EnumerateFiles(imgdir)).ConvertAll(s => s.Remove(0, imgdir.Length)).ToArray();
+				List<string> temp =new List<string>(Directory.EnumerateFiles(imgdir)).ConvertAll(s => s.Remove(0, imgdir.Length));
+				temp.Sort();
+				filenames = temp.ToArray();
 				D3DResources = new Texture2D[filenames.Length];
 				DataBox[] data = new DataBox[filenames.Length];
 				Texture2DDescription desc = new Texture2DDescription
@@ -55,10 +59,9 @@ namespace Game_Java_Port
 					SampleDescription = new SampleDescription(1,0),
 					Usage = ResourceUsage.Immutable
 				};
-
 				for (int i = 0 ; i < filenames.Length ; i++) {
-					Load(device, filenames[i], i);
-					data[i] = new DataBox(TextureArrayStream[i].DataPointer, ResourceSize * sizeof(int), ResourceSize * ResourceSize * sizeof(int));
+						Load(device, filenames[i], i );
+						data[i ] = new DataBox(TextureArrayStream[i].DataPointer, ResourceSize * sizeof(int), ResourceSize * ResourceSize * sizeof(int));
 				}
 				TextureArray = new Texture2D(device, desc, data);
 				ShaderResources = new ShaderResourceView(device, TextureArray);

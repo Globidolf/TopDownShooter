@@ -154,7 +154,7 @@ namespace Game_Java_Port.Logics {
             Size2 Size = Size2.Empty;
 
             // gets lines seperated by \n's and the final size of the text
-            string[] substr = prepare(s, new Size2((int)Area.Width, (int)Area.Height), out Size);
+            string[] substr = prepare(s, new Size2(Area.Width, Area.Height), out Size);
 
 
 			Area.Width = Size.Width;
@@ -205,7 +205,7 @@ namespace Game_Java_Port.Logics {
                 y += TileSize.Height + ParagraphSpacing;// new line
                 x = 0;
             }
-			output.mdl = characters.Merge().mdl;
+			output.mdl = characters.Merge(output.ResID, output.ResID2).mdl;
         }
 
         public RenderData translate(char c) {
@@ -220,8 +220,8 @@ namespace Game_Java_Port.Logics {
                 dataLoader.Font.Description.Height / rows);
             _Font = new RenderData {
                 AnimationFrameCount = new Point(cols, rows),
+                Area = new Rectangle(0,0,TileSize.Width, TileSize.Height),
                 ResID = -1,
-                Area = new Rectangle(0,0,TileSize.Width, TileSize.Height)
             };
 			_Font.mdl.VertexBuffer.ApplyColor(Color.Transparent);
 			buffer = new RenderData[cols * rows];
@@ -232,6 +232,7 @@ namespace Game_Java_Port.Logics {
 						AnimationFrameCount = _Font.AnimationFrameCount,
 						mdl = _Font.mdl.ValueCopy(),
 						ResID = _Font.ResID,
+						ResID2 = _Font.ResID2
 					};
 					result.mdl.VertexBuffer.ApplyColor(Color.White);
 

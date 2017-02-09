@@ -87,14 +87,15 @@ namespace Game_Java_Port {
             Attributes[Attribute.Wisdom] = Wis;
             Attributes[Attribute.Luck] = Luc;
 
-            RenderData.ResID = dataLoader.getResID("player");
-
-            //Image = dataLoader.get2D("player");
-
-            //drawType = DrawType.Image;
-            
-
-            RenderData.Area = new Rectangle(Program.width/2, Program.height/2, dataLoader.D3DResources[RenderData.ResID].Description.Width, dataLoader.D3DResources[RenderData.ResID].Description.Height);
+			RenderData = new RenderData
+			{
+				Area = new Rectangle(Program.width / 2, Program.height / 2, 16, 16),
+				ResID = dataLoader.getResID("s_character_4_4"),
+				AnimationFrameCount = new Point(4,4),
+				animate = true,
+				AnimationIndices = new[]{0,4,8,12},
+				Z = Renderer.Layer_Characters
+			};
             Health = MaxHealth;
 
             //Pencil.Color = Color.Blue;

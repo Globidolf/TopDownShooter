@@ -13,7 +13,6 @@ using System.Threading.Tasks;
 namespace Game_Java_Port {
     public abstract class CharacterBase : IRenderable, ITickable, ISerializable<CharacterBase>, IIndexable, ICollidible {
 		
-
 		public void updateRenderData() {
 			//Todo: update renderdata...
 		}
@@ -545,7 +544,8 @@ namespace Game_Java_Port {
                     GameStatus.Corpses.Add(this, 0);
 
             if(!isdead) {
-                new Background(dataLoader.getResID("corpse"), new RectangleF(Location.X - Size/2, Location.Y-Size/2, Size, Size), 30, Background.Settings.Parallax);
+				//TODO: Add random tile id
+                new Background(dataLoader.getResID("s_stain_2_2"), dataLoader.getResID("t_special"), new RectangleF(Location.X - Size/2, Location.Y-Size/2, Size, Size), 30, Background.Settings.Parallax);
                     //new Background(dataLoader.get2D("corpse.bmp"), Location, 30, Background.Settings.Parallax);
                     switch(Game.state) {
                         case Game.GameState.Menu:

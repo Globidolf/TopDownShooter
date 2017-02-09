@@ -44,7 +44,7 @@ namespace Game_Java_Port {
 		
         public RenderData RenderData { get; set; }
 
-        public Background(int resID, RectangleF? Area = null, float lifetime = 0, Settings settings = Settings.Default, bool add = true) {
+        public Background(int resID, int resID2, RectangleF? Area = null, float lifetime = 0, Settings settings = Settings.Default, bool add = true) {
             Texture2D tx = dataLoader.D3DResources[resID];
             
             Area = Area.HasValue ? Area : new RectangleF(0,0, tx.Description.Width, tx.Description.Height);
@@ -55,7 +55,8 @@ namespace Game_Java_Port {
 					VertexBuffer = Vertex.FromRectangle(Area.Value),
 					IndexBuffer = TriIndex.QuadIndex
 				},
-				ResID = resID
+				ResID = resID,
+				ResID2 = resID2
 			};
 
 			RenderData.mdl.VertexBuffer.ApplyZAxis(settings.HasFlag(Settings.Foreground) ? 5 : -5);
@@ -77,6 +78,7 @@ namespace Game_Java_Port {
 
 
         public virtual void draw(SharpDX.Direct2D1.DeviceContext rt) {
+
         }
 
         public virtual void Tick() {

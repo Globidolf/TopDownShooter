@@ -37,11 +37,10 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Boomerang";
-                temp.RenderData.ResID = dataLoader.getResID(temp.Name);
-                //temp.image = dataLoader.get2D(temp.Name);
-                //temp.drawType = Interface.DrawType.Image;
+				temp.RenderData.ResID = dataLoader.getResID("s_weapons1_2_2");
+				temp.RenderData.Frameindex = 2;
 
-                temp.Behaviour = BulletBehaviour.Returning;
+				temp.Behaviour = BulletBehaviour.Returning;
                 temp.WType = WeaponType.Throwable;
                 temp._Slot = Interface.EquipSlot.Weapon1H;
 
@@ -64,11 +63,10 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Throwing Knives";
-                temp.RenderData.ResID = dataLoader.getResID(temp.Name);
-                //temp.image = dataLoader.get2D(temp.Name);
-                //temp.drawType = Interface.DrawType.Image;
+				temp.RenderData.ResID = dataLoader.getResID("s_weapons4_2_2");
+				temp.RenderData.Frameindex = 3;
 
-                temp.Behaviour = BulletBehaviour.Piercing;
+				temp.Behaviour = BulletBehaviour.Piercing;
                 temp.WType = WeaponType.Throwable;
                 temp._Slot = Interface.EquipSlot.Weapon1H;
 
@@ -91,11 +89,10 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Rock";
-                temp.RenderData.ResID = dataLoader.getResID(temp.Name);
-                //temp.image = dataLoader.get2D(temp.Name);
-                //temp.drawType = Interface.DrawType.Image;
+				temp.RenderData.ResID = dataLoader.getResID("s_weapons4_2_2");
+				temp.RenderData.Frameindex = 0;
 
-                temp.Behaviour = BulletBehaviour.Bounce;
+				temp.Behaviour = BulletBehaviour.Bounce;
                 temp.WType = WeaponType.Throwable;
                 temp._Slot = Interface.EquipSlot.Weapon1H;
 
@@ -120,11 +117,10 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "SMG";
-                temp.RenderData.ResID = dataLoader.getResID(temp.Name);
-                //temp.image = dataLoader.get2D(temp.Name);
-                //temp.drawType = Interface.DrawType.Image;
+				temp.RenderData.ResID = dataLoader.getResID("s_weapons3_2_2");
+				temp.RenderData.Frameindex = 3;
 
-                temp.Behaviour = BulletBehaviour.Normal;
+				temp.Behaviour = BulletBehaviour.Normal;
                 temp.WType = WeaponType.SubMachineGun;
                 temp._Slot = Interface.EquipSlot.Weapon1H;
 
@@ -147,11 +143,10 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Sniper Rifle";
-                temp.RenderData.ResID = dataLoader.getResID(temp.Name);
-                //temp.image = dataLoader.get2D(temp.Name);
-                //temp.drawType = Interface.DrawType.Image;
+				temp.RenderData.ResID = dataLoader.getResID("s_weapons4_2_2");
+				temp.RenderData.Frameindex = 2;
 
-                temp.Behaviour = BulletBehaviour.Piercing;
+				temp.Behaviour = BulletBehaviour.Piercing;
                 temp.WType = WeaponType.SniperRifle;
                 temp._Slot = Interface.EquipSlot.Weapon2H;
 
@@ -174,11 +169,10 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Rocket Launcher";
-                temp.RenderData.ResID = dataLoader.getResID(temp.Name);
-                //temp.image = dataLoader.get2D(temp.Name);
-                //temp.drawType = Interface.DrawType.Image;
+				temp.RenderData.ResID = dataLoader.getResID("s_weapons4_2_2");
+				temp.RenderData.Frameindex = 1;
 
-                temp.Behaviour = BulletBehaviour.Explosive | BulletBehaviour.Knockback;
+				temp.Behaviour = BulletBehaviour.Explosive | BulletBehaviour.Knockback;
                 temp.WType = WeaponType.RocketLauncher;
                 temp._Slot = Interface.EquipSlot.Weapon2H;
 
@@ -203,11 +197,10 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Mace";
-                temp.RenderData.ResID = dataLoader.getResID(temp.Name);
-                //temp.image = dataLoader.get2D(temp.Name);
-                //temp.drawType = Interface.DrawType.Image;
+				temp.RenderData.ResID = dataLoader.getResID("s_weapons2_2_2");
+				temp.RenderData.Frameindex = 1;
 
-                temp.Behaviour = BulletBehaviour.Knockback;
+				temp.Behaviour = BulletBehaviour.Knockback;
                 temp.WType = WeaponType.Melee;
                 temp._Slot = Interface.EquipSlot.Weapon2H;
 
@@ -226,11 +219,10 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Spear";
-                temp.RenderData.ResID = dataLoader.getResID(temp.Name);
-                //temp.image = dataLoader.get2D(temp.Name);
-                //temp.drawType = Interface.DrawType.Image;
+				temp.RenderData.ResID = dataLoader.getResID("s_weapons2_2_2");
+				temp.RenderData.Frameindex = 2;
 
-                temp.Behaviour = BulletBehaviour.Knockback;
+				temp.Behaviour = BulletBehaviour.Knockback;
                 temp.WType = WeaponType.Melee;
                 temp._Slot = Interface.EquipSlot.Weapon2H;
 
@@ -249,11 +241,10 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Greatsword";
-                temp.RenderData.ResID = dataLoader.getResID(temp.Name);
-                //temp.image = dataLoader.get2D(temp.Name);
-                //temp.drawType = Interface.DrawType.Image;
+				temp.RenderData.ResID = dataLoader.getResID("s_weapons2_2_2");
+				temp.RenderData.Frameindex = 0;
 
-                temp.Behaviour = BulletBehaviour.Knockback;
+				temp.Behaviour = BulletBehaviour.Knockback;
                 temp.WType = WeaponType.Melee;
                 temp._Slot = Interface.EquipSlot.Weapon2H;
 
@@ -272,11 +263,10 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Sword";
-                temp.RenderData.ResID = dataLoader.getResID(temp.Name);
-                //temp.image = dataLoader.get2D(temp.Name);
-                //temp.drawType = Interface.DrawType.Image;
+				temp.RenderData.ResID = dataLoader.getResID("s_weapons2_2_2");
+				temp.RenderData.Frameindex = 3;
 
-                temp.Behaviour = BulletBehaviour.Knockback;
+				temp.Behaviour = BulletBehaviour.Knockback;
                 temp.WType = WeaponType.Melee;
                 temp._Slot = Interface.EquipSlot.Weapon1H;
 
@@ -297,11 +287,10 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "ElectroSphere";
-                temp.RenderData.ResID = dataLoader.getResID(temp.Name);
-                //temp.image = dataLoader.get2D(temp.Name);
-                //temp.drawType = Interface.DrawType.Image;
+				temp.RenderData.ResID = dataLoader.getResID("s_weapons1_2_2");
+				temp.RenderData.Frameindex = 3;
 
-                temp.Behaviour = BulletBehaviour.Beam | BulletBehaviour.Tracking | BulletBehaviour.Piercing;
+				temp.Behaviour = BulletBehaviour.Beam | BulletBehaviour.Tracking | BulletBehaviour.Piercing;
                 temp.WType = WeaponType.Electricity;
                 temp._Slot = Interface.EquipSlot.Weapon2H;
 
@@ -324,7 +313,8 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Assault Rifle";
-                temp.RenderData.ResID = dataLoader.getResID(temp.Name);
+                temp.RenderData.ResID = dataLoader.getResID("s_weapons1_2_2");
+				temp.RenderData.Frameindex = 1;
                 //temp.image = dataLoader.get2D(temp.Name);
                 //temp.drawType = Interface.DrawType.Image;
 
@@ -351,11 +341,10 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Acid Sprayer";
-                temp.RenderData.ResID = dataLoader.getResID(temp.Name);
-                //temp.image = dataLoader.get2D(temp.Name);
-                //temp.drawType = Interface.DrawType.Image;
+				temp.RenderData.ResID = dataLoader.getResID("s_weapons1_2_2");
+				temp.RenderData.Frameindex = 0;
 
-                temp.Behaviour = BulletBehaviour.Piercing | BulletBehaviour.MultiHit;
+				temp.Behaviour = BulletBehaviour.Piercing | BulletBehaviour.MultiHit;
                 temp.WType = WeaponType.Acid;
                 temp._Slot = Interface.EquipSlot.Weapon2H;
 
@@ -378,11 +367,10 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Shotgun";
-                temp.RenderData.ResID = dataLoader.getResID(temp.Name);
-                //temp.image = dataLoader.get2D(temp.Name);
-                //temp.drawType = Interface.DrawType.Image;
+				temp.RenderData.ResID = dataLoader.getResID("s_weapons3_2_2");
+				temp.RenderData.Frameindex = 2;
 
-                temp.Behaviour = BulletBehaviour.Knockback;
+				temp.Behaviour = BulletBehaviour.Knockback;
                 temp.WType = WeaponType.Shotgun;
                 temp._Slot = Interface.EquipSlot.Weapon2H;
 
@@ -405,11 +393,10 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Revolver";
-                temp.RenderData.ResID = dataLoader.getResID(temp.Name);
-                //temp.image = dataLoader.get2D(temp.Name);
-                //temp.drawType = Interface.DrawType.Image;
+				temp.RenderData.ResID = dataLoader.getResID("s_weapons3_2_2");
+				temp.RenderData.Frameindex = 1;
 
-                temp.Behaviour = BulletBehaviour.Normal;
+				temp.Behaviour = BulletBehaviour.Normal;
                 temp.WType = WeaponType.Revolver;
                 temp._Slot = Interface.EquipSlot.Weapon1H;
 
@@ -432,11 +419,10 @@ namespace Game_Java_Port {
             get {
                 Weapon temp = new Weapon();
                 temp.Name = "Pistol";
-                temp.RenderData.ResID = dataLoader.getResID(temp.Name);
-                //temp.image = dataLoader.get2D(temp.Name);
-                //temp.drawType = Interface.DrawType.Image;
+				temp.RenderData.ResID = dataLoader.getResID("s_weapons3_2_2");
+				temp.RenderData.Frameindex = 0;
 
-                temp.Behaviour = BulletBehaviour.Normal;
+				temp.Behaviour = BulletBehaviour.Normal;
                 temp.WType = WeaponType.Pistol;
                 temp._Slot = Interface.EquipSlot.Weapon1H;
 

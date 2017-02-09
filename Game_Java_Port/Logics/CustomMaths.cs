@@ -141,6 +141,8 @@ namespace Game_Java_Port {
 
         public static char getChar(this byte[] buffer, ref int pos) {
             char result = BitConverter.ToChar(buffer, pos);
+			Random r;
+			
             pos += charsize;
             return result;
         }

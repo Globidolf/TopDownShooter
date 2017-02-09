@@ -11,8 +11,6 @@ using Game_Java_Port.Logics;
 namespace Game_Java_Port {
     public sealed partial class Weapon : ItemBase, IEquipable, ISerializable<Weapon> {
 
-        public SolidColorBrush weaponPen;
-
 
         public float MeleeRangeExtension { get; private set; }
         public float Range { get; private set; }
@@ -31,8 +29,6 @@ namespace Game_Java_Port {
 
         private float _CoolDown;
         private float _Reload;
-
-        private bool disposed = false;
 
         public WeaponType WType { get; private set; }
         public BulletBehaviour Behaviour { get; private set; }
@@ -84,10 +80,9 @@ namespace Game_Java_Port {
         private EquipSlot _Slot = EquipSlot.Weapon2H;
         public EquipSlot Slot { get { return _Slot; } }
 
-        private Weapon() { }
+        private Weapon() { RenderData = new RenderData { AnimationFrameCount = new Point(2,2), mdl = Model.Square }; }
         
         public Weapon(uint level, int? seed = null, WeapPreset? wt = null, ItemType? rarity = null, bool add = true) {
-            weaponPen = new SolidColorBrush(Program.D2DContext, Color.White);
             Level = level;
 
             if(seed == null) {
@@ -605,16 +600,6 @@ namespace Game_Java_Port {
                 _Reload -= GameStatus.TimeMultiplier;
         }
 
-        private void makebgpen() {
-            weaponPen.Color = Color.Black;
-            weaponPen.Opacity = 0.7f;
-        }
-
-        private void resetpen() {
-            weaponPen.Color = GameVars.RarityColors[Rarity];
-            weaponPen.Opacity = 1f;
-        }
-
         public override Tooltip ItemInfo {
             get {
                 if (itemInfo == null) {
@@ -632,7 +617,7 @@ namespace Game_Java_Port {
 
         public override void draw(DeviceContext rt) {
             base.draw(rt);
-
+			/*
             if (!Game.state.HasFlag(Game.GameState.Menu) && Owner == Game.instance._player && _Reload > 0) {
                 int width = 150;
                 RectangleF pos = new RectangleF(-width/2,0,width,20);
@@ -640,7 +625,6 @@ namespace Game_Java_Port {
 				/*
                 pos.Location += Game.instance.Location;
                 sub.Location += Game.instance.Location;
-				*/
                 weaponPen.Color = Color.SmoothStep(Color.Yellow, Color.Black, 0.5f);
                 rt.FillRectangle(pos, GameStatus.BGBrush);
                 weaponPen.Color = Color.Yellow;
@@ -651,16 +635,7 @@ namespace Game_Java_Port {
                 //SpriteFont.DEFAULT.directDrawText("Reloading...", pos, rt);
                 //rt.DrawText("Reloading...", GameStatus.MenuFont, pos, weaponPen);
             }
-        }
-        
-        override protected void Dispose(bool disposing) {
-            if(disposed)
-                return;
-            if(disposing) {
-                weaponPen.Dispose();
-            }
-            disposed = true;
-            base.Dispose(disposing);
+		*/
         }
 
         public void Equip(CharacterBase on) {

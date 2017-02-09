@@ -99,7 +99,8 @@ namespace Game_Java_Port {
             creationtime = (float)Program.stopwatch.Elapsed.TotalSeconds;
 			RenderData = new RenderData
 			{
-				AnimationOffset = (((creationtime * Stopwatch.Frequency) % 10000) / 1000) % 1f
+				AnimationOffset = (((creationtime * Stopwatch.Frequency) % 10000) / 1000) % 1f,
+				ResID = dataLoader.getResID("s_bullets_4_4")
 			};
             RenderData.Area = new Rectangle((int) pos.X, (int) pos.Y, (int) _hitrange, (int) _hitrange);
 
@@ -116,30 +117,27 @@ namespace Game_Java_Port {
 
             switch(_source.WType) {
                 case WeaponType.Throwable:
-                    if(_source.Name.Contains("Throwing Knives"))
-
-                        RenderData.ResID = dataLoader.getResID("bullet_knife");//bullettexture = dataLoader.get2D("bullet_knife");
-
-                    else if(_source.Name.Contains("Boomerang"))
-                        RenderData.ResID = dataLoader.getResID("bullet_boomerang");//bullettexture = dataLoader.get2D("bullet_boomerang");
-                    else if(_source.Name.Contains("Rock")) {
-                        //animation = Animated_Tileset.Bullet_Rock;
-                        RenderData.ResID = dataLoader.getResID("bullet_rock_16_32");//animation.Off_Set_Frame(pseudorandom % 1f);
-                        RenderData.AnimationFrameCount = new Point(2, 2);
-                        RenderData.AnimationSpeed = 5.3543f;
-                    } else
-                        RenderData.ResID = dataLoader.getResID("bullet_normal");
+					if (_source.Name.Contains("Throwing Knives"))
+						RenderData.Frameindex = 1;
+					else if (_source.Name.Contains("Boomerang"))
+						RenderData.Frameindex = 2;
+					else if (_source.Name.Contains("Rock")) {
+						//animation = Animated_Tileset.Bullet_Rock;
+						RenderData.Frameindex = 4;
+						RenderData.AnimationIndices = new[] { 4, 5, 6, 7 };
+						RenderData.AnimationSpeed = 5.3543f;
+					} else
+						RenderData.Frameindex = 0;
                     break;
                 case WeaponType.Acid:
-                    //animation = Animated_Tileset.Bullet_Acid;
-                    RenderData.ResID = dataLoader.getResID("bullet_acid_16_32");// animation.Off_Set_Frame(pseudorandom % 1f);
-                    RenderData.AnimationFrameCount = new Point(2, 2);
+					RenderData.Frameindex = 8;
+					RenderData.AnimationIndices = new[] { 8, 9, 10, 11 };
                     RenderData.AnimationSpeed = 5.472743f;
                     break;
 
                 default:
-                    RenderData.ResID = dataLoader.getResID("bullet_normal");
-                    break;
+					RenderData.Frameindex = 0;
+					break;
             }
 
 

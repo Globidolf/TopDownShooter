@@ -241,7 +241,7 @@ namespace Game_Java_Port
         /// </summary>
         public static void SetMouseState(MouseEventArgs args, bool Down = true) {
 
-            Matrix3x2 transform = Program.D2DContext.Transform;
+            Matrix3x2 transform = Matrix3x2.Transformation(Program.ScreenScale.X, Program.ScreenScale.Y, 0, 0 ,0 );
 
             Vector2 pos = new Vector2(args.X, args.Y) * transform.TranslationVector;
             
@@ -287,69 +287,7 @@ namespace Game_Java_Port
 
         #region Menus
 
-        public static void Regenerate() {
-            _BGBrush?.Dispose();
-            _BGBrush = null;
-            _MenuPen?.Dispose();
-            _MenuPen = null;
-            _MenuHoverBrush?.Dispose();
-            _MenuHoverBrush = null;
-            _MenuTextBrush?.Dispose();
-            _MenuTextBrush = null;
-            tick(true);
-        }
-
         // menu settings
-
-        private static SolidColorBrush _BGBrush;
-
-        public static SolidColorBrush BGBrush {
-            get {
-                if(_BGBrush == null) {
-                    _BGBrush =
-                        new SolidColorBrush(Program.D2DContext,
-                        Color.Black);
-                }
-                return _BGBrush;
-            }
-        }
-
-        private static SolidColorBrush _MenuPen;
-
-        /// <summary>
-        /// Pen for the non-text non-border menu parts
-        /// </summary>
-        public static SolidColorBrush MenuPen { get {
-                if (_MenuPen == null)
-                    _MenuPen = new SolidColorBrush(Program.D2DContext, Color.Lerp(Color.Crimson, Color.Black, 0.4f));
-                return _MenuPen;
-            } }
-        /// <summary>
-        /// Pen for the menu borders
-        /// </summary>
-        public static SolidColorBrush MenuBorderPen { get { return MenuPen; } }
-        private static SolidColorBrush _MenuHoverBrush;
-        /// <summary>
-        /// Brush for the hover effect of the menu
-        /// </summary>
-        public static SolidColorBrush MenuHoverBrush { get {
-                if (_MenuHoverBrush == null) {
-                    _MenuHoverBrush = new SolidColorBrush(Program.D2DContext, Color.Lerp(Color.Crimson, Color.Black, 0.75f)); //CustomMaths.fromArgb(0xff, 0x17, 0x4e, 0x30)
-                }
-                return _MenuHoverBrush;
-            }
-        }
-        private static SolidColorBrush _MenuTextBrush;
-        /// <summary>
-        /// Brush for the text of the menu
-        /// </summary>
-        public static SolidColorBrush MenuTextBrush { get {
-                if(_MenuTextBrush == null) {
-                    _MenuTextBrush = new SolidColorBrush(Program.D2DContext, CustomMaths.fromArgb(255, 0xff, 0xff, 0xff));//new Pen(Color.FromArgb(0x27, 0xae, 0x60)).Brush;
-                }
-                return _MenuTextBrush;
-            }
-        }
         
         /// <summary>
         /// Padding for the menu
@@ -544,6 +482,7 @@ namespace Game_Java_Port
             //addTickable(Cursor);
 
 			Background_Tiled back = new Background_Tiled(
+				dataLoader.getResID("bg_grass1_8_8"),
 				dataLoader.getResID("bg_rock_2_2"),
 				new Point(2,2),
 				Area: new RectangleF(0,0,Program.width,Program.height),
@@ -562,11 +501,6 @@ namespace Game_Java_Port
         /// </summary>
         public static void exit() {
             Running = false;
-                MenuBorderPen.Dispose();
-                MenuHoverBrush.Dispose();
-                MenuPen.Dispose();
-                MenuTextBrush.Dispose();
-                BGBrush.Dispose();
             Program.form.Close();
         }
 

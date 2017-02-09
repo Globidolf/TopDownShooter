@@ -10,9 +10,9 @@ cbuffer ConstantBuffer: register(b0)
 };
 
 struct VertexObject {
-	float4 Pos : SV_Position;
-	float4 Color : COLOR; // filter
-	float3 Tex : TEXCOORD0;
+	float4 Pos : SV_Position; // position in texels, converted to normals in the vertex shader
+	float4 Color : COLOR; // filter: rgba
+	float4 Tex : TEXCOORD0; // xy = texture pos, zw = pair of resource IDs
 };
 
 
@@ -34,8 +34,27 @@ VertexObject VSMain3D(VertexObject input) {
 	return output;
 }
 */
-
+/*
+//Test Shader
 float4 PSMain(VertexObject input) : SV_Target
 {
-	return input.Tex.z >= 0 ? Textures.Sample(Sampler, input.Tex) * input.Color : Font.Sample(Sampler, input.Tex.xy) * input.Color;
+	return
+	(input.Tex.z >= 0 ? // base texture?
+		Textures.Sample(Sampler, float3(input.Tex.xy, 3)) : // yes, sample
+		Font.Sample(Sampler, input.Tex.xy)) * // no, use font
+		(false ? // secondary texture?
+			Textures.Sample(Sampler, input.Tex.xyw) * input.Color : // yes, sample & multiply plus apply color filter
+			input.Color); // no, simply apply color filter
+}
+*/
+//This shader samples two textures in one go to multiply their pixels.
+float4 PSMain(VertexObject input) : SV_Target
+{
+	return
+	(input.Tex.z >= 0 ? // base texture?
+		Textures.Sample(Sampler, input.Tex.xyz) : // yes, sample
+		Font.Sample(Sampler, input.Tex.xy)) * // no, use font
+	(input.Tex.w >= 0 ? // secondary texture?
+		Textures.Sample(Sampler, input.Tex.xyw) * input.Color : // yes, sample & multiply plus apply color filter
+		input.Color); // no, simply apply color filter
 }

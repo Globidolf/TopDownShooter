@@ -190,7 +190,8 @@ namespace Game_Java_Port {
 			RenderData = new RenderData
 			{
 				mdl = Model.Square,
-				ResID = dataLoader.getResID("tiled_menu_default_32_96")
+				ResID = dataLoader.getResID("m_menu"),
+				ResID2 = dataLoader.getResID("t_epic")
 			};
         }
 

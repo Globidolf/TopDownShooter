@@ -69,10 +69,13 @@ namespace Game_Java_Port {
 
 		private static Vector4 worldView2D;
 		private static Buffer constantBuffer;
+
+		private static bool loaded = false;
 		#endregion
 
 		public static void init(Device device, DeviceContext context, SwapChain swapChain, bool noalpha = false) {
-			unload();
+			if (loaded)
+				unload();
 			deviceContext = context;
 			Renderer.device = device;
 			// START
@@ -133,16 +136,17 @@ namespace Game_Java_Port {
 			var pixelShader = new PixelShader(device, pixelShaderBytecode);
 			var inputLayout = new InputLayout(device, ShaderSignature.GetInputSignature(vertexShaderBytecode), new[]
 			{
-					new InputElement("SV_Position", 0, Format.R32G32B32A32_Float, 0, 0),
+					new InputElement("SV_Position", 0, Format.R32G32B32A32_Float, 0, 0), // X, Y, Z, ??? no clue sry
 					new InputElement("COLOR", 0, Format.R32G32B32A32_Float, 16, 0),
-					new InputElement("TEXCOORD", 0, Format.R32G32B32_Float, 32, 0),
+					new InputElement("TEXCOORD", 0, Format.R32G32B32A32_Float, 32, 0), // X, Y, Texture1, Texture2
 				});
 			var samplerState = new SamplerState(device, samplerStateDescription);
 			var rasterizerState = new RasterizerState(device, rasterizerStateDescription);
 			var depthBuffer = new Texture2D(device, depthBufferDescription);
 			depthStencilView = new DepthStencilView(device, depthBuffer, depthStencilViewDescription);
 			var depthStencilState = new DepthStencilState(device, depthStencilStateDescription);
-			renderTargetView = new RenderTargetView(device, SharpDX.Direct3D11.Resource.FromSwapChain<Texture2D>(swapChain, 0));
+			Texture2D res = SharpDX.Direct3D11.Resource.FromSwapChain<Texture2D>(swapChain, 0);
+			renderTargetView = new RenderTargetView(device, res);
 			constantBuffer = Buffer.Create(device, BindFlags.ConstantBuffer, ref worldView2D);
 			var blendState = new BlendState(device, blendStateDescription);
 			
@@ -164,6 +168,7 @@ namespace Game_Java_Port {
 			context.PixelShader.SetShaderResource(0, dataLoader.FontResource);
 			context.PixelShader.SetShaderResource(1, dataLoader.ShaderResources);
 			
+
 			disposables.Add(vertexShaderBytecode);
 			disposables.Add(vertexShader);
 			disposables.Add(pixelShaderBytecode);
@@ -177,6 +182,8 @@ namespace Game_Java_Port {
 			disposables.Add(renderTargetView);
 			disposables.Add(constantBuffer);
 			disposables.Add(blendState);
+			disposables.Add(res);
+			loaded = true;
 		}
 
 		public static void add(IRenderable rend) {
@@ -213,8 +220,14 @@ namespace Game_Java_Port {
 		}
 
 		public static void unload() {
-			disposables.ForEach(d => d.Dispose());
-			disposables.Clear();
+			if (loaded) {
+
+				
+				deviceContext.OutputMerger.ResetTargets();
+				disposables.ForEach(d => d.Dispose());
+				disposables.Clear();
+				loaded = false;
+			}
 		}
 
 		public static void draw() {
@@ -229,30 +242,6 @@ namespace Game_Java_Port {
 				deviceContext.DrawIndexed(r.mdl.IndexBuffer.Length * 3, 0, 0);
 			}
 		}
-		/*
-		public static void drawNoTransparencyPLZ() {
-			
-            List<RenderData> allData = new List<RenderData>(RenderDataList.FindAll(r => r.mdl.IndexBuffer != null && r.mdl.VertexBuffer != null));
-			//deviceContext.ClearRenderTargetView(renderTargetView, Color.Transparent);
-			deviceContext.ClearDepthStencilView(depthStencilView, DepthStencilClearFlags.Depth | DepthStencilClearFlags.Stencil, 1f, 0);
-			
-            for(int ResID = allData.Min(r => r.ResID); ResID <= allData.Max(r => r.ResID); ResID++) {
-                if(allData.Any(r => r.ResID == ResID)){
-                    deviceContext.PixelShader.SetShaderResource(0, dataLoader.ShaderData[ResID]);
-                    allData.FindAll(r => r.ResID == ResID).ForEach(r => {
-                        using(var indexbuffer = r.mdl.CreateIndexBuffer(device, BindFlags.IndexBuffer))
-                        using(var vertexbuffer = r.mdl.CreateVertexBuffer(device, BindFlags.VertexBuffer)) {
-                            VertexBufferBinding vbb = new VertexBufferBinding(vertexbuffer, Utilities.SizeOf<Vertex>(), 0);
-                            deviceContext.InputAssembler.SetVertexBuffers(0, vbb);
-                            deviceContext.InputAssembler.SetIndexBuffer(indexbuffer, Format.R32_UInt, 0);
-                            deviceContext.DrawIndexed(r.mdl.IndexBuffer.Length * 3, 0, 0);
-                        }
-                    });
-                }
-            }
-		}
-		
-		*/
 
 		public static void updatePositions() {
 			double time = GameStatus.CurrentTick * 1000;
@@ -287,7 +276,7 @@ namespace Game_Java_Port {
     public class RenderData {
 		public bool animate;
         public Model mdl;
-		private int _ResID;
+		private int _ResID = 0;
         public int ResID {
 			get { return _ResID; }
 			set {
@@ -297,7 +286,18 @@ namespace Game_Java_Port {
 						mdl.VertexBuffer[i].Resource = value;
 				}
 			} }
-
+		private int _ResID2 = -1;
+		public int ResID2
+		{
+			get { return _ResID2; }
+			set {
+				_ResID2 = value;
+				if(mdl.VertexBuffer != null) {
+					for (int i = 0 ; i < mdl.VertexBuffer.Length ; i++)
+						mdl.VertexBuffer[i].Resource2 = value;
+				}
+			}
+		}
         public RenderData[] SubObjs;
 
         //animation
@@ -306,17 +306,21 @@ namespace Game_Java_Port {
         public float AnimationOffset;
         public float AnimationSpeed;
 
+		//utility setters
         public Rectangle Area { set {
 				if (mdl.VertexBuffer == null)
 					mdl = Model.Square;
                 mdl.VertexBuffer.ApplyRectangle(value);
 				ResID = _ResID;
+				ResID2 = _ResID2;
             } }
 		public float Z { set {
 				if (mdl.VertexBuffer == null)
 					mdl = Model.Square;
 				mdl.VertexBuffer = mdl.VertexBuffer.ApplyZAxis(value);
 			} }
+		public int Frameindex { set { mdl.VertexBuffer.SetAnimationFrame(value, AnimationFrameCount); } }
+
 		/// <summary>
 		/// Copies all values of this object to a new instance. Changes to the new instance are guaranteed to not change this object.
 		/// </summary>
@@ -330,6 +334,7 @@ namespace Game_Java_Port {
 				AnimationSpeed = AnimationSpeed,
 				mdl = mdl.ValueCopy(),
 				ResID = ResID,
+				ResID2 = ResID2,
 				SubObjs = SubObjs == null ? null : new RenderData[SubObjs.Length]
 			};
 			if (result.SubObjs != null)
@@ -375,7 +380,8 @@ namespace Game_Java_Port {
         /// </summary>
         public Vector2 TexCoord { get { return Tex.XY(); } set{ Tex.X = value.X; Tex.Y = value.Y; } }
 		public float Resource { get { return Tex.Z; } set { Tex.Z = value; } }
-		public Vector3 Tex;
+		public float Resource2 { get { return Tex.W; } set { Tex.W = value; } }
+		public Vector4 Tex;
         /// <summary>
         /// Returns a vertex buffer defining a 1x1 pixel square
         /// </summary>
@@ -415,10 +421,10 @@ namespace Game_Java_Port {
         public static readonly Vector4 DefaultColor = new Vector4(1);
 
 		// Base positions are 0.5, not 1 as the difference of -0.5 and 0.5 is 1, which should represent one pixel.
-        public static Vertex TopLeft { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(-0.5f, -0.5f, 0, 1), TexCoord = new Vector2(0, 0) }; } }
-        public static Vertex TopRight { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(0.5f, -0.5f, 0, 1), TexCoord = new Vector2(1, 0) }; } }
-        public static Vertex BottomLeft { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(-0.5f, 0.5f, 0, 1), TexCoord = new Vector2(0, 1) }; } }
-        public static Vertex BottomRight { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(0.5f, 0.5f, 0, 1), TexCoord = new Vector2(1, 1) }; } }
+        public static Vertex TopLeft { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(-0.5f, -0.5f, 0, 1), Tex = new Vector4(0, 0,  dataLoader.getResID(), -1) }; } }
+        public static Vertex TopRight { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(0.5f, -0.5f, 0, 1), Tex = new Vector4(1, 0,  dataLoader.getResID(), -1) }; } }
+        public static Vertex BottomLeft { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(-0.5f, 0.5f, 0, 1), Tex = new Vector4(0, 1,dataLoader.getResID(), -1) }; } }
+        public static Vertex BottomRight { get { return new Vertex { Color = DefaultColor, Pos = new Vector4(0.5f, 0.5f, 0, 1), Tex = new Vector4(1, 1, dataLoader.getResID(), -1) }; } }
     }
 
     /// <summary>
@@ -426,9 +432,9 @@ namespace Game_Java_Port {
     /// </summary>
     public static class VertexExtensions {
 
-		public static RenderData Merge(this List<RenderData> list) { return list.ToArray().Merge(); }
+		public static RenderData Merge(this List<RenderData> list, int? ResID = null, int? ResID2 = null) { return list.ToArray().Merge(ResID, ResID2); }
 
-		public static RenderData Merge(this RenderData[] list) {
+		public static RenderData Merge(this RenderData[] list, int? ResID = null, int? ResID2 = null) {
 			List<Vertex> vertices = new List<Vertex>();
 			List<TriIndex> indices = new List<TriIndex>();
 			for (int i = 0 ; i < list.Length ; i++) {
@@ -451,6 +457,10 @@ namespace Game_Java_Port {
 				VertexBuffer = vertices.ToArray(),
 				IndexBuffer = indices.ToArray()
 			} };
+			if (ResID.HasValue)
+				result.ResID = ResID.Value;
+			if (ResID2.HasValue)
+				result.ResID2 = ResID2.Value;
 			return result;
 		}
 

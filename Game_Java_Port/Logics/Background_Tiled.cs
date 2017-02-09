@@ -60,6 +60,7 @@ namespace Game_Java_Port {
 					AnimationFrameCount = RenderData.AnimationFrameCount,
 					mdl = Model.Square,
 					ResID = RenderData.ResID,
+					ResID2 = RenderData.ResID2
 				};
 				RenderData.SubObjs[i].Area = new Rectangle(
 					CustomMaths.mod(x * width + (int) MatrixExtensions.PVTranslation.X, Program.width + width) - width,
@@ -76,17 +77,18 @@ namespace Game_Java_Port {
         }
         public Background_Tiled(
             int ResID,
+			int ResID2,
 			Point Tiles,
             int? Seed = null,
             RectangleF? Area = null,
             float lifetime = 0,
             Settings settings = Settings.Default,
             bool add = true)
-            :base(ResID, Area.HasValue ? Area.Value : RectangleF.Empty, lifetime, settings, add) {
+            :base(ResID, ResID2, Area.HasValue ? Area.Value : RectangleF.Empty, lifetime, settings, add) {
 
             RenderData.Area = Area.HasValue ?
 				new Rectangle((int) Area.Value.X, (int) Area.Value.Y, (int) Area.Value.Width, (int) Area.Value.Height) :
-				new Rectangle(0,0,dataLoader.D3DResources[ResID].Description.Width, dataLoader.D3DResources[ResID].Description.Height);
+				new Rectangle(0,0,64, 64);
 
 			RenderData.AnimationFrameCount = Tiles;
             seed = Seed.HasValue ? Seed.Value : new Random().Next();

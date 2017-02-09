@@ -37,7 +37,6 @@ namespace Game_Java_Port {
         public float UnOwnedTime { get; private set; }
 
         public abstract ItemType Rarity { get; }
-        private SolidColorBrush Pencil = new SolidColorBrush(Program.D2DContext, Color.Transparent);
         //internal Bitmap image;
         
         public string Name { get; set; } = "Unknown Item";
@@ -203,7 +202,6 @@ namespace Game_Java_Port {
         public virtual void draw(DeviceContext rt) {
             if(Owner == null) {
                 
-                    if(!Pencil.IsDisposed) {
                     /*
                         switch(drawType) {
                             case DrawType.Circle:
@@ -214,13 +212,12 @@ namespace Game_Java_Port {
                                 break;
                         }
                         */
-                }
             }
         }
 
 
         public virtual void init() {
-            Pencil.Color = GameVars.RarityColors[Rarity];
+			//todo: move init code
         }
 
         public virtual void Tick() {
@@ -272,7 +269,6 @@ namespace Game_Java_Port {
 				this.unregister();
 				//GameStatus.removeRenderable(this);
                 GameStatus.removeTickable(this);
-                Pencil.Dispose();
                 ItemInfo.Dispose();
                 ActionInfo.Dispose();
                 NameTooltip.Dispose();

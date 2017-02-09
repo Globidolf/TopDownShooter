@@ -52,7 +52,7 @@ namespace Game_Java_Port {
 			RenderData = new RenderData
 			{
 				mdl = Model.Square,
-				ResID = -1,
+				ResID = dataLoader.getResID("s_cursors_4_4"),
 				AnimationFrameCount = new Point(4,4),
 				Z = Renderer.Layer_Cursor,
 				SubObjs = new[]
@@ -60,6 +60,7 @@ namespace Game_Java_Port {
 					SpriteFont.DEFAULT.generateText("TEST nachricht",Z: 100)
 				}
 			};
+			RenderData.mdl.VertexBuffer.SetAnimationFrame(0, RenderData.AnimationFrameCount);
             RenderData.mdl.VertexBuffer.ApplyRectangle(new RectangleF(MousePos.X, MousePos.Y, _Size, _Size));
         }
     }

@@ -28,7 +28,6 @@ namespace Game_Java_Port
         
         public static RenderForm form;
         public static D3DDevice device;
-        public static D2DDeviceContext D2DContext;
         public static D3DDeviceContext1 D3DContext;
 #if DEBUG
         private static DeviceDebug debugger;
@@ -37,7 +36,7 @@ namespace Game_Java_Port
         public static Stopwatch stopwatch;
         private static bool _togleFullScreen = false;
 
-        static Vector2 scale = Vector2.One;
+        public static Vector2 ScreenScale = Vector2.One;
         public static object RenderLock = new object();
 		public static Vector2 center { get { return new Vector2(width/2, height/2); } }
         public static int width { get {
@@ -52,8 +51,8 @@ namespace Game_Java_Port
             } }
 
         public static void formResized() {
-            scale.X = (float)form.ClientSize.Width / width;
-            scale.Y = (float)form.ClientSize.Height / height;
+            ScreenScale.X = (float)form.ClientSize.Width / width;
+            ScreenScale.Y = (float)form.ClientSize.Height / height;
         }
 
         /// <summary>
@@ -68,8 +67,6 @@ namespace Game_Java_Port
 
 
             init();
-
-            D2DContext.StrokeWidth = 2;
 			
             System.Windows.Forms.Cursor.Hide();
             float CursorSize = 16;
@@ -84,7 +81,7 @@ namespace Game_Java_Port
 
             form.MouseMove += (obj, args) =>
             {
-                GameStatus.MousePos = new Vector2(args.Location.X, args.Location.Y) / scale;
+                GameStatus.MousePos = new Vector2(args.Location.X, args.Location.Y) / ScreenScale;
 				GameStatus.Cursor.invalidate = true;
             };
 
@@ -172,55 +169,54 @@ namespace Game_Java_Port
         public static void Resize(bool toggledisplaymode = false) {
             _togleFullScreen = false;
             dataLoader.unLoadAll();
-            //Tileset.Clear();
 
-            device.ImmediateContext.ClearState();
-            device.ImmediateContext.Flush();
+			Renderer.unload();
 
-            //_RenderTarget.Flush();
-            D2DContext.Dispose();
+			
+            D3DContext.ClearState();
+			D3DContext.Flush();
+
+
             ModeDescription desc;
             if(toggledisplaymode) {
+				Console.WriteLine("Fullscreen " + !form.IsFullscreen);
                 //form.IsFullscreen ^= true;
                 form.IsFullscreen ^= true;
                 if(form.IsFullscreen) {
                     form.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
                     form.Location = System.Drawing.Point.Empty;
-                    //swapChain.ContainingOutput.GetDisplayModeList(Format.R8G8B8A8_UNorm, DisplayModeEnumerationFlags.);
 
-                    desc = new ModeDescription() {
+					desc = swapChain.ContainingOutput.GetDisplayModeList(Format.R8G8B8A8_UNorm, DisplayModeEnumerationFlags.Scaling)[0];
+						/*new ModeDescription() {
                         Width = Settings.UserSettings.FullscreenResolution.Width,
                         Height = Settings.UserSettings.FullscreenResolution.Height,
                         RefreshRate = new Rational(0 , 1)
-                    };
-                } else {
+                    };*/
+				} else {
                     form.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
-                    desc = new ModeDescription() {
+					desc = swapChain.ContainingOutput.GetDisplayModeList(Format.R8G8B8A8_UNorm, DisplayModeEnumerationFlags.Scaling)[0];
+						/*new ModeDescription() {
                         Width = Settings.UserSettings.WindowResolution.Width,
                         Height = Settings.UserSettings.WindowResolution.Height,
                         RefreshRate = new Rational(0, 1)
-                    };
-                }
+                    };*/
+				}
 
-                swapChain.ResizeTarget(ref desc);
-                form.Refresh();
+				form.ClientSize = new System.Drawing.Size(desc.Width, desc.Height);
+				
+				swapChain.ResizeTarget(ref desc);
+				form.Refresh();
                 swapChain.SetFullscreenState(!swapChain.IsFullScreen, null);
             }
 
+			Console.WriteLine("Resize..");
 
-
-            swapChain.ResizeBuffers(0, width, height, Format.Unknown, SwapChainFlags.AllowModeSwitch);
-
-            
-            using(Surface surface = swapChain.GetBackBuffer<Surface>(0)) {
-                D2DContext = new D2DDeviceContext(surface, new CreationProperties());
-            }
-            D2DContext.UnitMode = UnitMode.Pixels;
-            D2DContext.StrokeWidth = 2;
-
-			Renderer.init(device, D3DContext, swapChain);
+			swapChain.ResizeBuffers(1, width, height, Format.R8G8B8A8_UNorm, SwapChainFlags.AllowModeSwitch);
+			
 
             dataLoader.LoadAll(device);
+			Renderer.init(device, D3DContext, swapChain);
+
             //Tileset.Regenerate();
             //Background_Tiled.Regenerate();
             //Menu_BG_Tiled.Regenerate();
@@ -258,15 +254,10 @@ namespace Game_Java_Port
 
             //D3DContext.OutputMerger.SetRenderTargets()
 
-
-
-            using(Surface surface = swapChain.GetBackBuffer<Surface>(0)) 
-                D2DContext = new D2DDeviceContext(surface, new CreationProperties());
+			
 
 			dataLoader.LoadAll(device);
 			Renderer.init(device, D3DContext, swapChain);
-
-            D2DContext.UnitMode = UnitMode.Pixels;
             stopwatch = new Stopwatch();
             stopwatch.Start();
         }
@@ -310,7 +301,6 @@ namespace Game_Java_Port
         static void dispose() {
             swapChain.Dispose();
             //Tileset.Clear();
-            D2DContext.Dispose();
 #if DEBUG
             debugger.Dispose();
 #endif
