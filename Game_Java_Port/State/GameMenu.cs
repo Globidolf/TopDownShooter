@@ -34,61 +34,18 @@ namespace Game_Java_Port {
 
 
 		public void pseudoinit() {
-			Elements.ForEach(e => e.pseudoinit());
-			width = Math.Min(MaxMenuWidth, Math.Max(MinMenuWidth, Elements.Any() ? Elements.Max(e => e.width) + 2 * MenuMargin : 0));
-			int totalelementheight = Elements.Any() ? Elements.Sum(e => e.height) + (Elements.Count - 1) * ElementMargin + 2 * MenuMargin : MinMenuHeight;
+			Elements.ForEach(e => e.init());
+			width = Math.Min(MaxMenuWidth, Math.Max(MinMenuWidth, Elements.Any() ? Elements.Max(e => e.area.Width) + 2 * MenuMargin : 0));
+			int totalelementheight = Elements.Any() ? Elements.Sum(e => e.area.Height) + (Elements.Count - 1) * ElementMargin + 2 * MenuMargin : MinMenuHeight;
 			scrolloffset = Math.Max(0, totalelementheight - MaxMenuHeight);
-			height = Math.Min(MaxMenuHeight, Math.Max(MinMenuHeight, Elements.Any() ? Elements.Sum(e => e.height) + Elements.Count * ElementMargin + 2 * MenuMargin : 0));
+			height = Math.Min(MaxMenuHeight, Math.Max(MinMenuHeight, Elements.Any() ? Elements.Sum(e => e.area.Height) + Elements.Count * ElementMargin + 2 * MenuMargin : 0));
 			x = (MaxMenuWidth - width) / 2;
 			y = (MaxMenuHeight - height) / 2;
 			Elements.ForEach(e => e.postinit());
 			RenderData.Area = new Rectangle(x, y, width, height);
 		}
 		public void updateRenderData() {
-		/*
-			if (update) {
-				update = false;
-				#region height
-				_height = MenuMargin * 2;
-				Elements.FindAll((ele) => ele.Container == null).ForEach((ele) => {
-					_height += ElementMargin + (int) ele.Height;
-				});
-				_trueHeight = _height;
-				_height = Math.Min(
-					ScreenHeight,
-					_height);
-				if (_ScrollOffset < 0)
-					_ScrollOffset = 0;
-				if (_ScrollOffset > _trueHeight - _height)
-					_ScrollOffset = _trueHeight - _height;
 
-				#endregion
-
-				#region width
-
-				//default width
-				resizeStrings();
-				_Width = (int) (
-					(Elements.Any() ? Elements.Max((ele) => ele.Area.Width) : 0)
-					+ 2 * MenuMargin) - (tooLarge ? ScrollBarWidth : 0);
-
-				// max width
-				if (Elements.Any(ele => ele.GetType().Name.StartsWith("Regulator") ||
-					(ele is MenuElementListBase && ((MenuElementListBase) ele).Children.Any(ele2 => ele2.GetType().Name.StartsWith("Regulator"))))
-				) _Width = ScreenWidth - (tooLarge ? ScrollBarWidth : 0);
-				#endregion
-
-				_X = ScreenWidth / 2 - _Width / 2;
-				_Y = ScreenHeight / 2 - _height / 2;
-				RectangleF temp = new RectangleF(_X, _Y, _Width + (tooLarge ? ScrollBarWidth : 0), Height);
-				if (_Area != temp) {
-					_Area = temp;
-					update = true;
-					RenderData.mdl.VertexBuffer.ApplyRectangle(_Area);
-					Elements.ForEach(e => e.update = true);
-				}
-			}
-		*/
 		}
 			#region fields
 
@@ -216,7 +173,7 @@ namespace Game_Java_Port {
 			{
 				mdl = Model.Square,
 				ResID = dataLoader.getResID("m_menu"),
-				ResID2 = dataLoader.getResID("t_epic")
+				ResID2 = dataLoader.getResID("t_reserved")
 			};
         }
 
@@ -323,12 +280,12 @@ namespace Game_Java_Port {
         public string getInputValue(string Label) {
                 foreach(InputField input in Elements.FindAll((ele) => ele is InputField)) {
                     if(input.Label == Label)
-                        return input.Value;
+                        return input.text;
                 }
                 foreach(MenuElementListBase container in Elements.FindAll((ele) => ele is MenuElementListBase)) {
                     foreach(InputField input in container.Children.FindAll((ele) => ele is InputField)) {
                         if(input.Label == Label)
-                            return input.Value;
+                            return input.text;
                     }
                 }
 
@@ -387,7 +344,7 @@ namespace Game_Java_Port {
             Action onFocus = null, Action onFocusLost = null,
             Action onChange = null) {
             InputField temp = new InputField(this, Label);
-            temp.Value = defaultValue;
+            temp.text = defaultValue;
 
             if(onChange != null)
                 temp.onValueChange += onChange;

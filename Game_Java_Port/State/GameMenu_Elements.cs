@@ -16,112 +16,94 @@ namespace Game_Java_Port
 		private abstract class MenuElementListBase : MenuElementBase
 		{
 			internal List<MenuElementBase> Children { get; set; } = new List<MenuElementBase>();
+			
+			internal Rectangle childArea;
 
-
-			int check = 0;
-
-			private Rectangle _ContentArea;
-
-			internal Rectangle ContentArea
-			{
-				get {
-					return _ContentArea;
-				}
+			internal override void init() {
+				base.init();
+				area.Height = Math.Max(area.Height, Children.Max(c => c.area.Height)) + 2 * ElementMargin;
+				hover = hover && !Children.Any(c => c.hover);
+			}
+			internal override void postinit() {
+				base.postinit();
+				childArea = area;
+				int maxlabelwidth = Parent.Elements.Max(e => e.labelwidth);
+				childArea.X += maxlabelwidth;
+				childArea.Width -= maxlabelwidth;
 			}
 
-			internal override Rectangle calcArea() {
-				Rectangle temp = base.calcArea();
-
-				temp.Height = MinElementHeight + ElementMargin * 2;
-
-				Children.ForEach(ch => temp.Height = Math.Max(temp.Height, ch.Height + ElementMargin * 2));
-
-				//base.update();
-				_Hovering = _Hovering && !Children.Exists(ch => ch.Area.Contains(MousePos.X, MousePos.Y));
-
-				_ContentArea = new Rectangle(
-					Area.Left + Parent.LargestStringSize,
-					Area.Top,
-					Area.Width - Parent.LargestStringSize,
-					Area.Height);
-				return temp.Floor();
-			}
-
-			internal override Rectangle calcLabelArea() {
-				Rectangle temp = base.calcLabelArea();
-				temp.Y += (_Area.Height - MinElementHeight) / 2;
-				return temp.Floor();
-			}
 		}
 
 		private abstract class MenuElementBase : IRenderable
 		{
-			public bool update = true;
-
-			public int width, height, x, y, labelwidth;
+			public int labelwidth;
+			public Rectangle area, labelArea;
+			public virtual string Label { get; internal set; } = "";
+			internal bool hover,
+				updateLabel, updateArea,
+				doDrawLabel = true;
+			internal Color? TextColor = null;
 
 			internal virtual void postinit() {
-				width = Parent.width - 2 * MenuMargin;
-				x = Parent.x + MenuMargin;
-				int index = Parent.Elements.IndexOf(this);
-				y = index > 0 ? Parent.Elements[index - 1].y + Parent.Elements[index - 1].height + ElementMargin : Parent.y + MenuMargin;
-				RenderData.Area = new Rectangle(x, y, width, height);
+
+				area.Width = Parent.width - 2 * MenuMargin;
+				area.X = Parent.x + MenuMargin;
+				int index = Parent.Elements.IndexOf(Container == null ? this : Container);
+				area.Y = index > 0 ? Parent.Elements[index - 1].area.Bottom + ElementMargin : Parent.y + MenuMargin;
+				labelArea = new Rectangle
+				{
+					X = area.X + (area.Width - labelwidth)/ 2,
+					Y = area.Y + 2,
+					Height = area.Height / 2,
+					Width = labelwidth
+				};
+				hover = area.Contains(MousePos.X, MousePos.Y);
 			}
 
-			internal virtual void pseudoinit() {
+			internal int subObjCount = 1;
+
+			/// <summary>
+			/// Override this method to modify the initial attributes of the element.
+			/// <para/>
+			///	Initializes the <see cref="RenderData"/> object with it's <see cref="RenderData.SubObjs"/> slots matching <see cref="subObjCount"/>
+			///	and the basic <see cref="Model.Square"/> <see cref="Model"/>.
+			///	<para/>
+			///	!!! IMPORTANT !!! The slot 0 is RESERVED for the <see cref="Label"/>! If you want to add additional items, set subObjCount to the amount + 1 and use indices above 0!
+			///	<para/>
+			///	The area is set to the labelwidth, clamped between <see cref="MaxElementWidth"/> and <see cref="MinElementWidth"/>.
+			///	It's height is set to  <see cref="MinElementHeight"/>.
+			/// <para/>
+			///	When overriding it is recommended to call base.<see cref="init"/> to set these general values to prevent errors.
+			/// </summary>
+			internal virtual void init() {
+				RenderData = new RenderData { SubObjs = new RenderData[subObjCount], mdl = Model.Square };
 				labelwidth = SpriteFont.DEFAULT.MeasureString(Label).Width;
-				width = Math.Min(MaxElementWidth, Math.Max(MinElementWidth, MinElementWidth + labelwidth));
-				height = MinElementHeight;
+				area.Width = Math.Min(MaxElementWidth, Math.Max(MinElementWidth, MinElementWidth + labelwidth));
+				area.Height = MinElementHeight;
 			}
-
-			public virtual void init() {
-				_Area = calcArea();
-				_LabelArea = calcLabelArea();
-			}
-
-			protected bool labelchanged = false;
+			/// <summary>
+			/// If <see cref="updateArea"/> is true, this method will apply the current area to the <see cref="RenderData"/> and toggle it back to false.
+			/// <para/>
+			/// If <see cref="updateLabel"/> is true, this method will remove the <see cref="Label"/> from the <see cref="Renderer"/> and,
+			/// if the current label has a value, add the new value to the Renderer.
+			/// <para/>
+			/// </summary>
 			public virtual void updateRenderData() {
-				/*
-				if (update) {
-					update = false;
-					_Area = calcArea();
-					_LabelArea = calcLabelArea();
-					_Hovering = _Area.Contains(MousePos.X, MousePos.Y);
-					RenderData.Area = calcArea();
-					if (labelchanged) {
-						labelchanged = false;
-						Renderer.remove(RenderData.SubObjs[0]);
-						if (Label != null && Label != "") {
-							RenderData.SubObjs[0] = SpriteFont.DEFAULT.generateText(Label, _LabelArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text);
-							Renderer.add(RenderData.SubObjs[0]);
-						}
-					}
+				if (updateArea) {
+					RenderData.Area = area;
+					updateArea = false;
 				}
-				*/
+				if (updateLabel) {
+					Renderer.remove(RenderData.SubObjs[0]);
+					if (doDrawLabel && Label != null && Label.Length > 0) {
+						RenderData.SubObjs[0] = SpriteFont.DEFAULT.generateText(Label, labelArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip, hover ? Color.Orange : (Color?) null);
+						Renderer.add(RenderData.SubObjs[0]);
+					}
+					updateLabel = false;
+				}
 			}
 			public RenderData RenderData { get; set; }
-
-			public bool doDrawLabel = true;
-			public virtual string Label { get; internal set; } = "";
-			private Size2 _LabelSize;
-			public Size2 LabelSize
-			{
-				get {
-					//init
-					if (_LabelSize == default(Size2)) {
-						//measure
-						_LabelSize = SpriteFont.DEFAULT.MeasureString(Label);
-						/*
-                        using(TextLayout tl = new TextLayout(Program.DW_Factory, Label, MenuFont, ScreenWidth, ScreenHeight))
-                            _LabelSize = new Size2F(tl.Metrics.Width, tl.Metrics.Height);
-                            */
-						//no size -> 1,1
-						if (_LabelSize == default(Size2))
-							_LabelSize = new Size2(1, 1);
-					}
-					return _LabelSize;
-				}
-			}
+			
 			internal GameMenu Parent { get; set; }
 			private MenuElementListBase _Container;
 			internal MenuElementListBase Container
@@ -143,253 +125,41 @@ namespace Game_Java_Port
 					_Container = value;
 				}
 			}
-			internal int TextYOffset { get { return Parent.TextYOffset; } }
-			internal int TextXOffset { get { return Parent.TextXOffset; } }
-
-			internal Color? TextColor = null;
-
-			internal virtual void invalidateWidths() {
-				if (Container != null) {
-					int temp;
-					lock (Container.Children)
-						_conpos = Container.Children.FindIndex((ele) => ele.Equals(this));
-					temp = Container.ContentArea.Width - MenuMargin * 8;
-
-					if (this is Button)
-						temp = Math.Max(LabelSize.Width, Container.ContentArea.Height - 8 * MenuMargin);
-					else {
-						int buttoncount = 0;
-
-						foreach (Button btn in Container.Children.FindAll((ele) => ele is Button)) {
-							buttoncount++;
-							temp -= btn._width;
-						}
-
-						temp /= Container.Children.Count - buttoncount;
-
-						temp -= Container.Children.Count * ElementMargin;
-					}
-					_width = temp;
-
-					temp = Container.ContentArea.X + MenuMargin;
-					for (int i = 0 ; i < _conpos ; i++)
-						temp += Container.Children[i]._width + ElementMargin;
-					_x = temp;
-				} else {
-					_width = LabelSize.Width;
-				}
-			}
-
-			internal virtual Rectangle calcArea() {
-				invalidateWidths();
-
-				if (Container == null) {
-					int Y = Parent._Y + MenuMargin;
-					Parent.Elements.FindAll((ele) => {
-						return ele.Container == null && ele.Position < Position;
-					}).ForEach((ele) => {
-						Y += ElementMargin + ele.Area.Height;
-					});
-
-					return new Rectangle(
-							Parent._X + MenuMargin,
-							Y - Parent.ScrollOffset,
-							Math.Max(_width + 2 * MenuMargin,
-									 Parent._Width - 2 * MenuMargin),
-							MinElementHeight).Floor();
-
-				} else {
-					return new Rectangle(
-						_x,
-						Container._Area.Y + MenuMargin,
-						_width,
-						MinElementHeight).Floor();
-				}
-			}
-
-			virtual internal Rectangle calcLabelArea() {
-				Rectangle temp = _Area;
-				temp.X += TextXOffset;
-				temp.Width -= TextXOffset;
-				temp.Y += TextYOffset;
-				temp.Height -= TextYOffset;
-				return temp.Floor();
-			}
-			//private int _position = 0;
-			protected int _elecount = 0;
-
-			internal int Position
-			{
-				get {
-					if (Container == null) {
-						return Parent.Elements.IndexOf(this);
-					} else
-						return Container.Position;
-				}
-			}
-
-			protected int _conelecount = 0;
-			protected int _conpos = 0;
-
-			private int __x = 0;
-
-			protected int _x
-			{
-				get { return __x; }
-				set {
-					if (__x != value) {
-						__x = value;
-						update = true;
-						Parent.update = true;
-					}
-				}
-			}
-
-			private int __width = 0;
-
-			internal int _width
-			{
-				get { return __width; }
-				set {
-					if (__width != value) {
-						__width = value;
-						update = true;
-						Parent.update = true;
-					}
-				}
-			}
-
-			public int Height
-			{
-				get {
-					if (_CustomArea != Rectangle.Empty)
-						return _CustomArea.Height;
-					if (_Area != Rectangle.Empty)
-						return _Area.Height;
-					return MinElementHeight;
-				}
-			}
-
-			private Rectangle _CustomArea;
-			internal Rectangle _Area;
-			internal Rectangle _LabelArea;
-
-			internal bool _Hovering = false;
-
-			public virtual Rectangle Area
-			{
-				get {
-
-					if (_CustomArea != Rectangle.Empty)
-						return _CustomArea;
-
-					return _Area;
-				}
-				set {
-					_CustomArea = value.Floor();
-					Parent.update = true;
-					update = true;
-				}
-			}
-
-			//public int Z { get; set; } = 1001;
-
-			//public DrawType drawType { get; set; } = DrawType.Rectangle;
-
-			#region Drawing
-
-			/// <summary>
-			/// Do not call this method manually. It is handled by the renderer.
-			/// overrideable.
-			/// </summary>
-			public virtual void draw(DeviceContext rt) {
-				/*drawHoverHighlight(rt);
-				drawBorder(rt);
-				drawLabel(rt);
-				*/
-			}
-
-			/// <summary>
-			/// Draws the borders of this Menu Element. You can use this method if you override the Customdraw method.
-			/// </summary>
-			/// <param name="g">the Graphics object from the Customdraw parameter</param>
-			//internal void drawBorder(RenderTarget rt) { rt.DrawRectangle(Area, MenuBorderPen); }
-
-			/// <summary>
-			/// Writes the Label of this Menu Element. You can use this method if you override the Customdraw method.
-			/// </summary>
-			/// <param name="g">the Graphics object from the Customdraw parameter</param>
-			internal void drawLabel(RenderTarget rt) {
-				if (doDrawLabel) {
-					//Bitmap text = SpriteFont.DEFAULT.generateText(Label, _LabelArea);
-					/*
-                    if(TextColor != null) {
-                        Color4 tempColor = MenuTextBrush.Color;
-                        MenuTextBrush.Color = (Color)TextColor;
-                        
-                        rt.DrawText(Label, MenuFont, _LabelArea, MenuTextBrush);
-                        MenuTextBrush.Color = tempColor;
-                    } else*/
-
-					//rt.DrawBitmap(text, new RectangleF((int)_LabelArea.X, (int)_LabelArea.Y, text.PixelSize.Width, text.PixelSize.Height), 1, BitmapInterpolationMode.NearestNeighbor);
-					//text.Dispose();
-				}
-			}
-
-			/// <summary>
-			/// Highlights the Menu Element if the mouse hovers over it. You can use this method if you override the Customdraw method.
-			/// Note that you should call this method before other drawing methods, as this will otherwise draw above them,
-			/// rendering the other calls potentially invisible.
-			/// </summary>
-			/// <param name="g">the Graphics object from the Customdraw parameter</param>
-			//internal void drawHoverHighlight(RenderTarget rt) { if (_Hovering) rt.FillRectangle(Area, MenuHoverBrush); }
-
-			#endregion
-
 
 		}
 
 		private sealed class RegulatorButtons<T> : MenuElementListBase where T : struct, IComparable, IConvertible
 		{
 			public override void updateRenderData() {
-				if (update) {
-					base.updateRenderData();
-				}
+				bool ulabel = updateLabel, uarea = updateArea;
+				base.updateRenderData();
 			}
-			public override void init() {
+
+			internal override void init() {
 				base.init();
-				RenderData = new RenderData
-				{
-					mdl = Model.Square,
-					ResID = dataLoader.getResID("m_frame_default"),
-				};
+				RenderData.ResID = dataLoader.getResID("m_frame_default");
 				RenderData.mdl.VertexBuffer.ApplyColor(Color.Transparent);
 			}
 
 			public RegulatorButtons(Regulator<T> regulator, T? stepsize = null) {
 				if (stepsize == null)
-					stepsize = (T) Convert.ChangeType((float.Parse(regulator.MaxValue.ToString()) - float.Parse(regulator.MinValue.ToString())) / 20f, typeof(T));
+					stepsize = (T) Convert.ChangeType((Convert.ToSingle(regulator.MaxValue) - Convert.ToSingle(regulator.MinValue)) / 20f, typeof(T));
 				Parent = regulator.Parent;
-				Label = regulator.Label + " "; //add space to be able to seperate from regulator
+				Label = regulator.Label + "_rb"; //add space to be able to seperate from regulator
 
 				//increase button
 				Button inc = new Button(Parent, "+", (args) =>
 				{
 					if(checkargs(args)) {
-
-
-						double result = double.Parse(regulator.Value.ToString()) + double.Parse(stepsize.ToString());
-						double max = double.Parse(CustomMaths.MaxValue<T>().ToString());
-						double min = double.Parse(CustomMaths.MinValue<T>().ToString());
+						float result =  Convert.ToSingle(regulator.Value) + Convert.ToSingle(stepsize);
+						float max =     Convert.ToSingle(CustomMaths.MaxValue<T>());
+						float min =     Convert.ToSingle(CustomMaths.MinValue<T>());
 						if(result < min)
 							regulator.Value = CustomMaths.MinValue<T>();
 						else if(result > max)
 							regulator.Value = CustomMaths.MaxValue<T>();
 						else
 							regulator.Value = (T)Convert.ChangeType(result, typeof(T));
-						regulator.update = true;
-						update = true;
-						regulator.Parent.update = true;
 					}
 				});
 
@@ -397,101 +167,82 @@ namespace Game_Java_Port
 				Button dec = new Button(Parent, "-", (args) =>
 				{
 					if(checkargs(args)) {
-						double result = double.Parse(regulator.Value.ToString()) - double.Parse(stepsize.ToString());
-						double max = double.Parse(CustomMaths.MaxValue<T>().ToString());
-						double min = double.Parse(CustomMaths.MinValue<T>().ToString());
+						float result =	Convert.ToSingle(regulator.Value) - Convert.ToSingle(stepsize);
+						float max =		Convert.ToSingle(CustomMaths.MaxValue<T>());
+						float min =		Convert.ToSingle(CustomMaths.MinValue<T>());
 						if(result < min)
 							regulator.Value = CustomMaths.MinValue<T>();
 						else if(result > max)
 							regulator.Value = CustomMaths.MaxValue<T>();
 						else
 							regulator.Value = (T)Convert.ChangeType(result, typeof(T));
-						regulator.update = true;
-						update = true;
-						regulator.Parent.update = true;
 					}
 				});
 
 				dec.Container = this;
 				regulator.Container = this;
 				inc.Container = this;
+
 				Parent.Elements.Add(this);
-				init();
 			}
 		}
 
 		private sealed class InputField : MenuElementBase
 		{
-			private bool textchanged = false;
+			internal bool textchanged, focused;
+			internal Rectangle inputArea, inputTextArea;
+			internal string text;
+
+			public event Action onValueChange, onFocus, onFocusLost;
+
+			internal override void postinit() {
+				base.postinit();
+				inputArea = area;
+				int maxlabelwidth = Parent.Elements.Max(e => e.labelwidth);
+				inputArea.Left += maxlabelwidth;
+				inputArea.Width -= maxlabelwidth;
+			}
+
 			public override void updateRenderData() {
-				if (update) {
-					_InputArea = new RectangleF(
-							Area.Left + (int) Parent.LargestStringSize,
-							Area.Top,
-							Area.Width - (int) Parent.LargestStringSize,
-							Area.Height);
-					_TextDisplayArea = _InputArea;
-					_TextDisplayArea.Offset(TextXOffset, 0);
-					base.updateRenderData();
-					if (textchanged) {
-						textchanged = false;
-						Renderer.remove(RenderData.SubObjs[1]);
-						if (Value != null && Value != "") {
-							RenderData.SubObjs[1] = SpriteFont.DEFAULT.generateText(Value, _TextDisplayArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text);
-							Renderer.add(RenderData.SubObjs[1]);
-						}
+				base.updateRenderData();
+
+				if (textchanged) {
+
+					int maxlabelwidth = Parent.Elements.Max(e => e.labelwidth);
+					inputArea.Left += maxlabelwidth;
+					inputArea.Width -= maxlabelwidth;
+					inputTextArea = inputArea;
+					inputTextArea.X += 2;
+					inputTextArea.Y += 2;
+					inputTextArea.Width -= 2;
+					inputTextArea.Height -= 2;
+
+					Renderer.remove(RenderData.SubObjs[1]);
+					if (text != null && text != "") {
+						RenderData.SubObjs[1] = SpriteFont.DEFAULT.generateText(text, _TextDisplayArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip);
+						Renderer.add(RenderData.SubObjs[1]);
 					}
+					textchanged = false;
 				}
 			}
-			public override void init() {
-				RenderData = new RenderData
-				{
-					mdl = Model.Square,
-					ResID = dataLoader.getResID("m_frame_default"),
-					SubObjs = new[]
-					{
-						new RenderData { mdl = Model.Square },
-						new RenderData { mdl = Model.Square }
-					}
-				};
+
+			internal override void init() {
+				subObjCount = 2;
+				base.init();
+				inputArea = area;
+				inputArea.Left += Parent.LargestStringSize; new Rectangle(
+						area.Left + Parent.LargestStringSize,
+						area.Top,
+						area.Width - Parent.LargestStringSize,
+						area.Height);
+				RenderData.ResID = dataLoader.getResID("m_frame_default");
+
 				if (Label != null && Label != "")
-					RenderData.SubObjs[0] = SpriteFont.DEFAULT.generateText(Label, _LabelArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text);
-				if (Value != null && Value != "")
-					RenderData.SubObjs[1] = SpriteFont.DEFAULT.generateText(Value, _TextDisplayArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text);
+					RenderData.SubObjs[0] = SpriteFont.DEFAULT.generateText(Label, labelArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip );
+				if (text != null && text != "")
+					RenderData.SubObjs[1] = SpriteFont.DEFAULT.generateText(text, inputTextArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip );
 			}
 
-			private string _Value;
-
-			public string Value
-			{
-				get { return _Value; }
-				set {
-					if (_Value != value) {
-						_Value = value;
-						update = true;
-						textchanged = true;
-						Parent.update = true;
-					}
-				}
-			}
-			private bool _Editing = false;
-			public bool Editing
-			{
-				get { return _Editing; }
-				private set {
-					if (_Editing != value) {
-						_Editing = value;
-						update = true;
-						Parent.update = true;
-					}
-				}
-			}
-
-			public event Action onValueChange;
-
-			public event Action onFocus;
-
-			public event Action onFocusLost;
 
 
 			public InputField(GameMenu parent, string label) {
@@ -511,12 +262,12 @@ namespace Game_Java_Port
 							return;
 
 
-						if(Value.Length > 0 && args.Data.KeyCode == System.Windows.Forms.Keys.Back) {
+						if(text.Length > 0 && args.Data.KeyCode == System.Windows.Forms.Keys.Back) {
                             // Shift + Backspace clears the text, otherwis remove one character
                             if(args.Data.Shift)
-								Value = "";
+								text = "";
 							else {
-								Value = Value.Remove(Value.Length - 1);
+								text = text.Remove(text.Length - 1);
 								onValueChange?.Invoke();
 							}
 						}
@@ -527,7 +278,7 @@ namespace Game_Java_Port
 								result += 'A';
 							else
 								result += 'a';
-							Value += (char)result;
+							text += (char)result;
 						}
 
 					}
@@ -536,7 +287,7 @@ namespace Game_Java_Port
 				defocus = (obj, args) => {
 					if (args.Down && args.Button == Left && !InputArea.Contains(args.Position)) {
 						onFocusLost?.Invoke();
-						Editing = false;
+						focused = false;
 						onClickEvent -= defocus;
 						onKeyEvent -= KeyPressAction;
 					}
@@ -545,12 +296,11 @@ namespace Game_Java_Port
 				onClickEvent += (obj, args) => {
 					if (parent.isOpen && args.Down && args.Button == Left && !args.Consumed && InputArea.Contains(args.Position)) {
 						onFocus?.Invoke();
-						Editing = true;
+						focused = true;
 						onClickEvent += defocus;
 						onKeyEvent += KeyPressAction;
 					}
 				};
-				init();
 			}
 
 
@@ -676,7 +426,7 @@ namespace Game_Java_Port
 				RenderData = new RenderData
 				{
 					ResID = dataLoader.getResID("m_frame_default"),
-					Area = _Area,
+					Area = area,
 					SubObjs = new[]
 					{
 						new RenderData { mdl = Model.Square },
@@ -1037,7 +787,7 @@ namespace Game_Java_Port
 				RenderData = new RenderData
 				{
 					ResID = dataLoader.getResID("m_frame_default"),
-					Area = _Area,
+					Area = area,
 					SubObjs = new[]
 					{
 						new RenderData { mdl = Model.Square },
@@ -1080,7 +830,7 @@ namespace Game_Java_Port
 			public TextElement(GameMenu parent, string Text, Size2 size = default(Size2)) {
 				Parent = parent;
 				parent.Elements.Add(this);
-				_TextArea = new Rectangle(_Area.X, _Area.Y, size.Width, size.Height);
+				_TextArea = new Rectangle(area.X, area.Y, size.Width, size.Height);
 				this.Text = Text;
 				init();
 			}
@@ -1314,7 +1064,7 @@ namespace Game_Java_Port
 				get { return _ElementSize; }
 				set {
 					_ElementSize = value;
-					Columns = (_Area.Width - 2 * ElementMargin) % (_ElementSize + ElementMargin);
+					Columns = (area.Width - 2 * ElementMargin) % (_ElementSize + ElementMargin);
 				}
 			}
 
