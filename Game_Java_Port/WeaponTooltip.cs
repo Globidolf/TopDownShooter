@@ -31,7 +31,7 @@ namespace Game_Java_Port {
             temp.Width += 20;
             Area = temp;
             switch(Item.Rarity) {
-                case ItemType.Pearlescent:
+                case ItemType.Unique:
 					//frame = Menu_BG_Tiled.Pearlescent;
 					RenderData.ResID = dataLoader.getResID("tiled_menu_peal_32_96");
                     break;

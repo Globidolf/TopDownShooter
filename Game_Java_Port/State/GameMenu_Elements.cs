@@ -4,6 +4,7 @@ using SharpDX;
 using SharpDX.Direct2D1;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using static Game_Java_Port.GameStatus;
 using static System.Windows.Forms.MouseButtons;
 
@@ -31,7 +32,7 @@ namespace Game_Java_Port
 			internal override Rectangle calcArea() {
 				Rectangle temp = base.calcArea();
 
-				temp.Height = ElementHeight + ElementMargin * 2;
+				temp.Height = MinElementHeight + ElementMargin * 2;
 
 				Children.ForEach(ch => temp.Height = Math.Max(temp.Height, ch.Height + ElementMargin * 2));
 
@@ -39,23 +40,39 @@ namespace Game_Java_Port
 				_Hovering = _Hovering && !Children.Exists(ch => ch.Area.Contains(MousePos.X, MousePos.Y));
 
 				_ContentArea = new Rectangle(
-					Area.Left +Parent.LargestStringSize,
+					Area.Left + Parent.LargestStringSize,
 					Area.Top,
-					Area.Width -  Parent.LargestStringSize,
+					Area.Width - Parent.LargestStringSize,
 					Area.Height);
 				return temp.Floor();
 			}
 
 			internal override Rectangle calcLabelArea() {
 				Rectangle temp = base.calcLabelArea();
-				temp.Y += (_Area.Height - ElementHeight) / 2;
+				temp.Y += (_Area.Height - MinElementHeight) / 2;
 				return temp.Floor();
 			}
 		}
 
-		private abstract class MenuElementBase : IRenderable, IDisposable
+		private abstract class MenuElementBase : IRenderable
 		{
 			public bool update = true;
+
+			public int width, height, x, y, labelwidth;
+
+			internal virtual void postinit() {
+				width = Parent.width - 2 * MenuMargin;
+				x = Parent.x + MenuMargin;
+				int index = Parent.Elements.IndexOf(this);
+				y = index > 0 ? Parent.Elements[index - 1].y + Parent.Elements[index - 1].height + ElementMargin : Parent.y + MenuMargin;
+				RenderData.Area = new Rectangle(x, y, width, height);
+			}
+
+			internal virtual void pseudoinit() {
+				labelwidth = SpriteFont.DEFAULT.MeasureString(Label).Width;
+				width = Math.Min(MaxElementWidth, Math.Max(MinElementWidth, MinElementWidth + labelwidth));
+				height = MinElementHeight;
+			}
 
 			public virtual void init() {
 				_Area = calcArea();
@@ -64,6 +81,7 @@ namespace Game_Java_Port
 
 			protected bool labelchanged = false;
 			public virtual void updateRenderData() {
+				/*
 				if (update) {
 					update = false;
 					_Area = calcArea();
@@ -79,6 +97,7 @@ namespace Game_Java_Port
 						}
 					}
 				}
+				*/
 			}
 			public RenderData RenderData { get; set; }
 
@@ -137,7 +156,7 @@ namespace Game_Java_Port
 					temp = Container.ContentArea.Width - MenuMargin * 8;
 
 					if (this is Button)
-						temp = Math.Max( LabelSize.Width, Container.ContentArea.Height - 8 * MenuMargin);
+						temp = Math.Max(LabelSize.Width, Container.ContentArea.Height - 8 * MenuMargin);
 					else {
 						int buttoncount = 0;
 
@@ -177,14 +196,14 @@ namespace Game_Java_Port
 							Y - Parent.ScrollOffset,
 							Math.Max(_width + 2 * MenuMargin,
 									 Parent._Width - 2 * MenuMargin),
-							ElementHeight).Floor();
+							MinElementHeight).Floor();
 
 				} else {
 					return new Rectangle(
 						_x,
 						Container._Area.Y + MenuMargin,
 						_width,
-						ElementHeight).Floor();
+						MinElementHeight).Floor();
 				}
 			}
 
@@ -247,10 +266,10 @@ namespace Game_Java_Port
 						return _CustomArea.Height;
 					if (_Area != Rectangle.Empty)
 						return _Area.Height;
-					return ElementHeight;
+					return MinElementHeight;
 				}
 			}
-			
+
 			private Rectangle _CustomArea;
 			internal Rectangle _Area;
 			internal Rectangle _LabelArea;
@@ -324,25 +343,6 @@ namespace Game_Java_Port
 			/// </summary>
 			/// <param name="g">the Graphics object from the Customdraw parameter</param>
 			//internal void drawHoverHighlight(RenderTarget rt) { if (_Hovering) rt.FillRectangle(Area, MenuHoverBrush); }
-
-			#region IDisposable Support
-			public bool IsDisposed { get { return disposed; } }
-
-			private bool disposed = false;
-
-			protected virtual void Dispose(bool disposing) {
-
-				if (disposed)
-					return;
-				if (disposing) {
-					//nothing to dispose
-					disposed = true;
-				}
-			}
-			public void Dispose() {
-				Dispose(true);
-			}
-			#endregion
 
 			#endregion
 
@@ -1104,7 +1104,7 @@ namespace Game_Java_Port
 		/// The user can click on this Element, which will in turn raise an event.
 		/// Hover effects included.
 		/// </summary>
-		private sealed class Button : MenuElementBase, IDisposable
+		private sealed class Button : MenuElementBase
 		{
 			public override void init() {
 				RenderData = new RenderData
@@ -1165,33 +1165,16 @@ namespace Game_Java_Port
 				init();
 			}
 
-			private bool disposed = false;
-
-			protected override void Dispose(bool disposing) {
-				if (disposed)
-					return;
-				if (disposing) {
-					//unregister the onclick event.
-					if (_remoteOnClick != null)
-						onClickEvent -= _remoteOnClick;
-				}
-				disposed = true;
-				base.Dispose(disposing);
-			}
-
 		}
 
-		private class IconButton : MenuElementBase, IDisposable
+		private class IconButton : MenuElementBase
 		{
 			public override void init() {
 				RenderData = new RenderData
 				{
 					mdl = Model.Square,
 					ResID = dataLoader.getResID("m_frame_default"),
-					SubObjs = new[] {
-						new RenderData { ResID = dataLoader.getResID("border_" + Item.Rarity.ToString())
-						}
-					}
+					ResID2 = dataLoader.getResID("t_" + Item.Rarity.ToString())
 				};
 			}
 			public override void updateRenderData() {
@@ -1227,8 +1210,6 @@ namespace Game_Java_Port
 						if (args.Button == Right && !args.Down) {
 							if (getKeyState(System.Windows.Forms.Keys.ShiftKey)) {
 								item.Drop();
-								lock (this)
-									Dispose();
 							} else {
 								if (item is IEquipable && Game.instance._player.getEquipedItem(((IEquipable) item).Slot) != item) {
 									((IEquipable) item).Equip(Game.instance._player);
@@ -1247,12 +1228,12 @@ namespace Game_Java_Port
 				Parent = parent;
 				Item = item;
 				if (item is Weapon)
-					tooltip = new WeaponTooltip((Weapon) item, Location: () => new Vector2(Area.X + Area.Width/2, Area.Y + Area.Height / 2), Validation: () => _Hovering);
+					tooltip = new WeaponTooltip((Weapon) item, Location: () => new Vector2(Area.X + Area.Width / 2, Area.Y + Area.Height / 2), Validation: () => _Hovering);
 				else
 					tooltip = new Tooltip(item.ItemInfoText, Location: () => new Vector2(Area.X + Area.Width / 2, Area.Y + Area.Height / 2), Validation: () => _Hovering);
-				
+
 				//iconBG = dataLoader.get2D("border_" + item.Rarity.ToString());
-				
+
 				Parent.Elements.Add(this);
 				init();
 			}
@@ -1307,26 +1288,9 @@ namespace Game_Java_Port
 					tooltip.Tick();
 			}
 			*/
-			private bool disposed = false;
-
-			protected override void Dispose(bool disposing) {
-				if (disposed)
-					return;
-				if (disposing) {
-					onClickEvent -= _remoteOnClick;
-					lock (Parent.Elements)
-						Parent.Elements.Remove(this);
-					lock (Container.Children)
-						Container.Children.Remove(this);
-					lock (tooltip)
-						tooltip.Dispose();
-				}
-				disposed = true;
-				base.Dispose(disposing);
-			}
 		}
 
-		private class InventoryElement : MenuElementListBase, IDisposable
+		private class InventoryElement : MenuElementListBase
 		{
 			public override void updateRenderData() {
 				if (update) {
@@ -1383,22 +1347,6 @@ namespace Game_Java_Port
 
 			public override void draw(DeviceContext rt) {
 				//drawBorder(rt);
-			}
-
-			private bool disposed = false;
-
-			protected override void Dispose(bool disposing) {
-				if (disposed)
-					return;
-				if (disposing) {
-					List<MenuElementBase> temp = Children.FindAll(ch => ch is IDisposable);
-					temp.ForEach((ch) => { lock (ch) ((IDisposable) ch).Dispose(); });
-					lock (Parent.Elements)
-						Parent.Elements.Remove(this);
-					Parent = null;
-				}
-				disposed = true;
-				base.Dispose(disposing);
 			}
 		}
 	}

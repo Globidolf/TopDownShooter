@@ -14,13 +14,38 @@ namespace Game_Java_Port {
         public const int ScrollBarWidth = 8;
 		public const int MenuMargin = 64;
 
-		public const int ElementHeight = 16;
 		public const int ElementMargin = 8;
 		public const int GroupMargin = 4;
 
+		public const int MinElementHeight = 16;
+		public const int MinElementWidth = MinElementHeight;
+		public static int MaxElementWidth { get { return MaxMenuWidth - 2 * MenuMargin; } }
+		// No Max Element Heigth as scrolling is possible
+
+		public const int MinMenuWidth = 2 * MenuMargin + MinElementWidth;
+		public const int MinMenuHeight = 2 * MenuMargin + MinElementHeight;
+
+		public static int MaxMenuHeight { get { return Program.height; } }
+		public static int MaxMenuWidth { get { return Program.width; } }
+
 		public bool update = true;
 
+		public int width, height, x, y, scrolloffset;
+
+
+		public void pseudoinit() {
+			Elements.ForEach(e => e.pseudoinit());
+			width = Math.Min(MaxMenuWidth, Math.Max(MinMenuWidth, Elements.Any() ? Elements.Max(e => e.width) + 2 * MenuMargin : 0));
+			int totalelementheight = Elements.Any() ? Elements.Sum(e => e.height) + (Elements.Count - 1) * ElementMargin + 2 * MenuMargin : MinMenuHeight;
+			scrolloffset = Math.Max(0, totalelementheight - MaxMenuHeight);
+			height = Math.Min(MaxMenuHeight, Math.Max(MinMenuHeight, Elements.Any() ? Elements.Sum(e => e.height) + Elements.Count * ElementMargin + 2 * MenuMargin : 0));
+			x = (MaxMenuWidth - width) / 2;
+			y = (MaxMenuHeight - height) / 2;
+			Elements.ForEach(e => e.postinit());
+			RenderData.Area = new Rectangle(x, y, width, height);
+		}
 		public void updateRenderData() {
+		/*
 			if (update) {
 				update = false;
 				#region height
@@ -63,11 +88,11 @@ namespace Game_Java_Port {
 					Elements.ForEach(e => e.update = true);
 				}
 			}
+		*/
 		}
+			#region fields
 
-        #region fields
-
-        public event EventHandler onContinue;
+		public event EventHandler onContinue;
 
         public event EventHandler onOpen;
 

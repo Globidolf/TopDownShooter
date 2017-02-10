@@ -58,7 +58,8 @@ namespace Game_Java_Port {
                     temp.resizeNumbers();
                     temp.resizeStrings();
 
-                    addMenu(temp);
+					temp.pseudoinit();
+					addMenu(temp);
                 }
                 return getMenu(name);
             }
@@ -91,7 +92,8 @@ namespace Game_Java_Port {
                     temp.resizeNumbers();
                     temp.resizeStrings();
 
-                    addMenu(temp);
+					temp.pseudoinit();
+					addMenu(temp);
                 }
                 return getMenu(name);
             }
@@ -137,7 +139,8 @@ namespace Game_Java_Port {
                     temp.resizeStrings();
                     temp.resizeNumbers();
 
-                    addMenu(temp);
+					temp.pseudoinit();
+					addMenu(temp);
                 }
                 return getMenu(name);
             }
@@ -189,7 +192,8 @@ namespace Game_Java_Port {
                     temp.resizeStrings();
                     temp.resizeNumbers();
 
-                    addMenu(temp);
+					temp.pseudoinit();
+					addMenu(temp);
                 }
                 return getMenu(name);
             }
@@ -220,7 +224,7 @@ namespace Game_Java_Port {
                                 }
                                 */
                                 for(int i = 0; i < 100; i++) {
-                                    new Weapon((uint)i+1, rarity: ItemType.Pearlescent).PickUp(player);
+                                    new Weapon((uint)i+1, rarity: ItemType.Unique).PickUp(player);
                                 }
                             };
                             CharCreatorMenu.open();
@@ -260,7 +264,8 @@ namespace Game_Java_Port {
 
                     temp.resizeStrings();
 
-                    addMenu(temp);
+					temp.pseudoinit();
+					addMenu(temp);
                 }
                 return getMenu(name);
             }
@@ -442,7 +447,8 @@ namespace Game_Java_Port {
                         }
                     });
 
-                    addMenu(temp);
+					temp.pseudoinit();
+					addMenu(temp);
                 }
                 return getMenu(name);
             }
@@ -594,7 +600,8 @@ namespace Game_Java_Port {
                         }
                     });
 
-                    addMenu(temp);
+					temp.pseudoinit();
+					addMenu(temp);
                 }
                 return getMenu(name);
             }
@@ -662,15 +669,12 @@ namespace Game_Java_Port {
                     temp.onContinue += (obj, args2) =>
                     {
                         onKeyEvent -= inputHandler;
-                        lock(inventory)
-                            inventory.Dispose();
                         inventory = null;
                         temp.Elements.Clear();
                     };
 
-                    
-
-                    addMenu(temp);
+					temp.pseudoinit();
+					addMenu(temp);
                 }
                 return getMenu(name);
             }

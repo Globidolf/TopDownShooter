@@ -61,7 +61,7 @@ namespace Game_Java_Port {
                 case ItemType.Legendary:
                     price *= 10f;
                     break;
-                case ItemType.Pearlescent:
+                case ItemType.Unique:
                     price *= 50f;
                     break;
                 case ItemType.DevItem:
@@ -207,7 +207,7 @@ namespace Game_Java_Port {
                 chancesum += 50;
                 Chances.Add(ItemType.Legendary, chancesum);
                 chancesum += 10;
-                Chances.Add(ItemType.Pearlescent, chancesum);
+                Chances.Add(ItemType.Unique, chancesum);
                 chancesum += 1;
                 Chances.Add(ItemType.DevItem, chancesum);
                 chancesum += 0.01f;
@@ -255,7 +255,7 @@ namespace Game_Java_Port {
                 case ItemType.Legendary:
                     mods = 8;
                     break;
-                case ItemType.Pearlescent:
+                case ItemType.Unique:
                     mods = 10;
                     break;
                 case ItemType.DevItem:

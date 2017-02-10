@@ -70,7 +70,7 @@ namespace Game_Java_Port {
                         case ItemType.Rare         :    return Rare        ;
                         case ItemType.Epic         :    return Epic        ;
                         case ItemType.Legendary    :    return Legendary   ;
-                        case ItemType.Pearlescent  :    return Pearlescent ;
+                        case ItemType.Unique  :    return Pearlescent ;
                         case ItemType.DevItem      :    return DevItem     ;
                         case ItemType.Gold         :    return Gold;
                         default                    :    return Default ;
@@ -142,22 +142,23 @@ namespace Game_Java_Port {
         Acid,
     }
 
-    [Flags]
-    public enum ItemType : byte {
-        Set =           0x01,
-        Quest =         0x01 << 1,
-        Special =       0x01 << 2,
-        Reserved =      0x01 << 3,
-        Garbage =       0x00,
-        Common =        0x10,
-        Uncommon =      0x20, // 0x10 << 1
-        Rare =          0x30,
-        Epic =          0x40, // 0x10 << 2
-        Legendary =     0x50,
-        Pearlescent =   0x60,
-        DevItem =       0x70,
-        Gold =          0x10 << 3
-    }
+	[Flags]
+	public enum ItemType : byte
+	{
+		Set =		0x01,
+		Quest =		0x01 << 1,
+		Special =	0x01 << 2,
+		Reserved =	0x01 << 3,
+		Garbage =	0x00,
+		Common =	0x10,
+		Uncommon =	0x20, // 0x10 << 1
+		Rare =		0x30,
+		Epic =		0x40, // 0x10 << 2
+		Legendary = 0x50,
+		Unique =	0x60,
+		DevItem =	0x70,
+		Gold =		0x10 << 3
+	}
 
     [Flags]
     public enum Controls : short {
