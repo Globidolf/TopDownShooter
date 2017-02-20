@@ -36,6 +36,7 @@ namespace Game_Java_Port
 
 		private abstract class MenuElementBase : IRenderable
 		{
+			public const int textOffset = 2;
 			public int labelwidth;
 			public Rectangle area, labelArea;
 			public virtual string Label { get; internal set; } = "";
@@ -44,6 +45,10 @@ namespace Game_Java_Port
 				doDrawLabel = true;
 			internal Color? TextColor = null;
 
+			/// <summary>
+			/// Set final values here using the parents size as reference. <para/>
+			/// labelArea is set in the base call of this method.
+			/// </summary>
 			internal virtual void postinit() {
 
 				area.Width = Parent.width - 2 * MenuMargin;
@@ -53,8 +58,8 @@ namespace Game_Java_Port
 				labelArea = new Rectangle
 				{
 					X = area.X + (area.Width - labelwidth)/ 2,
-					Y = area.Y + 2,
-					Height = area.Height / 2,
+					Y = area.Y + textOffset,
+					Height = area.Height - textOffset * 2,
 					Width = labelwidth
 				};
 				hover = area.Contains(MousePos.X, MousePos.Y);
@@ -212,18 +217,19 @@ namespace Game_Java_Port
 					inputArea.Left += maxlabelwidth;
 					inputArea.Width -= maxlabelwidth;
 					inputTextArea = inputArea;
-					inputTextArea.X += 2;
-					inputTextArea.Y += 2;
-					inputTextArea.Width -= 2;
-					inputTextArea.Height -= 2;
+					inputTextArea.X += textOffset;
+					inputTextArea.Y += textOffset;
+					inputTextArea.Width -= textOffset;
+					inputTextArea.Height -= textOffset;
 
 					Renderer.remove(RenderData.SubObjs[1]);
 					if (text != null && text != "") {
-						RenderData.SubObjs[1] = SpriteFont.DEFAULT.generateText(text, _TextDisplayArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip);
+						RenderData.SubObjs[1] = SpriteFont.DEFAULT.generateText(text + " ", inputTextArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip);
 						Renderer.add(RenderData.SubObjs[1]);
 					}
 					textchanged = false;
 				}
+				RenderData.SubObjs[1].SubObjs[RenderData.SubObjs[1].SubObjs.Length - 1].Frameindex = (((CurrentTick * 1000) % 2) == 0 ? ' ' : '_')-32;
 			}
 
 			internal override void init() {
@@ -240,7 +246,7 @@ namespace Game_Java_Port
 				if (Label != null && Label != "")
 					RenderData.SubObjs[0] = SpriteFont.DEFAULT.generateText(Label, labelArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip );
 				if (text != null && text != "")
-					RenderData.SubObjs[1] = SpriteFont.DEFAULT.generateText(text, inputTextArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip );
+					RenderData.SubObjs[1] = SpriteFont.DEFAULT.generateText(text + " ", inputTextArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip );
 			}
 
 
@@ -285,7 +291,7 @@ namespace Game_Java_Port
 				};
 
 				defocus = (obj, args) => {
-					if (args.Down && args.Button == Left && !InputArea.Contains(args.Position)) {
+					if (args.Down && args.Button == Left && !inputArea.Contains(args.Position.X, args.Position.Y)) {
 						onFocusLost?.Invoke();
 						focused = false;
 						onClickEvent -= defocus;
@@ -294,7 +300,7 @@ namespace Game_Java_Port
 				};
 
 				onClickEvent += (obj, args) => {
-					if (parent.isOpen && args.Down && args.Button == Left && !args.Consumed && InputArea.Contains(args.Position)) {
+					if (parent.isOpen && args.Down && args.Button == Left && !args.Consumed && inputArea.Contains(args.Position.X, args.Position.Y)) {
 						onFocus?.Invoke();
 						focused = true;
 						onClickEvent += defocus;
@@ -302,156 +308,157 @@ namespace Game_Java_Port
 					}
 				};
 			}
-
-
-			public override void draw(DeviceContext rt) {
-				/*
-				drawBorder(rt);
-				drawLabel(rt);
-
-				rt.DrawRectangle(InputArea, MenuBorderPen);
-
-				// if editing, make a '_' blink at the end of the text...
-
-				RectangleF dest = _TextDisplayArea, dest2 = _TextDisplayArea;
-
-				Size2 tempsize = SpriteFont.DEFAULT.MeasureString(Value, new Size2((int)dest.Width, (int)dest.Height));
-				dest.Size = new Size2F(tempsize.Width, tempsize.Height);
-
-				tempsize = SpriteFont.DEFAULT.MeasureString(Value + "_", new Size2((int) dest2.Width, (int) dest2.Height));
-				dest2.Size = new Size2F(tempsize.Width, tempsize.Height);
-
-
-				if (Editing && (Program.stopwatch.ElapsedMilliseconds / 1000) % 2 == 0)
-					rt.DrawBitmap(_textBMP_, dest2, 1, BitmapInterpolationMode.NearestNeighbor);
-				else
-					rt.DrawBitmap(_textBMP, dest, 1, BitmapInterpolationMode.NearestNeighbor);
-				
-                if(!Editing || (Program.stopwatch.ElapsedMilliseconds / 3000) % 3 == 0)
-                    rt.DrawText(Value, MenuFont, _TextDisplayArea, MenuTextBrush);
-                else
-                    rt.DrawText(Value + "_", MenuFont, _TextDisplayArea, MenuTextBrush);
-                */
-			}
-
-			RectangleF _InputArea;
-
-			RectangleF InputArea
-			{
-				get {
-					return _InputArea;
-				}
-			}
-
-			RectangleF _TextDisplayArea;
-			/*
-			public override void update() {
-				base.update();
-			}
-			*/
 		}
-
-		/// <summary>
-		/// This class is for use within the GameMenu.
-		/// It represents a bar consisting of a minimum, a maximum and a value.
-		/// The user can change the value between the minimum and maximum by dragging.
-		/// Has various events available for additinal functionality.
-		/// </summary>
-		/// <typeparam name="T">The type of the value. not required, automatically determined.</typeparam>
+		
 		private sealed class Regulator<T> : MenuElementBase where T : struct, IComparable, IConvertible
 		{
-			public override void updateRenderData() {
-				if (update) {
-					_ValueArea = new Rectangle(
-						RegulatorArea.Left - (Parent.LrgstRegNumSz[0] + Parent.LrgstRegNumSz[1] + 3 * TextXOffset),
-						RegulatorArea.Top + TextYOffset,
-						Area.Width,
-						Area.Height);
-					_MaxValueArea = new Rectangle(
-						RegulatorArea.Right + TextXOffset,
-						RegulatorArea.Top + TextYOffset,
-						Area.Width,
-						Area.Height);
-					_MinValueArea = new Rectangle(
-						RegulatorArea.Left - Parent.LrgstRegNumSz[1],
-						RegulatorArea.Top + TextYOffset,
-						Area.Width,
-						Area.Height);
-					_Sep = _MinValueArea.Left - new Vector2(TextXOffset, TextYOffset);
+			bool updateMinValue, updateMaxValue, updateValue, drag;
+			Rectangle minValText, ValText, maxValText, regulatorArea, regulatorHandle;
+			int regulatorStart, regulatorWidth, regPos;
 
-
-
-					base.updateRenderData();
-					//change position if user is clicking on the bar
-					if (IsRegulating) {
-						// all values are ints, need to cast to get flating point numbers
-						RelativePos = (MousePos.X - RegulatorArea.Left) / RegulatorArea.Width;
-						update = true;
-					}
-					Renderer.remove(RenderData.SubObjs[0]);
-					Renderer.remove(RenderData.SubObjs[1]);
-					Renderer.remove(RenderData.SubObjs[2]);
-					Renderer.remove(RenderData.SubObjs[3]);
-					RenderData.SubObjs[0] = SpriteFont.DEFAULT.generateText(Label, _LabelArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text);
-					RenderData.SubObjs[1] = SpriteFont.DEFAULT.generateText(MinValue.ToString(), _MinValueArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text);
-					RenderData.SubObjs[2] = SpriteFont.DEFAULT.generateText(MaxValue.ToString(), _MaxValueArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text);
-					RenderData.SubObjs[3] = SpriteFont.DEFAULT.generateText(Value.ToString(), _ValueArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text);
-					Renderer.add(RenderData.SubObjs[0]);
-					Renderer.add(RenderData.SubObjs[1]);
-					Renderer.add(RenderData.SubObjs[2]);
-					Renderer.add(RenderData.SubObjs[3]);
-					RenderData.SubObjs[4].mdl.VertexBuffer.ApplyRectangle(RegulatorArea);
-				}
+			private T getPos(float percent, bool clamp = true) {
+				if (clamp)
+					percent = Math.Max(0, Math.Min(1, percent));
+				float max = Convert.ToSingle(MaxValue);
+				float min = Convert.ToSingle(MinValue);
+				return (T)Convert.ChangeType(percent * (max - min) + min, typeof(T));
 			}
-			public override void init() {
+
+			public override void updateRenderData() {
+				// keep value for the duration of this method
+				bool updateArea = this.updateArea;
+				base.updateRenderData();
+
+				if (drag) 
+					RelativePos = (MousePos.X - regulatorStart) / regulatorWidth;
+
+				if (updateArea) {
+					regulatorArea = new Rectangle(
+							area.Left + (Container == null ? Parent.LargestStringSize : 0) + Parent.LrgstRegNumSz[0] + Parent.LrgstRegNumSz[1] + 4 * textOffset,
+							area.Top,
+							area.Width - (Container == null ? Parent.LargestStringSize : 0) - Parent.LrgstRegNumSz[0] + Parent.LrgstRegNumSz[1] + Parent.LrgstRegNumSz[2] + 6 * textOffset,
+							area.Height);
+					ValText = new Rectangle(
+						regulatorArea.Left - (Parent.LrgstRegNumSz[0] + Parent.LrgstRegNumSz[1] + 3 * textOffset),
+						regulatorArea.Top + textOffset,
+						area.Width,
+						area.Height);
+					maxValText = new Rectangle(
+						regulatorArea.Right + textOffset,
+						regulatorArea.Top + textOffset,
+						area.Width,
+						area.Height);
+					minValText = new Rectangle(
+						regulatorArea.Left - Parent.LrgstRegNumSz[1],
+						regulatorArea.Top + textOffset,
+						area.Width,
+						area.Height);
+					regulatorHandle = new Rectangle(
+						regulatorStart + regPos - 1,
+						regulatorArea.Top + 2,
+						2,
+						regulatorArea.Height - 4);
+					
+
+					//apply new positions to the strings and disable the update for the rest of the method, as it has been updated here already
+					Renderer.remove(RenderData.SubObjs[2]);
+					RenderData.SubObjs[2] = SpriteFont.DEFAULT.generateText(MaxValue.ToString(), maxValText, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip);
+					Renderer.add(RenderData.SubObjs[2]);
+					updateMaxValue = false;
+
+					Renderer.remove(RenderData.SubObjs[1]);
+					RenderData.SubObjs[1] = SpriteFont.DEFAULT.generateText(MinValue.ToString(), minValText, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip);
+					Renderer.add(RenderData.SubObjs[1]);
+					updateMinValue = false;
+
+					Renderer.remove(RenderData.SubObjs[3]);
+					RenderData.SubObjs[3] = SpriteFont.DEFAULT.generateText(Value.ToString(), ValText, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip);
+					Renderer.add(RenderData.SubObjs[3]);
+					updateValue = false;
+
+					RenderData.SubObjs[4].mdl.VertexBuffer.ApplyRectangle(regulatorArea);
+					RenderData.SubObjs[5].mdl.VertexBuffer.ApplyRectangle(regulatorHandle);
+					updateArea = false;
+				}
+
+				if (updateMaxValue) {
+					Renderer.remove(RenderData.SubObjs[2]);
+					RenderData.SubObjs[2] = SpriteFont.DEFAULT.generateText(MaxValue.ToString(), maxValText, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip);
+					Renderer.add(RenderData.SubObjs[2]);
+					updateMaxValue = false;
+				}
+				if (updateMinValue) {
+					Renderer.remove(RenderData.SubObjs[1]);
+					RenderData.SubObjs[1] = SpriteFont.DEFAULT.generateText(MinValue.ToString(), minValText, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip);
+					Renderer.add(RenderData.SubObjs[1]);
+					updateMinValue = false;
+				}
+				if (updateValue) {
+					Renderer.remove(RenderData.SubObjs[3]);
+					RenderData.SubObjs[3] = SpriteFont.DEFAULT.generateText(Value.ToString(), ValText, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip);
+					Renderer.add(RenderData.SubObjs[3]);
+					updateValue = false;
+				}
+
+			}
+
+			internal override void postinit() {
+				base.postinit();
+
+				regulatorArea = new Rectangle(
+						area.Left + (Container == null ? Parent.LargestStringSize : 0) + Parent.LrgstRegNumSz[0] + Parent.LrgstRegNumSz[1] + 4 * textOffset,
+						area.Top,
+						area.Width - (Container == null ? Parent.LargestStringSize : 0) - Parent.LrgstRegNumSz[0] + Parent.LrgstRegNumSz[1] + Parent.LrgstRegNumSz[2] + 6 * textOffset,
+						area.Height);
+				ValText = new Rectangle(
+					regulatorArea.Left - (Parent.LrgstRegNumSz[0] + Parent.LrgstRegNumSz[1] + 3 * textOffset),
+					regulatorArea.Top + textOffset,
+					area.Width,
+					area.Height);
+				maxValText = new Rectangle(
+					regulatorArea.Right + textOffset,
+					regulatorArea.Top + textOffset,
+					area.Width,
+					area.Height);
+				minValText = new Rectangle(
+					regulatorArea.Left - Parent.LrgstRegNumSz[1],
+					regulatorArea.Top + textOffset,
+					area.Width,
+					area.Height);
+				regulatorHandle = new Rectangle(
+					regulatorStart + regPos - 1,
+					regulatorArea.Top + 2,
+					2,
+					regulatorArea.Height - 4);
+
+				//Todo: Determine max characters to init value text and modify ONLY it's texcoords on updates
+
+				RenderData.SubObjs[1] = SpriteFont.DEFAULT.generateText(MinValue.ToString(), minValText, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip);
+				RenderData.SubObjs[2] = SpriteFont.DEFAULT.generateText(MaxValue.ToString(), maxValText, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip);
+				RenderData.SubObjs[3] = SpriteFont.DEFAULT.generateText(Value.ToString(), ValText, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip);
+				RenderData.SubObjs[4] = new RenderData
+				{
+					Area = regulatorArea,
+					ResID = dataLoader.getResID("m_bar_1_4"),
+					AnimationFrameCount = new Point(1,4),
+					Frameindex = 0
+				};
+				RenderData.SubObjs[5] = new RenderData
+				{
+					Area = regulatorHandle,
+					ResID = dataLoader.getResID("m_symbols_8_8"),
+					AnimationFrameCount = new Point(8,8),
+					Frameindex = 0
+				};
+			}
+
+			internal override void init() {
+				subObjCount += 6;
 				base.init();
 
-				_ValueArea = new Rectangle(
-					RegulatorArea.Left - (Parent.LrgstRegNumSz[0] + Parent.LrgstRegNumSz[1] + 3 * TextXOffset),
-					RegulatorArea.Top + TextYOffset,
-					Area.Width,
-					Area.Height);
-				_MaxValueArea = new Rectangle(
-					RegulatorArea.Right + TextXOffset,
-					RegulatorArea.Top + TextYOffset,
-					Area.Width,
-					Area.Height);
-				_MinValueArea = new Rectangle(
-					RegulatorArea.Left - Parent.LrgstRegNumSz[1],
-					RegulatorArea.Top + TextYOffset,
-					Area.Width,
-					Area.Height);
-				_Sep = _MinValueArea.Left - new Vector2(TextXOffset, TextYOffset);
-
-				RenderData = new RenderData
-				{
-					ResID = dataLoader.getResID("m_frame_default"),
-					Area = area,
-					SubObjs = new[]
-					{
-						new RenderData { mdl = Model.Square },
-						SpriteFont.DEFAULT.generateText(MinValue.ToString(), _MinValueArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text),
-						SpriteFont.DEFAULT.generateText(MaxValue.ToString(), _MaxValueArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text),
-						SpriteFont.DEFAULT.generateText(Value.ToString(), _ValueArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text),
-						new RenderData {
-							Area = RegulatorArea,
-							ResID = dataLoader.getResID("m_frame_default"),
-						}
-					}
-				};
-				if (Label != null && Label != "")
-					RenderData.SubObjs[0] = SpriteFont.DEFAULT.generateText(Label, _LabelArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text);
+				RenderData.ResID = dataLoader.getResID("m_frame_default");
 			}
-
-			#region Layout Data
-
-			private Rectangle _ValueArea;
-			private Rectangle _MaxValueArea;
-			private Rectangle _MinValueArea;
-			private Vector2 _Sep;
-
-			#endregion
-
+			
 			/// <summary>
 			/// Datastorage for the Value property.
 			/// </summary>
@@ -510,7 +517,7 @@ namespace Game_Java_Port
 							_val = value;
 					} else { //decrease
 
-						// same as with max, look above. no comments for this part any more...
+						// same as with max, see above.
 						if (Value.CompareTo(MinValue) == 0)
 							return;
 
@@ -522,8 +529,12 @@ namespace Game_Java_Port
 						} else
 							_val = value;
 					}
-					//if the value didn't change, it would've returned by now. invoke onChange.
+					//any case that would've made the value NOT change did return. invoke the onchange event.
 					onChange?.Invoke();
+
+					//above code has updated the RelativePos value. update the Regulatorposition for the renderloop and inform that it has updated
+					regPos = regulatorStart + (int)(RelativePos * regulatorWidth);
+					updateValue = true;
 				}
 			}
 
@@ -570,23 +581,7 @@ namespace Game_Java_Port
 					Value = (T) Convert.ChangeType(Math.Max(value, 0) * (max - min) + min, typeof(T));
 				}
 			}
-
-			/// <summary>
-			/// The regulator is seperate from the label.
-			/// The parent also manages the sizes of the other regulators, so we
-			/// can get a neatly aligned design.
-			/// </summary>
-			Rectangle RegulatorArea
-			{
-				get {
-					return new Rectangle(
-						Area.Left + (Container == null ? (int) Parent.LargestStringSize : 0) + (int) (Parent.LrgstRegNumSz[0] + Parent.LrgstRegNumSz[1] + 4 * TextXOffset),
-						Area.Top,
-						Area.Width - (Container == null ? (int) Parent.LargestStringSize : 0) - (int) (Parent.LrgstRegNumSz[0] + Parent.LrgstRegNumSz[1] + Parent.LrgstRegNumSz[2] + 6 * TextXOffset),
-						Area.Height);
-				}
-			}
-
+			
 			#endregion
 
 			//Various events. A Regulator comes with a lot of possibilities!
@@ -664,9 +659,8 @@ namespace Game_Java_Port
 
 				// set functionality
 				onClickEvent += (obj, args) => {
-					if (parent.isOpen && !args.Consumed && args.Button == Left && args.Down && RegulatorArea.Contains(args.Position.X, args.Position.Y)) {
+					if (parent.isOpen && !args.Consumed && args.Button == Left && args.Down && regulatorArea.Contains(args.Position.X, args.Position.Y)) {
 						IsRegulating = true;
-						update = true;
 						onClickEvent += stopregulation;
 					}
 				};
@@ -704,7 +698,7 @@ namespace Game_Java_Port
 			/// Override of the default draw method.
 			/// A lot of changes because of a really complex behaviour.
 			/// </summary>
-			public override void draw(DeviceContext rt) {
+			//public override void draw(DeviceContext rt) {
 
 				/*
 				base.draw(rt);
@@ -732,7 +726,7 @@ namespace Game_Java_Port
 				rt.DrawLine(_SepTop, _SepBot, MenuBorderPen);
 				*/
 
-			}
+			//}
 			/*
 			public override void update() {
 				base.update();
@@ -773,29 +767,24 @@ namespace Game_Java_Port
 		private sealed class TextElement : MenuElementBase
 		{
 			private Rectangle _TextArea;
+
+			private bool updateText;
+
 			public override void updateRenderData() {
-				if (update) {
-					base.updateRenderData();
+				base.updateRenderData();
+				if (updateText) {
 					Renderer.remove(RenderData.SubObjs[1]);
 					if (Text != null && Text != "") {
 						RenderData.SubObjs[1] = SpriteFont.DEFAULT.generateText(Text, _TextArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text);
 						Renderer.add(RenderData.SubObjs[1]);
 					}
+					updateText = false; 
 				}
 			}
-			public override void init() {
-				RenderData = new RenderData
-				{
-					ResID = dataLoader.getResID("m_frame_default"),
-					Area = area,
-					SubObjs = new[]
-					{
-						new RenderData { mdl = Model.Square },
-						new RenderData { mdl = Model.Square }
-					}
-				};
-				if (Label != null && Label != "")
-					RenderData.SubObjs[0] = SpriteFont.DEFAULT.generateText(Label, _LabelArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text);
+
+			internal override void init() {
+				subObjCount += 1;
+				base.init();
 				if (Text != null && Text != "")
 					RenderData.SubObjs[1] = SpriteFont.DEFAULT.generateText(Text, _TextArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text);
 			}
@@ -820,7 +809,7 @@ namespace Game_Java_Port
 				set {
 					if (_Text != value) {
 						_Text = value;
-						update = true;
+						updateText = true;
 						Parent.update = true;
 					}
 				}
@@ -841,7 +830,7 @@ namespace Game_Java_Port
 				temp.Width = temp.Width;
 				temp.Height = ElementMargin;
 
-				return temp.Floor();
+				return temp;
 			}
 
 		}
@@ -856,25 +845,13 @@ namespace Game_Java_Port
 		/// </summary>
 		private sealed class Button : MenuElementBase
 		{
-			public override void init() {
-				RenderData = new RenderData
-				{
-					mdl = Model.Square,
-					ResID = dataLoader.getResID("m_frame_default"),
-					SubObjs = new[] {
-						SpriteFont.DEFAULT.generateText(Label, _LabelArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text)
-					}
-				};
+			internal override void init() {
+				base.init();
 
 				RenderData.mdl.VertexBuffer.ApplyColor(DefaultColor);
 			}
 			public override void updateRenderData() {
-				if (update) {
-					base.updateRenderData();
-					Renderer.remove(RenderData.SubObjs[0]);
-					RenderData.SubObjs[0] = SpriteFont.DEFAULT.generateText(Label, _LabelArea, Renderer.Layer_Menu + Renderer.LayerOffset_Tooltip + Renderer.LayerOffset_Text);
-					Renderer.add(RenderData.SubObjs[0]);
-				}
+				base.updateRenderData();
 			}
 			/// <summary>
 			/// Will run all registered actions when the button is clicked.
@@ -928,9 +905,7 @@ namespace Game_Java_Port
 				};
 			}
 			public override void updateRenderData() {
-				if (update) {
-					base.updateRenderData();
-				}
+				base.updateRenderData();
 			}
 			Tooltip tooltip;
 

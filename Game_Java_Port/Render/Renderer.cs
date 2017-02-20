@@ -221,8 +221,6 @@ namespace Game_Java_Port {
 
 		public static void unload() {
 			if (loaded) {
-
-				
 				deviceContext.OutputMerger.ResetTargets();
 				disposables.ForEach(d => d.Dispose());
 				disposables.Clear();
@@ -319,6 +317,10 @@ namespace Game_Java_Port {
 					mdl = Model.Square;
 				mdl.VertexBuffer = mdl.VertexBuffer.ApplyZAxis(value);
 			} }
+		/// <summary>
+		/// Only set after the Model has been set directly, or inderectly via Area, AND after the animationFrameCount has been set.
+		/// will apply the new texture coordinates to the internal vertexbuffer to display the new region of the texture.
+		/// </summary>
 		public int Frameindex { set { mdl.VertexBuffer.SetAnimationFrame(value, AnimationFrameCount); } }
 
 		/// <summary>

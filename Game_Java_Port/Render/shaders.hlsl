@@ -22,31 +22,6 @@ VertexObject VSMain2D(VertexObject input) {
 	output.Pos.z = 0;
 	return output;
 }
-
-/* unused
-VertexObject VSMain3D(VertexObject input) {
-	VertexObject output = input;
-
-	output.Pos.xy = (input.Pos.xy + DisplayArea.xy / 2) / DisplayArea.zw * 2; 
-	output.Pos.z = input.Pos.z / 1000 + 0.5; // render everything in +- 500 range
-	output.Pos.y = -output.Pos.y;
-
-	return output;
-}
-*/
-/*
-//Test Shader
-float4 PSMain(VertexObject input) : SV_Target
-{
-	return
-	(input.Tex.z >= 0 ? // base texture?
-		Textures.Sample(Sampler, float3(input.Tex.xy, 3)) : // yes, sample
-		Font.Sample(Sampler, input.Tex.xy)) * // no, use font
-		(false ? // secondary texture?
-			Textures.Sample(Sampler, input.Tex.xyw) * input.Color : // yes, sample & multiply plus apply color filter
-			input.Color); // no, simply apply color filter
-}
-*/
 //This shader samples two textures in one go to multiply their pixels.
 float4 PSMain(VertexObject input) : SV_Target
 {

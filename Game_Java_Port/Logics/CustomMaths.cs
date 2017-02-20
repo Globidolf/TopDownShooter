@@ -459,13 +459,6 @@ namespace Game_Java_Port {
             //call overload
             return track(a0, target, new AngleSingle(strength, type), perfect);
         }
-
-		public static Rectangle Floor(this Rectangle rect) {
-			return new Rectangle((int) rect.X, (int) rect.Y, (int) rect.Width, (int) rect.Height);
-		}
-		public static Rectangle Ceil(this Rectangle rect) {
-			return new Rectangle((int) (rect.X + 1 - float.Epsilon), (int) (rect.Y + 1 - float.Epsilon), (int) (rect.Width + 1 - float.Epsilon), (int) (rect.Height + 1 - float.Epsilon));
-		}
 		public static RectangleF Floor(this RectangleF rect) {
             return new RectangleF((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height);
         }
