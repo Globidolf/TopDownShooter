@@ -22,10 +22,9 @@ namespace Game_Java_Port {
 		Question = 2
     }
 
-    public class CustomCursor : IRenderable {
+    public class CustomCursor : IRenderable, ITickable {
 		
-
-		public void updateRenderData() {
+		public void Tick() {
 			if (invalidate) {
 				RenderData.mdl.VertexBuffer.ApplyRectangle(new RectangleF(MousePos.X, MousePos.Y, _Size, _Size));
 				/*
@@ -54,11 +53,7 @@ namespace Game_Java_Port {
 				mdl = Model.Square,
 				ResID = dataLoader.getResID("s_cursors_4_4"),
 				AnimationFrameCount = new Point(4,4),
-				Z = Renderer.Layer_Cursor,
-				SubObjs = new[]
-				{
-					SpriteFont.DEFAULT.generateText("TEST nachricht",Z: 100)
-				}
+				Z = Renderer.Layer_Cursor
 			};
 			RenderData.mdl.VertexBuffer.SetAnimationFrame(0, RenderData.AnimationFrameCount);
             RenderData.mdl.VertexBuffer.ApplyRectangle(new RectangleF(MousePos.X, MousePos.Y, _Size, _Size));

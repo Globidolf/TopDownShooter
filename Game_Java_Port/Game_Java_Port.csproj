@@ -136,6 +136,7 @@
   <ItemGroup>
     <Compile Include="AI Library.cs" />
     <Compile Include="Beam.cs" />
+    <Compile Include="GameMenu.cs" />
     <Compile Include="Logics\Animated_Tileset.cs" />
     <Compile Include="Logics\Background_Tiled.cs" />
     <Compile Include="CharacterBase.cs" />
@@ -151,8 +152,6 @@
     <Compile Include="Settings.cs" />
     <Compile Include="State\Game.cs" />
     <Compile Include="State\GameClient.cs" />
-    <Compile Include="State\GameMenu_Elements.cs" />
-    <Compile Include="State\GameMenu_Presets.cs" />
     <Compile Include="State\Host.cs" />
     <Compile Include="Interface\ICollidible.cs" />
     <Compile Include="Interface\IEquipable.cs" />
@@ -167,7 +166,6 @@
     <Compile Include="State\GameStatus.cs" />
     <Compile Include="State\GameVars.cs" />
     <Compile Include="ItemBase.cs" />
-    <Compile Include="State\GameMenu.cs" />
     <Compile Include="Interface\ITickable.cs" />
     <Compile Include="State\Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

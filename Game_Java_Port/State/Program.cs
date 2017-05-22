@@ -152,7 +152,7 @@ namespace Game_Java_Port
                         fps = i;
                         i = 0;
                         i2 = stopwatch.ElapsedMilliseconds;
-						Console.WriteLine(fps);
+						//Console.WriteLine(fps);
                     }
                     swapChain.Present(0, PresentFlags.None);
                 });
